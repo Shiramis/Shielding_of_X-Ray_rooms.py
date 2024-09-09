@@ -394,11 +394,14 @@ class ddepartment():
         # Check if combining is enabled
         if self.d.get(varcompb_key).get() == 1:
             # Initialize variables and widgets for combining
-            self.d[f"vnumbar {t}"] = IntVar(value=1)
-            self.d[spincom_key] = ttk.Spinbox(master=self.d[frame_key], from_=0, to=100, width=5,
-                textvariable=self.d[f"vnumbar {t}"],
-                command=lambda e=self.d[f"x {t}"], nr=self.d[f"nr {t}"]: self.numbcom(e, nr, t))
+            self.d[f"vnumbar {t}"] = IntVar(value=2)
+            self.d[spincom_key] = ttk.Spinbox(master=self.d[frame_key], from_=2, to=100, width=5,
+            textvariable=self.d[f"vnumbar {t}"],command=lambda e=self.d[f"x {t}"],
+            nr=self.d[f"nr {t}"]: self.numbcom(e, nr,t))
             self.d[spincom_key].grid(row=10, column=1, padx=10, pady=10, sticky="w")
+
+            self.numbcom(self.d[f"x {t}"], self.d[f"nr {t}"], t)
+
             self.d[combutton_key] = ttk.Button(master=self.d[frame_key], text="Combine",
                 command=lambda e=self.d[f"x {t}"], nr=self.d[f"nr {t}"],
                                b=self.d[f"vnumbar {t}"].get(): self.calcom(e,nr,b,t))
@@ -409,36 +412,39 @@ class ddepartment():
             self.d[commatter_key] = ttk.OptionMenu(self.d[frame_key], self.d[f"vcommater {t}"], "Select Material",
                 *materials)
             self.d[commatter_key].grid(row=11, column=0, padx=10, pady=10, sticky="w")
+
         elif self.d.get(varcompb_key).get() == 0:
-            # Destroy widgets if combining is not enabled
+            # Destroy combined material widgets
+            combarr_num = self.d.get(f"comnum {t}", 2)
+            for i in range(1, combarr_num + 1):
+                destroy_widget(f"{combarr_key_prefix}{i}")
             destroy_widget(spincom_key)
             destroy_widget(combutton_key)
             destroy_widget(commatter_key)
-            # Destroy combined material widgets
-            combarr_num = self.d.get(f"comnum {t}", 0)
-            if self.d.get(f"combarr {t}"):
-                for i in range(1, self.d.get(f"vnumbar {t}", 0) + 1):
-                    destroy_widget(f"{combarr_key_prefix}{i}")
+            self.d[f"comnum {t}"] = 0
+
     def numbcom(self, e, nr, t):
         # Access frequently used keys
         num_com_key = f"comnum {t}"
         num_bar_key = f"vnumbar {t}"
         frame_key = f"frame_1 {t}"
+        # Initialize values for comnum and vnumbar if not set yet
+        if num_com_key not in self.d:
+            self.d[num_com_key] = 0
         # Increase the number of barriers
-        if self.d[num_com_key] <= self.d[num_bar_key]:
-            while self.d[num_com_key] < self.d[num_bar_key]:
+        if self.d[num_com_key] <= self.d[num_bar_key].get():
+            while self.d[num_com_key] < self.d[num_bar_key].get():
                 self.d[num_com_key] += 1
                 barrier_num = self.d[num_com_key]
                 barrier_key = f"vcombar {nr}{barrier_num}"
                 combarr_key = f"combarr {t}{barrier_num}"
                 self.d[barrier_key] = StringVar()
                 self.d[combarr_key] = ttk.OptionMenu(self.d[frame_key], self.d[barrier_key], "Select Barrier",
-                    *self.barr)
-                # Position barriers starting from row 12
+                                                     *self.barr)
                 self.d[combarr_key].grid(row=12 + barrier_num)
         # Decrease the number of barriers
-        elif self.d[num_com_key] > self.d[num_bar_key]:
-            while self.d[num_com_key] > self.d[num_bar_key]:
+        elif self.d[num_com_key] > self.d[num_bar_key].get() :
+            while self.d[num_com_key] > self.d[num_bar_key].get():
                 barrier_num = self.d[num_com_key]
                 combarr_key = f"combarr {t}{barrier_num}"
                 if self.d.get(combarr_key):
