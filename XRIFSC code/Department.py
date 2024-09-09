@@ -67,7 +67,7 @@ class ddepartment():
                     textvariable=self.d[f"vselroom {self.i}"], values=["X-Ray room", "CT Room"], state="readonly")
                 self.d[f"selroom {self.i}"].grid(row=2 + self.i, column=2, pady=10, padx=20, sticky="w")
                 self.d[f"selroom {self.i}"].set("Shield room")
-                # Uncomment this block to add method selection
+                # Selections for more methods
                 """
                 self.method = ("BIR 2012", "NCRP 147")
                 self.d[f"vmethod {self.i}"] = StringVar()
@@ -202,7 +202,7 @@ class ddepartment():
         # Additional workload entry options
         self.d[f"worentry {t}"] = None
         self.d[f"vrawork {t}"] = IntVar(value=0)
-        self.raworkl = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Write total Workload (mA min/week):",
+        self.raworkl = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Write total\nWorkload (mA min/week):",
                                        variable=self.d[f"vrawork {t}"], value=1, command=lambda: self.workload(t))
         self.raworkl.grid(row=5, column=0, pady=5, padx=5, sticky="w")
         self.ranumb = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="or the number of patients per week:",

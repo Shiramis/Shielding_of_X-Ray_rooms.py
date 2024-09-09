@@ -210,110 +210,72 @@ class dep_defs():
             self.d[sellocation_key].grid(row=15, column=1, pady=10, padx=10, sticky="w")
             self.d[sellocation_key].config(width=15)
 
-    def barrier_sel(self, e,nr,t):
-        if self.d["radiob_w "+str(e)+nr].get() == 1:
-            if self.d["lau "+str(e)] is not None:
-                self.d["lau " + str(e)].destroy()
-                self.d["use_ent " + str(e)].destroy()
-                self.d["presh " + str(e)].destroy()
-                self.d["preunsh " + str(e)].destroy()
-                if self.d["laks " + str(e) + nr] is not None:
-                    self.d["laks " + str(e) + nr].destroy()
-                    self.d["entk " + str(e) + nr].destroy()
-            if self.d["leak " + str(e) + nr] is not None:
-                if  self.d["airkerv " + str(e) + nr].get()== 1:
-                    self.d["radside "+str(e)+nr].destroy()
-                    self.d["radforward " +str(e)+nr].destroy()
-                    self.d["leak " + str(e) + nr].destroy()
-                    self.d["forw " + str(e) + nr].destroy()
-                    self.d["side " + str(e) + nr].destroy()
-                    self.d["write " + str(e) + nr].destroy()
-                elif self.d["airkerv " + str(e) + nr].get()== 4:
-                    self.d["leak " + str(e) + nr].destroy()
-                    self.d["forw " + str(e) + nr].destroy()
-                    self.d["side " + str(e) + nr].destroy()
-                    self.d["write " + str(e) + nr].destroy()
-                    self.d["laks " + str(e) + nr].destroy()
-                    self.d["entk " + str(e) + nr].destroy()
+    def barrier_sel(self, e, nr, t):
+        radiob_w_key = f"radiob_w {e}{nr}"
+        barrierf_key = f"barrierf {e}{nr}"
+        if self.d[radiob_w_key].get() == 1:
+            # Safely destroy previous widgets if they exist
+            for key in [f"lau {e}", f"use_ent {e}", f"presh {e}", f"preunsh {e}", f"laks {e}{nr}", f"entk {e}{nr}",
+                        f"radside {e}{nr}", f"radforward {e}{nr}", f"leak {e}{nr}", f"forw {e}{nr}", f"side {e}{nr}",
+                        f"write {e}{nr}"]:
+                if self.d.get(key):
+                    self.d[key].destroy()
+            # ================== Use Factor ====================
+            self.d[f"lau {e}"] = ttk.Label(master=self.d[barrierf_key], style="AL.TLabel", text="Use Factor:")
+            self.d[f"lau {e}"].grid(row=3, column=0, pady=10, padx=10, sticky="w")
+            self.d[f"use_ent {e}"] = ttk.Entry(master=self.d[barrierf_key], width=10)
+            # Insert the appropriate values based on Room
+            if e == 1:
+                if self.d.get(f"selxroom {t}"):
+                    if self.d[f"vsexroom {t}"].get() == "Rad Room (floor or other barriers)":
+                        self.d[f"use_ent {e}"].insert(0, str(0.89))
                 else:
-                    self.d["leak " + str(e) + nr].destroy()
-                    self.d["forw " + str(e) + nr].destroy()
-                    self.d["side " + str(e) + nr].destroy()
-                    self.d["write " + str(e) + nr].destroy()
-            #=========use factor====================
-            self.d["lau "+str(e)] = ttk.Label(master=self.d["barrierf " + str(e)+nr], style="AL.TLabel",
-                                    text="Use Factor:")
-            self.d["lau "+str(e)].grid(row=3, column=0, pady=10, padx=10, sticky="w")
-            self.d["use_ent "+str(e)] = ttk.Entry(
-                master=self.d["barrierf " + str(e)+nr], width=10)
-            if e==1:
-                if self.d["selxroom {0}".format(str(t))] is not None:
-                    if self.d["vsexroom " + str(t)].get()=="Rad Room (floor or other barriers)":
-                        self.d["use_ent " + str(e)].insert(0, str(0.89))
-                else:
-                    self.d["use_ent " + str(e)].insert(0, str(1))
-            elif e==2:
-                self.d["use_ent " + str(e)].insert(0, str(1/16))
+                    self.d[f"use_ent {e}"].insert(0, str(1))
+            elif e == 2:
+                self.d[f"use_ent {e}"].insert(0, str(1 / 16))
             else:
-                if self.d["selxroom {0}".format(str(t))] is not None:
-                    if self.d["vsexroom " + str(t)].get()=="Rad Room (floor or other barriers)":
-                        self.d["use_ent " + str(e)].insert(0, str(0.02))
+                if self.d.get(f"selxroom {t}"):
+                    if self.d[f"vsexroom {t}"].get() == "Rad Room (floor or other barriers)":
+                        self.d[f"use_ent {e}"].insert(0, str(0.02))
                 else:
-                    self.d["use_ent " + str(e)].insert(0, str(1/4))
-            self.d["use_ent " + str(e)].grid(row=3, column=1, pady=10, padx=10, sticky="w")
-            #==========Preshielding===========
-            self.d["presh "+str(e)]=ttk.Checkbutton(master=self.d["barrierf " + str(e)+nr], text= "Preshielding",
-                                                    variable=self.d["preshvar "+str(e) + nr],
-                                                    offvalue=0, onvalue=1, command=lambda: self.pres(e,nr))
-            self.d["presh " + str(e)].grid(row=4, column=0, pady=10, padx=10, sticky="w")
-            #===========unshielding air kerma=================
-            self.d["preunsh " + str(e)] = ttk.Checkbutton(master=self.d["barrierf " + str(e) + nr], text="Unshielded air kerma",
-                                                        variable=self.d["preshuns " + str(e) + nr], offvalue=0,
-                                                        onvalue=1, command=lambda: self.uns(e, nr))
-            self.d["preunsh " + str(e)].grid(row=4, column=1, pady=10, padx=10, sticky="w")
-
-
-        elif self.d["radiob_w "+str(e)+nr].get() == 2:
-            if self.d["leak " + str(e) + nr] is not None:
-                self.d["leak " + str(e) + nr].destroy()
-                self.d["side " + str(e) + nr].destroy()
-                self.d["forw " + str(e) + nr].destroy()
-                self.d["write " + str(e) + nr].destroy()
-            if self.d["lau "+str(e)] is not None:
-                self.d["lau " + str(e)].destroy()
-                self.d["use_ent " + str(e)].destroy()
-                self.d["preunsh " + str(e)].destroy()
-                if  self.d["preshvar " + str(e) + nr].get()== 1:
-                    self.d["radbucky " + str(e)].destroy()
-                    self.d["radcross " + str(e)].destroy()
-                    self.d["presh " + str(e)].destroy()
-                elif self.d["preshvar " + str(e) + nr].get()== 0:
-                    self.d["presh " + str(e)].destroy()
-                if self.d["laks " + str(e) + nr] is not None:
-                    self.d["laks " + str(e) + nr].destroy()
-                    self.d["entk " + str(e) + nr].destroy()
-            # ====================Leakage========================
-            self.d["leak " + str(e) + nr] = ttk.Radiobutton(
-                master=self.d["barrierf " + str(e) + nr],text="Leakage radiation",
-                variable=self.d["airkerv " + str(e) + nr], value=1,
-                 command=lambda : self.leakage(e, nr))
-            self.d["leak " + str(e) + nr].grid(row=2, column=0, pady=10, padx=10, sticky="w")
-            self.d["side " + str(e) + nr] = ttk.Radiobutton(master=self.d["barrierf " + str(e) + nr],
-                text="Side-Scatter", variable=self.d["airkerv " + str(e) + nr],value=2,
-                 command=lambda : self.leakage(e, nr))
-            self.d["side " + str(e) + nr].grid(row=2, column=1, pady=10, padx=10, sticky="w")
-            self.d["forw " + str(e) + nr] = ttk.Radiobutton(master=self.d["barrierf " + str(e) + nr],
-                text="Forward/ Backscatter", variable=self.d["airkerv " + str(e) + nr], value=3,
-                 command=lambda : self.leakage(e, nr))
-            self.d["forw " + str(e) + nr].grid(row=3, column=0, pady=10, padx=10, sticky="w")
-            self.d["write "+ str(e) + nr] = ttk.Radiobutton(master=self.d["barrierf " + str(e) + nr],
-                text="Unshielded air kerma", variable=self.d["airkerv " + str(e) + nr], value=4,
-                 command=lambda : self.leakage(e, nr))
-            self.d["write " + str(e) + nr].grid(row=3, column=1, pady=10, padx=10, sticky="w")
-
+                    self.d[f"use_ent {e}"].insert(0, str(1 / 4))
+            self.d[f"use_ent {e}"].grid(row=3, column=1, pady=10, padx=10, sticky="w")
+            # =========== Preshielding ==============
+            self.d[f"presh {e}"] = ttk.Checkbutton(master=self.d[barrierf_key], text="Preshielding",
+                                                   variable=self.d[f"preshvar {e}{nr}"], offvalue=0, onvalue=1,
+                                                   command=lambda: self.pres(e, nr))
+            self.d[f"presh {e}"].grid(row=4, column=0, pady=10, padx=10, sticky="w")
+            # =========== Unshielded Air Kerma ============
+            self.d[f"preunsh {e}"] = ttk.Checkbutton(master=self.d[barrierf_key], text="Unshielded air kerma",
+                                                     variable=self.d[f"preshuns {e}{nr}"], offvalue=0, onvalue=1,
+                                                     command=lambda: self.uns(e, nr))
+            self.d[f"preunsh {e}"].grid(row=4, column=1, pady=10, padx=10, sticky="w")
+        elif self.d[radiob_w_key].get() == 2:
+            # Safely destroy widgets for the previous state if they exist
+            for key in [f"leak {e}{nr}", f"side {e}{nr}", f"forw {e}{nr}", f"write {e}{nr}", f"lau {e}", f"use_ent {e}",
+                        f"preunsh {e}", f"presh {e}", f"laks {e}{nr}", f"entk {e}{nr}"]:
+                if self.d.get(key):
+                    self.d[key].destroy()
+            # ============ Leakage Radiation Selection ============
+            self.d[f"leak {e}{nr}"] = ttk.Radiobutton(master=self.d[barrierf_key], text="Leakage radiation",
+                                                      variable=self.d[f"airkerv {e}{nr}"], value=1,
+                                                      command=lambda: self.leakage(e, nr))
+            self.d[f"leak {e}{nr}"].grid(row=2, column=0, pady=10, padx=10, sticky="w")
+            self.d[f"side {e}{nr}"] = ttk.Radiobutton(master=self.d[barrierf_key], text="Side-Scatter",
+                                                      variable=self.d[f"airkerv {e}{nr}"], value=2,
+                                                      command=lambda: self.leakage(e, nr))
+            self.d[f"side {e}{nr}"].grid(row=2, column=1, pady=10, padx=10, sticky="w")
+            self.d[f"forw {e}{nr}"] = ttk.Radiobutton(master=self.d[barrierf_key], text="Forward/Backscatter",
+                                                      variable=self.d[f"airkerv {e}{nr}"], value=3,
+                                                      command=lambda: self.leakage(e, nr))
+            self.d[f"forw {e}{nr}"].grid(row=3, column=0, pady=10, padx=10, sticky="w")
+            self.d[f"write {e}{nr}"] = ttk.Radiobutton(master=self.d[barrierf_key], text="Unshielded air kerma",
+                                                       variable=self.d[f"airkerv {e}{nr}"], value=4,
+                                                       command=lambda: self.leakage(e, nr))
+            self.d[f"write {e}{nr}"].grid(row=3, column=1, pady=10, padx=10, sticky="w")
     def uns(self,e,nr):
         if self.d["preshuns " + str(e) + nr].get()== 1:
-            self.d["laks " + str(e) + nr] = ttk.Label(master=self.d["barrierf " + str(e) + nr], text="K\u209b\u2091 (mGy/patient):")
+            self.d["laks " + str(e) + nr] = ttk.Label(master=self.d["barrierf " + str(e) + nr], text="K (mGy/patient):")
             self.d["laks " + str(e) + nr].grid(row=6, column=0, pady=10, padx=10, sticky="w")
             self.d["entk " + str(e) + nr] = ttk.Entry(master=self.d["barrierf " + str(e) + nr], width=10)
             self.d["entk " + str(e) + nr].grid(row=6, column=1, pady=10, padx=10, sticky="w")
@@ -322,8 +284,6 @@ class dep_defs():
             if self.d["laks " + str(e) + nr] is not None:
                 self.d["laks " + str(e) + nr].destroy()
                 self.d["entk " + str(e) + nr].destroy()
-
-
     def numbmater(self,e,nr,t):
         if self.d["vselroom "+ str(t)].get()=="CT Room":
             if self.d["m "+ str(e) + nr]  < self.d["vnumbmat " +str(e)+nr].get():
@@ -384,7 +344,6 @@ class dep_defs():
                     self.d["mater "+str(e)+str(self.d["m " + str(e) + nr])].destroy()
                     self.d["matlab " + str(e) + str(self.d["m " + str(e) + nr])].destroy()
                     self.d["m " + str(e) + nr] -= 1
-
     def pres(self,e,nr):
         if self.d["preshvar " + str(e) + nr].get()== 1:
             self.d["radbucky "+str(e)] = ttk.Radiobutton(master=self.d["barrierf " + str(e) + nr],
@@ -399,7 +358,6 @@ class dep_defs():
             if self.d["radbucky " + str(e)] is not None:
                 self.d["radbucky " + str(e)].destroy()
                 self.d["radcross " +str(e)].destroy()
-
     def leakage(self,e,nr):
         if self.d["airkerv " + str(e) + nr].get()== 1:
             if self.d["radside " + str(e)+nr] is not None:
