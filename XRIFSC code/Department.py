@@ -288,7 +288,6 @@ class ddepartment():
         frame_key = f"frame_1 {t}"
         selxroom_key = f"selxroom {t}"
         vsexroom_key = f"vsexroom {t}"
-        # Check the type of selection
         if self.d[xray_key].get() == 1:
             # Destroy existing widget if it exists
             if self.d.get(selxroom_key):
@@ -308,6 +307,7 @@ class ddepartment():
             self.d[vsexroom_key] = IntVar(value=25)
             self.d[selxroom_key] = ttk.Spinbox(master=self.d[frame_key], from_=25, to=150, increment=5,
                 textvariable=self.d[vsexroom_key], width=10)
+            self.d[selxroom_key].grid(row=4, column=1, columnspan=2, pady=10, padx=10, sticky="w")
     def occupation(self, t):
         def destroy_widget(widget_key):
             if self.d.get(widget_key) is not None:
@@ -422,7 +422,6 @@ class ddepartment():
             destroy_widget(combutton_key)
             destroy_widget(commatter_key)
             self.d[f"comnum {t}"] = 0
-
     def numbcom(self, e, nr, t):
         # Access frequently used keys
         num_com_key = f"comnum {t}"

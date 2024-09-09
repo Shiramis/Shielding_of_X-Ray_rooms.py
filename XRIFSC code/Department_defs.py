@@ -142,125 +142,73 @@ class dep_defs():
         self.d[f"dikeent {index}{room_number}"] = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"], width=10)
         self.d[f"dikeent {index}{room_number}"].grid(row=16, column=1, pady=10, padx=10, sticky="w")
 
-    def occupation3(self,e,nr,t):
-        if self.d["vraoccup " + str(e)+nr].get() == 1:
-            if self.d["sellocation " + str(e)+nr] is not None:
-                self.d["sellocation " + str(e)+nr].destroy()
-            if self.d["occupentry " + str(e)+nr] is not None:
-                self.d["occupentry " + str(e)+nr].destroy()
-            self.d["vselocation {0}".format(str(e)) + nr]=StringVar()
-            self.d["occupentry " + str(e)+nr] = ttk.Entry(master=self.d["barrierf " + str(e)+nr], width=10)
-            if self.d["area " + str(e)+nr].get() == "Cotrolled Area":
-                self.d["occupentry " + str(e)+nr].insert(0,str(1))
-            elif self.d["area " + str(e)+nr].get() == "Uncontrolled Area":
-                self.d["occupentry " + str(e)+nr].insert(0,str(1/16))
-            elif self.d["area " + str(e)+nr].get() == "Supervised Area":
-                self.d["occupentry " + str(e)+nr].insert(0,str(1/4))
-            self.d["occupentry " + str(e)+nr].grid(row=14, column=1, pady=10, padx=10)
-        elif self.d["vraoccup " + str(e)+nr].get() == 2:
-            if self.d["occupentry " + str(e)+nr] is not None:
-                self.d["occupentry " + str(e)+nr].destroy()
-            if self.d["sellocation " + str(e)+nr] is not None:
-                self.d["sellocation " + str(e)+nr].destroy()
-            self.d["vselocation {0}".format(str(e))+nr] = StringVar()
-            if self.d["area " + str(e)+nr].get() == "Cotrolled Area":
-                self.control = ("Administrative or clerical offices", "Laboratories",
-                                "Pharmacies and other work areas fully occupied by an individual", "Receptionist areas",
-                                "Attended waiting rooms", "Children’s indoor play areas", "Adjacent x-ray rooms",
-                                "Film reading areas", "Nurse’s stations", "X-ray control rooms",
-                                "Rooms used for patient examinations and treatments")
-                self.d["sellocation " + str(e)+nr] = ttk.OptionMenu(self.d["barrierf " + str(e)+nr],
-                                                                 self.d["vselocation " + str(e)+nr], "Select Location",
-                                                                 *self.control)
-            elif self.d["area " + str(e)+nr].get() == "Uncontrolled Area":
-                self.uncontroll = (
-                "Public toilets", "Unattended vending areas", "Storage  rooms", "Outdoor areas with seating",
-                "Unattended waiting rooms", "Patient holding areas",
-                "Outdoor areas with only transient pedestrian or vehicular traffic", "Unattended parking lots",
-                "Vehicular drop off areas (unattended)", "Attics", "Stairways", "Unattended elevators",
-                "Janitor’s closets")
-                self.d["sellocation " + str(e)+nr] = ttk.OptionMenu(self.d["barrierf " + str(e)+nr],
-                                                                 self.d["vselocation " + str(e)+nr], "Select Location",
-                                                                 *self.uncontroll)
-            elif self.d["area " + str(e)+nr].get() == "Supervised Area":
-                self.supervised = ("Corridors", "Patient rooms", "Employee lounges", "Staff restooms", "Corridor doors")
-                self.d["sellocation " + str(e)+nr] = ttk.OptionMenu(self.d["barrierf " + str(e)+nr],
-                                                                 self.d["vselocation " + str(e)+nr], "Select Location",
-                                                                 *self.supervised)
+    def occupation3(self, e, nr, t):
+        vra_key = f"vraoccup {e}{nr}"
+        area_key = f"area {e}{nr}"
+        occupentry_key = f"occupentry {e}{nr}"
+        sellocation_key = f"sellocation {e}{nr}"
+        barrierf_key = f"barrierf {e}{nr}"
+        dikeent_key = f"dikeent {e}{nr}"
+        # Destroy any existing entry before creating a new one
+        if self.d.get(dikeent_key):
+            self.d[dikeent_key].destroy()
+
+        self.d[dikeent_key] = ttk.Entry(master=self.d[barrierf_key], width=10)
+        self.d[dikeent_key].grid(row=16, column=1, pady=10, padx=10, sticky="w")
+
+        if self.d[vra_key].get() == 1:
+            # Destroy previous widgets if they exist
+            if self.d.get(sellocation_key):
+                self.d[sellocation_key].destroy()
+            if self.d.get(occupentry_key):
+                self.d[occupentry_key].destroy()
+            # Create Location Entry widget for occupation
+            self.d[f"vselocation {e}{nr}"] = StringVar()
+            self.d[occupentry_key] = ttk.Entry(master=self.d[barrierf_key], width=10)
+            # Insert specific values depending on the area
+            if self.d[area_key].get() == "Controlled Area":
+                self.d[occupentry_key].insert(0, str(1))
+                self.d[dikeent_key].insert(0, str(0.01))
+            elif self.d[area_key].get() == "Uncontrolled Area":
+                self.d[occupentry_key].insert(0, str(1 / 16))
+                self.d[dikeent_key].insert(0, str(0.006))
+            elif self.d[area_key].get() == "Supervised Area":
+                self.d[occupentry_key].insert(0, str(1 / 4))
+                self.d[dikeent_key].insert(0, str(0.006))
+            self.d[occupentry_key].grid(row=14, column=1, pady=10, padx=10)
+        elif self.d[vra_key].get() == 2:
+            # Destroy previous widgets if they exist
+            if self.d.get(occupentry_key):
+                self.d[occupentry_key].destroy()
+            if self.d.get(sellocation_key):
+                self.d[sellocation_key].destroy()
+            # Initialize the location options
+            self.d[f"vselocation {e}{nr}"] = StringVar()
+            # Create location options based on the area
+            if self.d[area_key].get() == "Controlled Area":
+                locations = ("Administrative or clerical offices", "Laboratories", "Pharmacies", "Receptionist areas",
+                             "X-ray control rooms")
+                self.d[dikeent_key].insert(0, str(0.01))
+            elif self.d[area_key].get() == "Uncontrolled Area":
+                locations = ("Public toilets", "Storage rooms", "Outdoor areas", "Unattended waiting rooms")
+                self.d[dikeent_key].insert(0, str(0.006))
+            elif self.d[area_key].get() == "Supervised Area":
+                locations = ("Corridors", "Patient rooms", "Employee lounges", "Staff restrooms")
+                self.d[dikeent_key].insert(0, str(0.006))
             else:
-                self.d["sellocation " + str(e)+nr] = ttk.Combobox(self.d["barrierf " + str(e)+nr], textvariable=self.d["vselocation " + str(e)+nr], state="readonly",
-                                        values=["Administrative or clerical offices", "Laboratories",
-                                                "Pharmacies and other work areas fully occupied by an individual",
-                                                "Receptionist areas", "Attended waiting rooms",
-                                                "Children’s indoor play areas", "Adjacent x-ray rooms",
-                                                "Film reading areas", "Nurse’s stations", "X-ray control rooms",
-                                                "Rooms used for patient examinations and treatments", "Corridors",
-                                                "Patient rooms", "Employee lounges", "Staff restooms", "Corridor doors",
-                                                "Public toilets", "Unattended vending areas", "Storage  rooms",
-                                                "Outdoor areas with seating", "Unattended waiting rooms",
-                                                "Patient holding areas",
-                                                "Outdoor areas with only transient pedestrian or vehicular traffic",
-                                                "Unattended parking lots", "Vehicular drop off areas (unattended)",
-                                                "Attics", "Stairways", "Unattended elevators", "Janitor’s closets"])
-
-            self.d["sellocation " + str(e)+nr].grid(row=15, column=1, pady=10, padx=10, sticky="w")
-            self.d["sellocation " + str(e) + nr].config(width=15)
-        if self.d["area " + str(e) + nr].get() == "Cotrolled Area":
-            self.d["dikeent " + str(e) + nr].destroy()
-            self.d["dikeent {0}".format(e) + nr] = ttk.Entry(
-                master=self.d["barrierf " + str(e) + nr], width=10)
-            self.d["dikeent " + str(e) + nr].grid(row=16, column=1, pady=10, padx=10, sticky="w")
-            self.d["dikeent "+str(e)+nr].insert(0, str(0.01))
-        elif self.d["area " + str(e) + nr].get() == "Uncontrolled Area":
-            self.d["dikeent " + str(e) + nr].destroy()
-            self.d["dikeent {0}".format(e) + nr] = ttk.Entry(master=self.d["barrierf " + str(e) + nr], width=10)
-            self.d["dikeent " + str(e) + nr].grid(row=16, column=1, pady=10, padx=10, sticky="w")
-            self.d["dikeent "+str(e)+nr].insert(0, str(0.006))
-        elif self.d["area " + str(e) + nr].get() == "Supervised Area":
-            self.d["dikeent " + str(e) + nr].destroy()
-            self.d["dikeent {0}".format(e) + nr] = ttk.Entry(master=self.d["barrierf " + str(e) + nr], width=10)
-            self.d["dikeent " + str(e) + nr].grid(row=16, column=1, pady=10, padx=10, sticky="w")
-            self.d["dikeent "+str(e)+nr].insert(0, str(0.006))
-    def workload2(self,e,nr, t):
-        if self.d["vrawork " + str(e)+nr].get() == 1:
-            if self.d["numpapwe " + str(e)+nr] is not None:
-                self.d["numpapwe " + str(e)+nr].destroy()
-            if self.d["worentry " + str(e)+nr] is not None:
-                self.d["worentry " + str(e)+nr].destroy()
-            self.d["worentry " + str(e)+nr] = ttk.Entry(master=self.d["barrierf " + str(e) + nr], width=10)
-            self.d["worentry " + str(e)+nr].grid(row=17, column=1, pady=5, padx=5)
-        elif self.d["vrawork " + str(e)+nr].get() == 2:
-            if self.d["worentry " + str(e)+nr] is not None:
-                self.d["worentry " + str(e)+nr].destroy()
-            if self.d["numpapwe " + str(e)+nr] is not None:
-                self.d["numpapwe " + str(e)+nr].destroy()
-            self.d["numpapwe " + str(e)+nr] = ttk.Entry(master=self.d["barrierf " + str(e) + nr], width=10)
-            self.d["numpapwe " + str(e)+nr].grid(row=18, column=1, pady=5, padx=5, sticky="w")
-
-    def existbarrier(self, e,nr,t):
-        if self.d["existvar " + str(e)+nr].get() == 1:
-            if self.d["existla " + str(e) + nr] is not None:
-                self.d["existla " + str(e) + nr].destroy()
-                self.d["existmat " + str(e) + nr].destroy()
-                self.d["materex " + str(e) + nr].destroy()
-            self.d["existla "+str(e)+nr] \
-                = ttk.Label(master=self.d["barrierf " + str(e)+nr], style="AL.TLabel",
-                                                             text="Existing Barrier in mm:")
-            self.d["existla " + str(e)+nr].grid(row=6, column=0, pady=10, padx=10, sticky="w")
-            self.d["existmat "+str(e)+nr] \
-                = ttk.Entry(master=self.d["barrierf " + str(e)+nr], width=10)
-            self.d["existmat " + str(e)+nr].grid(row=6, column=1, pady=10, padx=10, sticky="w")
-
-            self.d["vmaterex "+str(e)+nr] = StringVar()
-            self.d["materex "+str(e)+nr] \
-                = ttk.OptionMenu(self.d["barrierf " + str(e)+nr],
-                self.d["vmaterex "+str(e)+nr], "Select Material", *self.mater)
-            self.d["materex " + str(e)+nr].grid(row=7, column=0, pady=10, padx=10, sticky="w")
-        elif self.d["existvar " + str(e)+nr].get() == 0:
-            if self.d["existla " + str(e)+nr] is not None:
-                self.d["existla " + str(e)+nr].destroy()
-                self.d["existmat " + str(e)+nr].destroy()
-                self.d["materex " + str(e)+nr].destroy()
+                locations = ("Administrative or clerical offices","Laboratories", "Pharmacies and other work areas fully occupied by an individual",
+                "Receptionist areas","Attended waiting rooms","Children’s indoor play areas","Adjacent x-ray rooms",
+                "Film reading areas", "Nurse’s stations","X-ray control rooms","Rooms used for patient examinations and treatments",
+                "Corridors", "Patient rooms","Employee lounges", "Staff restooms","Corridor doors", "Public toilets",
+                "Unattended vending areas","Storage  rooms","Outdoor areas with seating","Unattended waiting rooms",
+                "Patient holding areas","Outdoor areas with only transient pedestrian or vehicular traffic",
+                "Unattended parking lots","Vehicular drop off areas (unattended)","Attics", "Stairways",
+                "Unattended elevators","Janitor’s closets")
+            # Create OptionMenu with location choices
+            self.d[sellocation_key] = ttk.OptionMenu(self.d[barrierf_key], self.d[f"vselocation {e}{nr}"],
+                                                     "Select Location", *locations)
+            self.d[sellocation_key].grid(row=15, column=1, pady=10, padx=10, sticky="w")
+            self.d[sellocation_key].config(width=15)
 
     def barrier_sel(self, e,nr,t):
         if self.d["radiob_w "+str(e)+nr].get() == 1:
@@ -495,23 +443,27 @@ class dep_defs():
                 self.d["entk " + str(e) + nr].destroy()
 
         # ============selection of X-ray room or X-ray tube=============
-    def XrRoom1(self,e,nr, t):
-        if self.d["vselxray " +str(e)+nr].get() == 1:
-            if self.d["selxroom " +str(e)+nr] is not None:
-                self.d["selxroom " +str(e)+nr].destroy()
-            self.xrooms = (
-            "Rad Room (chest bucky)", "Rad Room (floor or other barriers)", "Rad Room (all barriers)",
-            "Fluoroscopy Tube (R&F room)","Rad Tube (R&F room)", "Chest Room", "Mammography Room", "Cardiac Angiography",
-            "Peripheral Angiography")
-            self.d["vsexroom {0}".format(str(e))+nr] = StringVar()
-            self.d["selxroom " +str(e)+nr] = ttk.OptionMenu(self.d["barrierf " + str(e) + nr], self.d["vsexroom " + str(e)+nr],
-                                                          "Select X-ray room", *self.xrooms)
-            self.d["selxroom " +str(e)+nr].grid(row=16, column=0, columnspan=2, pady=10, padx=10, sticky="w")
-        elif self.d["vselxray " +str(e)+nr].get() == 2:
-            if self.d["selxroom " +str(e)+nr] is not None:
-                self.d["selxroom " +str(e)+nr].destroy()
-            self.d["vsexroom {0}".format(str(e))+nr] = IntVar(value=25)
-            self.d["selxroom "+str(e)+nr] = ttk.Spinbox(master=self.d["barrierf " + str(e) + nr], from_=25, to=150,
-                                                       increment=5, textvariable=self.d["vsexroom " + str(e)+nr],
-                                                       width=10)
-            self.d["selxroom " +str(e)+nr].grid(row=16, column=1, columnspan=2, pady=10, padx=10, sticky="w")
+    def existbarrier(self, e,nr,t):
+        if self.d["existvar " + str(e)+nr].get() == 1:
+            if self.d["existla " + str(e) + nr] is not None:
+                self.d["existla " + str(e) + nr].destroy()
+                self.d["existmat " + str(e) + nr].destroy()
+                self.d["materex " + str(e) + nr].destroy()
+            self.d["existla "+str(e)+nr] \
+                = ttk.Label(master=self.d["barrierf " + str(e)+nr], style="AL.TLabel",
+                                                             text="Existing Barrier in mm:")
+            self.d["existla " + str(e)+nr].grid(row=6, column=0, pady=10, padx=10, sticky="w")
+            self.d["existmat "+str(e)+nr] \
+                = ttk.Entry(master=self.d["barrierf " + str(e)+nr], width=10)
+            self.d["existmat " + str(e)+nr].grid(row=6, column=1, pady=10, padx=10, sticky="w")
+
+            self.d["vmaterex "+str(e)+nr] = StringVar()
+            self.d["materex "+str(e)+nr] \
+                = ttk.OptionMenu(self.d["barrierf " + str(e)+nr],
+                self.d["vmaterex "+str(e)+nr], "Select Material", *self.mater)
+            self.d["materex " + str(e)+nr].grid(row=7, column=0, pady=10, padx=10, sticky="w")
+        elif self.d["existvar " + str(e)+nr].get() == 0:
+            if self.d["existla " + str(e)+nr] is not None:
+                self.d["existla " + str(e)+nr].destroy()
+                self.d["existmat " + str(e)+nr].destroy()
+                self.d["materex " + str(e)+nr].destroy()
