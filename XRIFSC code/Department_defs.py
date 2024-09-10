@@ -3,7 +3,6 @@ import subprocess
 from tkinter import *
 from tkinter import ttk
 
-
 class dep_defs():
     def barriers(self, t):
         current_barriers = self.d[f"x {t}"]
@@ -17,11 +16,10 @@ class dep_defs():
             # Default barrier settings
             for var in ["titleresul", "lau", "use_ent", "presh", "radbucky", "radcross"]:
                 self.d[f"{var} {index}"] = None
-            for var in ["radside", "radforward", "leakvar", "existvar",
-                        "sellocation", "forw", "side", "laks", "entk", "leak"]:
+            for var in ["radside", "radforward", "leakvar", "existvar", "sellocation", "forw", "side", "laks", "entk",
+                        "leak"]:
                 self.d[f"{var} {index}{room_number}"] = None
-            for var in ["preshvar", "preshuns", "radiob_pre","radiob_leak", "leakvar",
-                        "airkerv"]:
+            for var in ["preshvar", "preshuns", "radiob_pre", "radiob_leak", "leakvar", "airkerv"]:
                 self.d[f"{var} {index}{room_number}"] = IntVar(value=0)
             self.d[f"barrierf {index}{room_number}"] = ttk.Frame(self.d[f"noteb {t}{room_number}"], width=190)
             self.d[f"barrierf {index}{room_number}"].pack()
@@ -30,20 +28,37 @@ class dep_defs():
                 self.barn[f"lab_bar {index}{room_number}"] = Label(text=labels[index - 1])
             else:
                 self.barn[f"lab_bar {index}{room_number}"] = Label(text=f"Barrier {index - 3}")
-            self.d[f"noteb {t}{room_number}"].add(self.d[f"barrierf {index}{room_number}"], text=self.barn[f"lab_bar {index}{room_number}"].cget("text"))
+            self.d[f"noteb {t}{room_number}"].add(self.d[f"barrierf {index}{room_number}"],
+                text=self.barn[f"lab_bar {index}{room_number}"].cget("text"))
             self.barr[self.barn[f"lab_bar {index}{room_number}"].cget("text")] = 0
+            # Select Materials
+            self.matlab = ttk.Label(master= self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
+                                    text="Select Materials:")
+            self.matlab.grid(row=8, column=0, padx=10, pady=10, sticky="w")
+            # Add spinbox for number of materials
+            self.d[f"vnumbmat {index}{room_number}"] = IntVar(value=1)
+            if self.d[f"vselroom {t}"].get() == "CT Room":
+                self.d[f"numbmat {index}{room_number}"] = ttk.Spinbox(master=self.d[f"barrierf {index}{room_number}"],
+                    from_=1, to=2, width=5, textvariable=self.d[f"vnumbmat {index}{room_number}"],
+                    command=lambda e=index, nr=room_number: self.numbmater(e, nr, t))
+            else:
+                self.d[f"numbmat {index}{room_number}"] = ttk.Spinbox(master=self.d[f"barrierf {index}{room_number}"],
+                    from_=1, to=6, width=5, textvariable=self.d[f"vnumbmat {index}{room_number}"],
+                    command=lambda e=index, nr=room_number: self.numbmater(e, nr, t))
+
+            self.d[f"numbmat {index}{room_number}"].grid(row=8, column=1, padx=10, pady=10, sticky="w")
             # Add widgets based on room type
             if self.d[f"vselroom {t}"].get() == "CT Room":
                 self._add_ct_room_widgets(index, room_number, t)
             else:
                 self._add_xray_room_widgets(index, room_number, t)
             # Calculate button
-            self.d[f"calbutton {index}"] = ttk.Button(
-                master=self.d[f"barrierf {index}{room_number}"],
-                text="Calculate",
-                command=lambda e=index, nr=room_number, ep=self.ep: self.choosetype(e, nr, ep, t)
-            )
+            self.d[f"calbutton {index}"] = ttk.Button(master=self.d[f"barrierf {index}{room_number}"], text="Calculate",
+                command=lambda e=index, nr=room_number: self.choosetype(e, nr, t))
             self.d[f"calbutton {index}"].grid(row=19, column=1, pady=10, padx=10, sticky="w")
+            # Call numbmater to initialize the materials based on the spinbox value
+            self.numbmater(index, room_number, t)
+        # Add or remove barriers as necessary
         if current_barriers < max_barriers:
             while current_barriers < max_barriers:
                 current_barriers += 1
@@ -55,9 +70,14 @@ class dep_defs():
                 self.d[f"radpw {current_barriers}{room_number}"].destroy()
                 self.d[f"radsw {current_barriers}{room_number}"].destroy()
                 current_barriers -= 1
+        # Update the number of barriers
         self.d[f"x {t}"] = current_barriers
-        self.d[f"noteb {t}{room_number}"].grid(row=0, column=4, rowspan=10, columnspan=current_barriers, pady=10, padx=10, sticky="wn")
-
+        if self.d[f"vselroom {t}"].get() == "CT Room":
+            self.d[f"noteb {t}{room_number}"].grid(row=0, column=2, rowspan=10, columnspan=current_barriers, pady=10,
+                                                   padx=10, sticky="wn")
+        else:
+            self.d[f"noteb {t}{room_number}"].grid(row=4, column=0, rowspan=10, columnspan=current_barriers, pady=10,
+                                               padx=10, sticky="wn")
     def _add_ct_room_widgets(self, index, room_number, t):
         """Add CT room specific widgets."""
         dist_label = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
@@ -104,7 +124,6 @@ class dep_defs():
         self.d[f"entryd {index}{room_number}"] = ttk.Entry(
             master=self.d[f"barrierf {index}{room_number}"], width=10)
         self.d[f"entryd {index}{room_number}"].grid(row=7, column=1, pady=10, padx=10, sticky="w")
-
         # Area classification and occupancy factor
         self._add_xray_room_additional_widgets(index, room_number, t)
 
@@ -213,10 +232,11 @@ class dep_defs():
     def barrier_sel(self, e, nr, t):
         radiob_w_key = f"radiob_w {e}{nr}"
         barrierf_key = f"barrierf {e}{nr}"
+        # =====Selects Primary Barrier=======
         if self.d[radiob_w_key].get() == 1:
             # Safely destroy previous widgets if they exist
-            for key in [f"lau {e}", f"use_ent {e}", f"presh {e}", f"preunsh {e}", f"laks {e}{nr}", f"entk {e}{nr}",
-                        f"radside {e}{nr}", f"radforward {e}{nr}", f"leak {e}{nr}", f"forw {e}{nr}", f"side {e}{nr}",
+            for key in [f"lau {e}", f"use_ent {e}", f"presh {e}", f"preunsh {e}",f"radbucky {e}",f"radcross {e}", f"laks {e}{nr}", f"entk {e}{nr}",
+                        f"radside {e}{nr}", f"radforward {e}{nr}", f"leak {e}{nr}",f"radleak {e}{nr}", f"forw {e}{nr}", f"side {e}{nr}",
                         f"write {e}{nr}"]:
                 if self.d.get(key):
                     self.d[key].destroy()
@@ -250,10 +270,11 @@ class dep_defs():
                                                      variable=self.d[f"preshuns {e}{nr}"], offvalue=0, onvalue=1,
                                                      command=lambda: self.uns(e, nr))
             self.d[f"preunsh {e}"].grid(row=4, column=1, pady=10, padx=10, sticky="w")
+        # =====Selects Secondary Barrier=======
         elif self.d[radiob_w_key].get() == 2:
             # Safely destroy widgets for the previous state if they exist
             for key in [f"leak {e}{nr}", f"side {e}{nr}", f"forw {e}{nr}", f"write {e}{nr}", f"lau {e}", f"use_ent {e}",
-                        f"preunsh {e}", f"presh {e}", f"laks {e}{nr}", f"entk {e}{nr}"]:
+                        f"preunsh {e}", f"presh {e}", f"radbucky {e}",f"radcross {e}", f"laks {e}{nr}", f"entk {e}{nr}"]:
                 if self.d.get(key):
                     self.d[key].destroy()
             # ============ Leakage Radiation Selection ============
@@ -273,134 +294,151 @@ class dep_defs():
                                                        variable=self.d[f"airkerv {e}{nr}"], value=4,
                                                        command=lambda: self.leakage(e, nr))
             self.d[f"write {e}{nr}"].grid(row=3, column=1, pady=10, padx=10, sticky="w")
-    def uns(self,e,nr):
-        if self.d["preshuns " + str(e) + nr].get()== 1:
-            self.d["laks " + str(e) + nr] = ttk.Label(master=self.d["barrierf " + str(e) + nr], text="K (mGy/patient):")
-            self.d["laks " + str(e) + nr].grid(row=6, column=0, pady=10, padx=10, sticky="w")
-            self.d["entk " + str(e) + nr] = ttk.Entry(master=self.d["barrierf " + str(e) + nr], width=10)
-            self.d["entk " + str(e) + nr].grid(row=6, column=1, pady=10, padx=10, sticky="w")
 
-        elif self.d["preshuns " + str(e) + nr].get()==0:
-            if self.d["laks " + str(e) + nr] is not None:
-                self.d["laks " + str(e) + nr].destroy()
-                self.d["entk " + str(e) + nr].destroy()
-    def numbmater(self,e,nr,t):
-        if self.d["vselroom "+ str(t)].get()=="CT Room":
-            if self.d["m "+ str(e) + nr]  < self.d["vnumbmat " +str(e)+nr].get():
-                while self.d["m "+ str(e) + nr]  < self.d["vnumbmat " +str(e)+nr].get():
-                    self.d["m " + str(e) + nr]+=1
+    def uns(self, e, nr):
+        preshuns_key = f"preshuns {e}{nr}"
+        barrierf_key = f"barrierf {e}{nr}"
+        laks_key = f"laks {e}{nr}"
+        entk_key = f"entk {e}{nr}"
+        if self.d[preshuns_key].get() == 1:
+            # Create and display if select unshielded air kerma
+            self.d[laks_key] = ttk.Label(master=self.d[barrierf_key], text="K (mGy/patient):")
+            self.d[laks_key].grid(row=6, column=0, pady=10, padx=10, sticky="w")
+            self.d[entk_key] = ttk.Entry(master=self.d[barrierf_key], width=10)
+            self.d[entk_key].grid(row=6, column=1, pady=10, padx=10, sticky="w")
+        elif self.d[preshuns_key].get() == 0:
+            if self.d.get(laks_key):
+                self.d[laks_key].destroy()
+            if self.d.get(entk_key):
+                self.d[entk_key].destroy()
+
+    def numbmater(self, e, nr, t):
+        m_key = f"m {e}{nr}"
+        vnumbmat_key = f"vnumbmat {e}{nr}"
+        # Initialize the material count if not already present
+        if m_key not in self.d:
+            self.d[m_key] = 0
+        selected_room = self.d[f"vselroom {t}"].get()
+        # For "CT Room"
+        if selected_room == "CT Room":
+            if self.d[m_key] < self.d[vnumbmat_key].get():
+                while self.d[m_key] < self.d[vnumbmat_key].get():
+                    self.d[m_key] += 1
                     self.mater = ("Lead", "Concrete")
-                    self.d["vmater {0}".format(str(e))+str(self.d["m " + str(e) + nr])+nr] = StringVar()
-                    self.d["mater {0}".format(str(e))+str(self.d["m " + str(e) + nr])] = ttk.OptionMenu(
-                        self.d["barrierf " + str(e) + nr],
-                        self.d["vmater " +str(e)+str(self.d["m " + str(e) + nr])+nr], "Select Material", *self.mater)
-                    if self.d["m " + str(e) + nr] <3:
-                        self.d["matlab {0}".format(str(e)) + str(self.d["m " + str(e) + nr])]\
-                            =ttk.Label(self.d["barrierf " + str(e) + nr],text="#"+str(self.d["m " + str(e) + nr])+":")
-                        self.d["matlab "+str(e) + str(self.d["m " + str(e) + nr])].\
-                            grid(row=10, column= -1+self.d["m " + str(e) + nr], sticky="w")
-                        self.d["mater " + str(e)+str(self.d["m " + str(e) + nr])].\
-                            grid(row=10, column= -1+self.d["m " + str(e) + nr],pady=10, padx=25, sticky="s")
+                    self.d[f"vmater {e}{self.d[m_key]}{nr}"] = StringVar()
+                    self.d[f"mater {e}{self.d[m_key]}"] = ttk.OptionMenu(self.d[f"barrierf {e}{nr}"],
+                        self.d[f"vmater {e}{self.d[m_key]}{nr}"], "Select Material", *self.mater)
+                    if self.d[m_key] < 3:
+                        self.d[f"matlab {e}{self.d[m_key]}"] = ttk.Label(self.d[f"barrierf {e}{nr}"],
+                            text=f"#{self.d[m_key]}:")
+                        self.d[f"matlab {e}{self.d[m_key]}"].grid(row=10, column=-1 + self.d[m_key], sticky="w")
+                        self.d[f"mater {e}{self.d[m_key]}"].grid(row=10, column=-1 + self.d[m_key], pady=10, padx=25,
+                            sticky="s")
 
+            # Destroy extra widgets if material count exceeds the required number
             else:
-                while self.d["m " + str(e) + nr] > self.d[
-                    "vnumbmat " + str(e) + nr].get():
-                    self.d["mater "+str(e)+str(self.d["m " + str(e) + nr])].destroy()
-                    self.d["matlab " + str(e) + str(self.d["m " + str(e) + nr])].destroy()
-                    self.d["m " + str(e) + nr] -= 1
+                while self.d[m_key] > self.d[vnumbmat_key].get():
+                    self.d[f"mater {e}{self.d[m_key]}"].destroy()
+                    self.d[f"matlab {e}{self.d[m_key]}"].destroy()
+                    self.d[m_key] -= 1
+
+        # For "X-ray Room"
         else:
-            if self.d["m "+ str(e) + nr]  < self.d["vnumbmat " +str(e)+nr].get():
-                while self.d["m "+ str(e) + nr]  < self.d["vnumbmat " +str(e)+nr].get():
-                    self.d["m " + str(e) + nr]+=1
+            if self.d[m_key] < self.d[vnumbmat_key].get():
+                while self.d[m_key] < self.d[vnumbmat_key].get():
+                    self.d[m_key] += 1
                     self.mater = ("Lead", "Concrete", "Gypsum Wallboard", "Steel", "Plate Glass", "Wood")
-                    self.d["vmater {0}".format(str(e))+str(self.d["m " + str(e) + nr])+nr] = StringVar()
-                    self.d["mater {0}".format(str(e))+str(self.d["m " + str(e) + nr])] = ttk.OptionMenu(
-                        self.d["barrierf " + str(e) + nr],
-                        self.d["vmater " +str(e)+str(self.d["m " + str(e) + nr])+nr], "Select Material", *self.mater)
-                    if self.d["m " + str(e) + nr] <3:
-                        self.d["matlab {0}".format(str(e)) + str(self.d["m " + str(e) + nr])]\
-                            =ttk.Label(self.d["barrierf " + str(e) + nr],text="#"+str(self.d["m " + str(e) + nr])+":")
-                        self.d["matlab "+str(e) + str(self.d["m " + str(e) + nr])].\
-                            grid(row=10, column= -1+self.d["m " + str(e) + nr], sticky="w")
-                        self.d["mater " + str(e)+str(self.d["m " + str(e) + nr])].\
-                            grid(row=10, column= -1+self.d["m " + str(e) + nr],pady=5, padx=5, sticky="s")
-                    elif 2<self.d["m "+ str(e) + nr] <5:
-                        self.d["matlab {0}".format(str(e)) + str(self.d["m " + str(e) + nr])] = ttk.Label(
-                            self.d["barrierf " + str(e) + nr], text="#" + str(self.d["m " + str(e) + nr]) + ":")
-                        self.d["matlab " + str(e) + str(self.d["m " + str(e) + nr])].grid(row=11, column= -3+self.
-                            d["m " + str(e) + nr], sticky="w")
-                        self.d["mater " + str(e) + str(self.d["m " + str(e) + nr])].grid(row=11, column= -3+self.
-                            d["m " + str(e) + nr ],pady=5, padx=5, sticky="s")
+                    self.d[f"vmater {e}{self.d[m_key]}{nr}"] = StringVar()
+                    self.d[f"mater {e}{self.d[m_key]}"] = ttk.OptionMenu(self.d[f"barrierf {e}{nr}"],
+                        self.d[f"vmater {e}{self.d[m_key]}{nr}"], "Select Material", *self.mater)
+                    if self.d[m_key] < 3:
+                        self.d[f"matlab {e}{self.d[m_key]}"] = ttk.Label(self.d[f"barrierf {e}{nr}"],
+                            text=f"#{self.d[m_key]}:")
+                        self.d[f"matlab {e}{self.d[m_key]}"].grid(row=10, column=-1 + self.d[m_key], sticky="w")
+                        self.d[f"mater {e}{self.d[m_key]}"].grid(row=10, column=-1 + self.d[m_key], pady=5, padx=5,
+                            sticky="s")
+                    elif 2 < self.d[m_key] < 5:
+                        self.d[f"matlab {e}{self.d[m_key]}"] = ttk.Label(self.d[f"barrierf {e}{nr}"],
+                            text=f"#{self.d[m_key]}:")
+                        self.d[f"matlab {e}{self.d[m_key]}"].grid(row=11, column=-3 + self.d[m_key], sticky="w")
+                        self.d[f"mater {e}{self.d[m_key]}"].grid(row=11, column=-3 + self.d[m_key], pady=5, padx=5,
+                            sticky="s")
                     else:
-                        self.d["matlab {0}".format(str(e)) + str(self.d["m " + str(e) + nr])] = ttk.Label(
-                            self.d["barrierf " + str(e) + nr], text="#" + str(self.d["m " + str(e) + nr]) + ":")
-                        self.d["matlab " + str(e) + str(self.d["m " + str(e) + nr])]. grid(row=12, column= -5+self.
-                            d["m " + str(e) + nr], sticky="w")
-                        self.d["mater " + str(e) + str(self.d["m " + str(e) + nr])].grid(row=12, column=-5 + self.d[
-                            "m " + str(e) + nr], pady=5, padx=5, sticky="s")
+                        self.d[f"matlab {e}{self.d[m_key]}"] = ttk.Label(self.d[f"barrierf {e}{nr}"],
+                            text=f"#{self.d[m_key]}:")
+                        self.d[f"matlab {e}{self.d[m_key]}"].grid(row=12, column=-5 + self.d[m_key], sticky="w")
+                        self.d[f"mater {e}{self.d[m_key]}"].grid(row=12, column=-5 + self.d[m_key], pady=5, padx=5,
+                            sticky="s")
+
+            # Destroy extra widgets if material count exceeds the required number
             else:
-                while self.d["m " + str(e) + nr] > self.d[
-                    "vnumbmat " + str(e) + nr].get():
-                    self.d["mater "+str(e)+str(self.d["m " + str(e) + nr])].destroy()
-                    self.d["matlab " + str(e) + str(self.d["m " + str(e) + nr])].destroy()
-                    self.d["m " + str(e) + nr] -= 1
-    def pres(self,e,nr):
-        if self.d["preshvar " + str(e) + nr].get()== 1:
-            self.d["radbucky "+str(e)] = ttk.Radiobutton(master=self.d["barrierf " + str(e) + nr],
-                variable=self.d["radiob_pre " + str(e)+nr], text="Bucky", value=1)
-            self.d["radbucky " + str(e)].grid(row=5, column=0, pady=10, padx=10, sticky="w")
-            self.d["radcross " +str(e)] = ttk.Radiobutton(master=self.d["barrierf " + str(e) + nr],
-                variable=self.d["radiob_pre " + str(e)+nr], text="Cross-table", value=2)
-            self.d["radcross " + str(e)].grid(row=5, column=1, pady=10, padx=10, sticky="w")
+                while self.d[m_key] > self.d[vnumbmat_key].get():
+                    self.d[f"mater {e}{self.d[m_key]}"].destroy()
+                    self.d[f"matlab {e}{self.d[m_key]}"].destroy()
+                    self.d[m_key] -= 1
 
-        elif self.d["preshvar "+str(e) + nr].get()==0:
+    def pres(self, e, nr):
+        preshvar_key = f"preshvar {e}{nr}"
+        radbucky_key = f"radbucky {e}"
+        radcross_key = f"radcross {e}"
+        radiob_pre_key = f"radiob_pre {e}{nr}"
+        # Check if selects preshielding
+        if self.d[preshvar_key].get() == 1:
+            self.d[radbucky_key] = ttk.Radiobutton(master=self.d[f"barrierf {e}{nr}"], variable=self.d[radiob_pre_key],
+                text="Bucky", value=1)
+            self.d[radbucky_key].grid(row=5, column=0, pady=10, padx=10, sticky="w")
 
-            if self.d["radbucky " + str(e)] is not None:
-                self.d["radbucky " + str(e)].destroy()
-                self.d["radcross " +str(e)].destroy()
-    def leakage(self,e,nr):
-        if self.d["airkerv " + str(e) + nr].get()== 1:
-            if self.d["radside " + str(e)+nr] is not None:
-                self.d["radside " + str(e)+nr].destroy()
-                self.d["radforward " +str(e)+nr].destroy()
-                self.d["radleak " + str(e) + nr].destroy()
-            if self.d["laks "+ str(e) + nr] is not None:
-                self.d["laks " + str(e) + nr].destroy()
-                self.d["entk " + str(e) + nr].destroy()
-            self.d["radside "+str(e)+nr] = ttk.Radiobutton(master=self.d["barrierf " + str(e) + nr],
-                variable=self.d["radiob_leak " + str(e)+nr], text="Leakage and Side-Scatter", value=1)
-            self.d["radside " + str(e)+nr].grid(row=4, column=0, pady=10, padx=10, sticky="w")
-            self.d["radforward " +str(e)+nr] = ttk.Radiobutton(master=self.d["barrierf " + str(e) + nr],
-                variable=self.d["radiob_leak " + str(e)+nr], text="Leakage and Forward/ Backscatter", value=2)
-            self.d["radforward " + str(e)+nr].grid(row=4, column=1, pady=10, padx=10, sticky="w")
-            self.d["radleak " + str(e) + nr] = ttk.Radiobutton(master=self.d["barrierf " + str(e) + nr],
-                                                                  variable=self.d["radiob_leak " + str(e) + nr],
-                                                                  text="Only Leakage", value=0)
-            self.d["radleak " + str(e) + nr].grid(row=5, column=0, pady=10, padx=10, sticky="w")
+            self.d[radcross_key] = ttk.Radiobutton(master=self.d[f"barrierf {e}{nr}"], variable=self.d[radiob_pre_key],
+                text="Cross-table", value=2)
+            self.d[radcross_key].grid(row=5, column=1, pady=10, padx=10, sticky="w")
 
-        elif self.d["airkerv " + str(e) + nr].get()== 4:
-            if self.d["radside " + str(e)+nr] is not None:
-                self.d["radside " + str(e)+nr].destroy()
-                self.d["radforward " +str(e)+nr].destroy()
-                self.d["radleak " + str(e) + nr].destroy()
-            if self.d["laks "+ str(e) + nr] is not None:
-                self.d["laks " + str(e) + nr].destroy()
-                self.d["entk " + str(e) + nr].destroy()
-            self.d["laks "+ str(e) + nr]=ttk.Label(master=self.d["barrierf " + str(e) + nr], text="K\u209b (mGy/patient):")
-            self.d["laks "+ str(e) + nr].grid(row=4, column=0, pady=10, padx=10, sticky="w")
-            self.d["entk "+ str(e) + nr]=ttk.Entry(master=self.d["barrierf " + str(e) + nr], width=10)
-            self.d["entk " + str(e) + nr].grid(row=4, column=1, pady=10, padx=10, sticky="w")
+        # If "preshielding" is set to 0, destroy the widgets if they exist
+        elif self.d[preshvar_key].get() == 0:
+            if radbucky_key in self.d and self.d[radbucky_key] is not None:
+                self.d[radbucky_key].destroy()
+            if radcross_key in self.d and self.d[radcross_key] is not None:
+                self.d[radcross_key].destroy()
 
+    def leakage(self, e, nr):
+        airkerv_key = f"airkerv {e}{nr}"
+        radside_key = f"radside {e}{nr}"
+        radforward_key = f"radforward {e}{nr}"
+        radleak_key = f"radleak {e}{nr}"
+        laks_key = f"laks {e}{nr}"
+        entk_key = f"entk {e}{nr}"
+        radiob_leak_key = f"radiob_leak {e}{nr}"
+        # Function to destroy existing widgets if they exist
+        def destroy_widgets(keys):
+            for key in keys:
+                if key in self.d and self.d[key] is not None:
+                    self.d[key].destroy()
+        # If selects Leakage
+        if self.d[airkerv_key].get() == 1:
+            # Destroy any existing widgets before creating new ones
+            destroy_widgets([radside_key, radforward_key, radleak_key, laks_key, entk_key])
+            # Create options of leakage barrier
+            self.d[radside_key] = ttk.Radiobutton(master=self.d[f"barrierf {e}{nr}"], variable=self.d[radiob_leak_key],
+                text="Leakage and Side-Scatter", value=1)
+            self.d[radside_key].grid(row=4, column=0, pady=10, padx=10, sticky="w")
+            self.d[radforward_key] = ttk.Radiobutton(master=self.d[f"barrierf {e}{nr}"],
+                variable=self.d[radiob_leak_key], text="Leakage and Forward/ Backscatter", value=2)
+            self.d[radforward_key].grid(row=4, column=1, pady=10, padx=10, sticky="w")
+            self.d[radleak_key] = ttk.Radiobutton(master=self.d[f"barrierf {e}{nr}"], variable=self.d[radiob_leak_key],
+                text="Only Leakage", value=0)
+            self.d[radleak_key].grid(row=5, column=0, pady=10, padx=10, sticky="w")
+        # If selects Secondary Air Kerma
+        elif self.d[airkerv_key].get() == 4:
+            # Destroy any existing widgets before creating new ones
+            destroy_widgets([radside_key, radforward_key, radleak_key, laks_key, entk_key])
+            self.d[laks_key] = ttk.Label(master=self.d[f"barrierf {e}{nr}"], text="K\u209b (mGy/patient):")
+            self.d[laks_key].grid(row=4, column=0, pady=10, padx=10, sticky="w")
+            self.d[entk_key] = ttk.Entry(master=self.d[f"barrierf {e}{nr}"], width=10)
+            self.d[entk_key].grid(row=4, column=1, pady=10, padx=10, sticky="w")
+        # For Scatter, destroy existing widgets
         else:
-            if self.d["radside " + str(e)+nr] is not None:
-                self.d["radside " + str(e)+nr].destroy()
-                self.d["radforward " +str(e)+nr].destroy()
-                self.d["radleak " + str(e) + nr].destroy()
-            if self.d["laks "+ str(e) + nr] is not None:
-                self.d["laks " + str(e) + nr].destroy()
-                self.d["entk " + str(e) + nr].destroy()
-
+            destroy_widgets([radside_key, radforward_key, radleak_key, laks_key, entk_key])
         # ============selection of X-ray room or X-ray tube=============
+
     def existbarrier(self, e,nr,t):
         if self.d["existvar " + str(e)+nr].get() == 1:
             if self.d["existla " + str(e) + nr] is not None:

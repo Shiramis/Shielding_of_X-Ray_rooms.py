@@ -148,7 +148,7 @@ class ddepartment():
                 self.d[f"y {t}"] = 0
                 self.d[f"nr {t}"] = self.d[f"labelname {t}"].cget("text")
                 self.ep = 1
-                # Create a notebook for room details
+                # Create a notebook with Room variables
                 self.d[f"noteb {t}{self.d[f'nr {t}']}"] = ttk.Notebook(self.d[f"frame_1 {t}"], style="BL.TNotebook")
                 # Create label for number of barriers and spinbox for selection
                 self.lanumwall = ttk.Label(self.d[f"frame_1 {t}"], style="AL.TLabel", text="Number of Barriers")
@@ -165,12 +165,12 @@ class ddepartment():
                                           command=lambda: self.closedeproom(t))
                 self.closBut.pack()
                 # If not a CT room, add "Combine Barriers" checkbox
-                if room_type != "CT Room":
+                """if room_type != "CT Room":
                     self.d[f"varcompb {t}"] = IntVar(value=0)
                     self.d[f"compb {t}"] = ttk.Checkbutton(self.d[f"frame_1 {t}"], text="Combine Barriers as one",
                                                            variable=self.d[f"varcompb {t}"], onvalue=1, offvalue=0,
                                                            command=lambda: self.combination(t))
-                    self.d[f"compb {t}"].grid(row=10, column=0, pady=5, padx=5, sticky="w")
+                    self.d[f"compb {t}"].grid(row=10, column=0, pady=5, padx=5, sticky="w")"""
                 # Setup for X-Ray Room type
                 if room_type == "X-Ray room":
                     self.setup_xray_room(t)
@@ -184,9 +184,9 @@ class ddepartment():
             self.resnote.select(self.d[f"resframe {t}"])
     def setup_xray_room(self, t):
         # Add workload and X-ray room options
-        self.title_workload = ttk.Label(self.d[f"frame_1 {t}"], style="BL.TLabel", text="Workload")
+        self.title_workload = ttk.Label(self.d[f"frame_1 {t}"], style="BL.TLabel", text="Workload:")
         self.title_workload.grid(row=1, column=0, pady=5, padx=5, sticky="w")
-        # X-Ray room selection or kVp entry
+        """# X-Ray room selection or kVp entry
         self.xrayLabel = ttk.Label(self.d[f"frame_1 {t}"], text="Select X-Ray room or give tube kVp")
         self.xrayLabel.grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.d[f"vselxray {t}"] = IntVar(value=0)
@@ -198,16 +198,16 @@ class ddepartment():
         self.d[f"selxray2 {t}"] = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Give kVp",
                                                   variable=self.d[f"vselxray {t}"], value=2,
                                                   command=lambda: self.XrRoom(t))
-        self.d[f"selxray2 {t}"].grid(row=3, column=1, pady=5, padx=5, sticky="w")
+        self.d[f"selxray2 {t}"].grid(row=3, column=1, pady=5, padx=5, sticky="w")"""
         # Additional workload entry options
         self.d[f"worentry {t}"] = None
         self.d[f"vrawork {t}"] = IntVar(value=0)
         self.raworkl = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Write total\nWorkload (mA min/week):",
                                        variable=self.d[f"vrawork {t}"], value=1, command=lambda: self.workload(t))
-        self.raworkl.grid(row=5, column=0, pady=5, padx=5, sticky="w")
-        self.ranumb = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="or the number of patients per week:",
+        self.raworkl.grid(row=1, column=1, pady=5, padx=5, sticky="w")
+        self.ranumb = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="The Number of\nPatients per week:",
                                       variable=self.d[f"vrawork {t}"], value=2, command=lambda: self.workload(t))
-        self.ranumb.grid(row=6, column=0, pady=5, padx=5, sticky="w")
+        self.ranumb.grid(row=1, column=3, pady=5, padx=5, sticky="w")
     def setup_ct_room(self, t):
         # CT room setup with body/head procedures, kVp, and DLP entries
         self.bp_label = ttk.Label(self.d[f"frame_1 {t}"], text='Body Procedures (weekly):')
@@ -373,13 +373,13 @@ class ddepartment():
             destroy_widget(numpapwe_key)
             destroy_widget(worentry_key)
             self.d[worentry_key] = ttk.Entry(master=self.d[frame_key], width=10)
-            self.d[worentry_key].grid(row=5, column=1, pady=5, padx=5)
+            self.d[worentry_key].grid(row=1, column=2, pady=5, padx=5)
         # Handle workload "Number of Patients"
         elif workload_type == 2:
             destroy_widget(worentry_key)
             destroy_widget(numpapwe_key)
             self.d[numpapwe_key] = ttk.Entry(master=self.d[frame_key], width=10)
-            self.d[numpapwe_key].grid(row=6, column=1, pady=5, padx=5, sticky="w")
+            self.d[numpapwe_key].grid(row=1, column=4, pady=5, padx=5, sticky="w")
     def combination(self, t):
         def destroy_widget(widget_key):
             if self.d.get(widget_key) is not None:
