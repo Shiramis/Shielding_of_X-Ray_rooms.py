@@ -3,6 +3,7 @@ import tkinter
 from tkinter import *
 from tkinter import ttk
 import xlsxwriter
+import platform
 
 class ddepartment():
     # ============creating def for Deparment notebook===================================
@@ -16,7 +17,7 @@ class ddepartment():
         # Initialize the department notebook if it hasn't been initialized
         if self.depnote is None:
             self.depnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-            self.depnote.configure(width=955, height=728)
+            self.depnote.configure(width=980, height=728)
             self.depnote.grid(row=0, sticky="w")
             # Bind the tab change event to sync with results
             self.depnote.bind("<<NotebookTabChanged>>", self.sync_results_tab)
@@ -43,7 +44,7 @@ class ddepartment():
         self.numrlab = ttk.Label(master=self.roomsframe, style="AL.TLabel", text="Number of Rooms:")
         self.numrlab.grid(row=1, column=0, pady=10, padx=10, sticky="w")
         self.numrooms = IntVar(value=1)
-        self.num_rooms = ttk.Spinbox(master=self.roomsframe, from_=0, to=100000, increment=1,
+        self.num_rooms = ttk.Spinbox(master=self.roomsframe, from_=0, to=10000, increment=1,
                                      textvariable=self.numrooms, width=5, command=self.createrooms)
         self.num_rooms.grid(row=1, column=1, pady=10, padx=20, sticky="e")
 
@@ -117,7 +118,7 @@ class ddepartment():
                 if self.i == 1 or (self.i > 0 and self.resnote is None):
                     self.resnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
                     self.resnote.grid(row=0, column=1, sticky="w")
-                    self.resnote.configure(width=562, height=728)
+                    self.resnote.configure(width=545, height=728)
                 # Initialize room-specific values
                 self.d[f"selxroom {t}"] = None
                 self.d[f"numpapwl {t}"] = None
@@ -128,21 +129,57 @@ class ddepartment():
                 self.d[f"newroomf {t}"].pack()
                 self.depnote.add(self.d[f"newroomf {t}"], text=self.d[f"name_room {t}"].get())
                 self.depnote.grid()
+                self.depnote.add(self.d[f"newroomf {t}"], text=self.d[f"name_room {t}"].get())
+                self.depnote.grid()
+
                 # Set up scrollbars for the canvas
                 self.roomcanv = Canvas(self.d[f"newroomf {t}"])
                 self.xscrollroom = ttk.Scrollbar(self.d[f"newroomf {t}"], orient=HORIZONTAL,
                                                  command=self.roomcanv.xview)
                 self.xscrollroom.pack(side=BOTTOM, fill=X)
+
                 self.yscrollroom = ttk.Scrollbar(self.d[f"newroomf {t}"], orient=VERTICAL, command=self.roomcanv.yview)
                 self.yscrollroom.pack(side=RIGHT, fill=Y)
+
                 self.roomcanv.configure(yscrollcommand=self.yscrollroom.set, xscrollcommand=self.xscrollroom.set,
                                         bg="#f7faf9")
                 self.roomcanv.pack(side=LEFT, fill=BOTH, expand=1)
+
                 # Create frame inside the canvas
                 self.d[f"frame_1 {t}"] = ttk.Frame(self.roomcanv)
                 self.d[f"frame_1 {t}"].bind('<Configure>',
                                             lambda e: self.roomcanv.configure(scrollregion=self.roomcanv.bbox("all")))
                 self.roomcanv.create_window((0, 0), window=self.d[f"frame_1 {t}"], anchor="nw")
+
+                # Bind mouse wheel scrolling
+                def on_vertical_scroll(event):
+                    system = platform.system()
+                    if system == "Windows" or system == "Linux":
+                        # For Windows/Linux, use event.delta / 120 and invert the scroll direction
+                        self.roomcanv.yview_scroll(int(-1 * (event.delta / 120)), "units")
+                    elif system == "Darwin":  # macOS
+                        # For macOS, event.delta is in reverse, so just use it directly
+                        self.roomcanv.yview_scroll(int(event.delta), "units")
+
+                def on_horizontal_scroll(event):
+                    system = platform.system()
+                    if system == "Windows" or system == "Linux":
+                        # For Windows/Linux, use event.delta / 120 and invert the scroll direction
+                        self.roomcanv.xview_scroll(int(-1 * (event.delta / 120)), "units")
+                    elif system == "Darwin":  # macOS
+                        # For macOS, event.delta is in reverse, so just use it directly
+                        self.roomcanv.xview_scroll(int(event.delta), "units")
+
+                # Bind mouse scroll for vertical and horizontal scrolling
+                self.roomcanv.bind_all("<MouseWheel>", on_vertical_scroll)  # For vertical scrolling (Windows/Linux)
+                self.roomcanv.bind_all("<Shift-MouseWheel>",
+                                       on_horizontal_scroll)  # Horizontal scrolling with Shift key (Windows/Linux)
+
+                # For macOS, different event binding
+                self.roomcanv.bind_all("<Button-4>",
+                                       lambda event: self.roomcanv.yview_scroll(-1, "units"))  # macOS Scroll up
+                self.roomcanv.bind_all("<Button-5>",
+                                       lambda event: self.roomcanv.yview_scroll(1, "units"))  # macOS Scroll down
                 # Initialize some room values
                 self.d[f"x {t}"] = 0
                 self.d[f"y {t}"] = 0
@@ -186,19 +223,6 @@ class ddepartment():
         # Add workload and X-ray room options
         self.title_workload = ttk.Label(self.d[f"frame_1 {t}"], style="BL.TLabel", text="Workload:")
         self.title_workload.grid(row=1, column=0, pady=5, padx=5, sticky="w")
-        """# X-Ray room selection or kVp entry
-        self.xrayLabel = ttk.Label(self.d[f"frame_1 {t}"], text="Select X-Ray room or give tube kVp")
-        self.xrayLabel.grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        self.d[f"vselxray {t}"] = IntVar(value=0)
-        # Radio buttons for room or kVp selection
-        self.d[f"selxray1 {t}"] = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Select X-Ray Room",
-                                                  variable=self.d[f"vselxray {t}"], value=1,
-                                                  command=lambda: self.XrRoom(t))
-        self.d[f"selxray1 {t}"].grid(row=3, column=0, pady=5, padx=5, sticky="w")
-        self.d[f"selxray2 {t}"] = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Give kVp",
-                                                  variable=self.d[f"vselxray {t}"], value=2,
-                                                  command=lambda: self.XrRoom(t))
-        self.d[f"selxray2 {t}"].grid(row=3, column=1, pady=5, padx=5, sticky="w")"""
         # Additional workload entry options
         self.d[f"worentry {t}"] = None
         self.d[f"vrawork {t}"] = IntVar(value=0)
@@ -282,32 +306,7 @@ class ddepartment():
             self.resnote.select(self.d[result_frame_key])
         else:
             pass
-    def XrRoom(self, t):
-        # Access frequently used keys
-        xray_key = f"vselxray {t}"
-        frame_key = f"frame_1 {t}"
-        selxroom_key = f"selxroom {t}"
-        vsexroom_key = f"vsexroom {t}"
-        if self.d[xray_key].get() == 1:
-            # Destroy existing widget if it exists
-            if self.d.get(selxroom_key):
-                self.d[selxroom_key].destroy()
-            # Define options for X-ray room
-            self.xrooms = ("Rad Room (chest bucky)", "Rad Room (floor or other barriers)", "Rad Room (all barriers)",
-                           "Fluoroscopy Tube (R&F room)", "Rad Tube (R&F room)", "Chest Room", "Mammography Room",
-                           "Cardiac Angiography", "Peripheral Angiography")
-            self.d[vsexroom_key] = StringVar()
-            self.d[selxroom_key] = ttk.OptionMenu(self.d[frame_key], self.d[vsexroom_key], "Select X-ray room",
-                *self.xrooms)
-            self.d[selxroom_key].grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky="w")
-        elif self.d[xray_key].get() == 2:
-            # Destroy existing widget if it exists
-            if self.d.get(selxroom_key):
-                self.d[selxroom_key].destroy()
-            self.d[vsexroom_key] = IntVar(value=25)
-            self.d[selxroom_key] = ttk.Spinbox(master=self.d[frame_key], from_=25, to=150, increment=5,
-                textvariable=self.d[vsexroom_key], width=10)
-            self.d[selxroom_key].grid(row=4, column=1, columnspan=2, pady=10, padx=10, sticky="w")
+
     def occupation(self, t):
         def destroy_widget(widget_key):
             if self.d.get(widget_key) is not None:

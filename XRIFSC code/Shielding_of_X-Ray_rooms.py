@@ -120,13 +120,16 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room):
         self.style.configure("ML.TFrame", background="#2c3b47", foreground="#171719")
         self.style.configure("AL.TNotebook", background="#2c3b47", foreground="#f7faf9")
         self.style.configure("BL.TNotebook", background="#f7faf9", foreground="#f7faf9")
+        #======Label styles==========
         self.style.configure("BL.TLabel", background="#f7faf9", foreground='#171719', font='Helvetica 14',
                              weight='bold')
         self.style.configure("CL.TLabel", background="#2c3b47", foreground='#f6f8f8', font='Helvetica 14',
                              weight='bold')
         self.style.configure("AL.TLabel", background="#f7faf9", foreground='#171719', font='Helvetica 12')
+        self.style.configure("BL2.TLabel", background="#f7faf9", foreground='#171719', font=('Helvetica', 12, 'bold'))
 
         self.style.configure("TLabel", background="#f7faf9", foreground='#171719', font='Helvetica 12')
+
         self.style.configure("TRadiobutton", background="#f7faf9", foreground='#171719', font='Helvetica 11')
         self.style.configure("TCheckbutton", background="#f7faf9", foreground='#171719', font='Helvetica 11')
         self.style.configure("TSpinbox", background="#f7faf9", foreground='#000000', font='Helvetica 11')
