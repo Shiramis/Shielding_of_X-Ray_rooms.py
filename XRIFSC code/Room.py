@@ -65,38 +65,22 @@ class droom():
                                                            width=5, command=lambda: self.barriers(t))
         self.d["numwall " + str(t)].grid(row=0, column=1, pady=10, padx=10, sticky="w")
         self.barriers(t)
-        # ========Workload===========
-        self.title_workload = ttk.Label(master=self.d["frame_1 " + str(t)], style="BL.TLabel", text="Workload")
+        # Add workload
+        self.title_workload = ttk.Label(self.d[f"frame_1 {t}"], style="BL.TLabel", text="Workload:")
         self.title_workload.grid(row=1, column=0, pady=5, padx=5, sticky="w")
-        # =========X-ray Rooms============
-        self.xrayLabel = ttk.Label(master=self.d["frame_1 " + str(t)], text="Select X-Ray room or give tube kVp")
-        self.xrayLabel.grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        # ======X-ray Room or kVp==========
-        self.d["vselxray {0}".format(str(t))] = IntVar(value=0)
-        self.d["selxray1 {0}".format(str(t))] = ttk.Radiobutton(master=self.d["frame_1 " + str(t)],
-                                                                variable=self.d["vselxray " + str(t)],
-                                                                text="Select X-Ray Room", value=1,
-                                                                command=lambda: self.XrRoom(t))
-        self.d["selxray1 " + str(t)].grid(row=3, column=0, pady=5, padx=5, sticky="w")
+        # Additional workload entry options
+        self.d[f"worentry {t}"] = None
+        self.d[f"vrawork {t}"] = IntVar(value=0)
+        self.raworkl = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Write total\nWorkload (mA min/week):",
+                                       variable=self.d[f"vrawork {t}"], value=1, command=lambda: self.workload(t))
+        self.raworkl.grid(row=1, column=1, pady=5, padx=5, sticky="w")
+        self.ranumb = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="The Number of\nPatients per week:",
+                                      variable=self.d[f"vrawork {t}"], value=2, command=lambda: self.workload(t))
+        self.ranumb.grid(row=1, column=3, pady=5, padx=5, sticky="w")
 
-        self.d["selxray2 {0}".format(str(t))] = ttk.Radiobutton(master=self.d["frame_1 " + str(t)],
-                                                                variable=self.d["vselxray " + str(t)], text="Give kVp",
-                                                                value=2, command=lambda: self.XrRoom(t))
-        self.d["selxray2 " + str(t)].grid(row=3, column=1, pady=5, padx=5, sticky="w")
-        # =====================Write workload========================
-        self.d["worentry {0}".format(str(t))] = None
-        self.d["vrawork {0}".format(str(t))] = IntVar(value=0)
-        self.raworkl = ttk.Radiobutton(master=self.d["frame_1 " + str(t)], variable=self.d["vrawork " + str(t)],
-                                       text="Write total Workload (mA min/week):", value=1,
-                                       command=lambda: self.workload(t))
-        self.raworkl.grid(row=5, column=0, pady=5, padx=5, sticky="w")
-
-        self.ranumb = ttk.Radiobutton(master=self.d["frame_1 " + str(t)], text="or the number of patient per week:",
-                                      variable=self.d["vrawork " + str(t)], value=2, command=lambda: self.workload(t))
-        self.ranumb.grid(row=6, column=0, pady=5, padx=5, sticky="w")
         #======Export to excel========
         self.exp_but = ttk.Button(master=self.d["frame_1 " + str(t)], text="Export to Excel", command=lambda : self.exp_room(t))
-        self.exp_but.grid(row=7, column=0, pady=10, padx=10, sticky="w")
+        self.exp_but.grid(row=1, column=5, pady=10, padx=10, sticky="w")
 
         # ==========Results==============
         self.d["resframe {0}".format(str(t))] = ttk.Frame(self.resnote)
@@ -120,38 +104,29 @@ class droom():
         self.closBut = ttk.Button(self.roomframe, text="X", width=4, command=lambda:self.closeroom(t) )
         self.closBut.pack()
 
-    def occupation2(self, t):
-
-        if self.d["vraoccup " + str(t)].get() == 1:
-            if self.d["sellocation " + str(t)] is not None:
-                self.d["sellocation " + str(t)].destroy()
-            self.d["occupentry " + str(t)] = ttk.Entry(master=self.d["frame_1 " + str(t)], width=10)
-            self.d["occupentry " + str(t)].grid(row=3, column=1, pady=10, padx=10)
-        elif self.d["vraoccup " + str(t)].get() == 2:
-            if self.d["occupentry " + str(t)] is not None:
-                self.d["occupentry " + str(t)].destroy()
-            self.d["vselocation {0}".format(str(t))] = StringVar()
-            self.d["sellocation " + str(t)] = ttk.Combobox(master=self.d["frame_1 " + str(t)],
-                                                                 textvariable=self.d["vselocation " + str(t)], values=["Administrative or clerical offices", "Laboratories",
-                                "Pharmacies and other work areas fully occupied by an individual",
-                                "Receptionist areas", "Attended waiting rooms", "Children’s indoor play areas",
-                                "Adjacent x-ray rooms", "Film reading areas", "Nurse’s stations",
-                                "X-ray control rooms", "Rooms used for patient examinations and treatments","Public toilets", "Unattended vending areas", "Storage  rooms",
-                                   "Outdoor areas with seating", "Unattended waiting rooms",
-                                   "Patient holding areas",
-                                   "Outdoor areas with only transient pedestrian or vehicular traffic",
-                                   "Unattended parking lots", "Vehicular drop off areas (unattended)", "Attics",
-                                   "Stairways", "Unattended elevators", "Janitor’s closets","Public toilets", "Unattended vending areas", "Storage  rooms",
-                                   "Outdoor areas with seating", "Unattended waiting rooms",
-                                   "Patient holding areas",
-                                   "Outdoor areas with only transient pedestrian or vehicular traffic",
-                                   "Unattended parking lots", "Vehicular drop off areas (unattended)", "Attics",
-                                   "Stairways", "Unattended elevators", "Janitor’s closets"]
-                                                                 , state="readonly")
-
-            self.d["sellocation " + str(t)].set("Select Location")
-            self.d["sellocation " + str(t)].config(width=20)
-            self.d["sellocation " + str(t)].grid(row=4, column=1, columnspan=2, pady=10, padx=10, sticky="w")
+    def workload(self, t):
+        def destroy_widget(widget_key):
+            if self.d.get(widget_key) is not None:
+                self.d[widget_key].destroy()
+        # Widget keys
+        frame_key = f"frame_1 {t}"
+        worentry_key = f"worentry {t}"
+        numpapwe_key = f"numpapwe {t}"
+        vrawork_key = f"vrawork {t}"
+        # Get the value for workload type
+        workload_type = self.d.get(vrawork_key).get()
+        # Handle workload "Total workload"
+        if workload_type == 1:
+            destroy_widget(numpapwe_key)
+            destroy_widget(worentry_key)
+            self.d[worentry_key] = ttk.Entry(master=self.d[frame_key], width=10)
+            self.d[worentry_key].grid(row=1, column=2, pady=5, padx=5)
+        # Handle workload "Number of Patients"
+        elif workload_type == 2:
+            destroy_widget(worentry_key)
+            destroy_widget(numpapwe_key)
+            self.d[numpapwe_key] = ttk.Entry(master=self.d[frame_key], width=10)
+            self.d[numpapwe_key].grid(row=1, column=4, pady=5, padx=5, sticky="w")
 
     def exp_room(self, t):
         import pandas as pd
