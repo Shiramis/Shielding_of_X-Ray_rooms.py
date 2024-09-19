@@ -11,7 +11,7 @@ class  CT_Room():
         self.depbutton.destroy()
         self.roombutton.destroy()
         self.CTbutton.destroy()
-        self.quickbutton.destroy()
+        #self.quickbutton.destroy()
         self.chooseCal.destroy()
         p = "Design CT room"
         t = 0

@@ -12,7 +12,7 @@ class ddepartment():
         self.depbutton.destroy()
         self.roombutton.destroy()
         self.CTbutton.destroy()
-        self.quickbutton.destroy()
+        #self.quickbutton.destroy()
         self.chooseCal.destroy()
         # Initialize the department notebook if it hasn't been initialized
         if self.depnote is None:
@@ -226,7 +226,7 @@ class ddepartment():
         # Additional workload entry options
         self.d[f"worentry {t}"] = None
         self.d[f"vrawork {t}"] = IntVar(value=0)
-        self.raworkl = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Write total\nWorkload (mA min/week):",
+        self.raworkl = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Write total\nWorkload (mA∙min∙week\u207B\u00b9):",
                                        variable=self.d[f"vrawork {t}"], value=1, command=lambda: self.workload(t))
         self.raworkl.grid(row=1, column=1, pady=5, padx=5, sticky="w")
         self.ranumb = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="The Number of\nPatients per week:",

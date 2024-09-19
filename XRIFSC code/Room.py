@@ -10,7 +10,7 @@ class droom():
         self.depbutton.destroy()
         self.roombutton.destroy()
         self.CTbutton.destroy()
-        self.quickbutton.destroy()
+        #self.quickbutton.destroy()
         self.chooseCal.destroy()
         p = "Design x-ray room"
         t = 0

@@ -36,7 +36,9 @@ class dep_defs():
             # Select Materials label
             self.matlab = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
                                     text="Select Materials:")
-            self.matlab.grid(row=99, column=0, padx=5, pady=6.5, sticky="w")
+            rowm = 8 if self.d[f"vselroom {t}"].get() == "CT Room" else 99
+
+            self.matlab.grid(row=rowm, column=0, padx=5, pady=6.5, sticky="w")
 
             # Add spinbox for number of materials
             self.d[f"vnumbmat {index}{room_number}"] = IntVar(value=1)
@@ -44,7 +46,7 @@ class dep_defs():
             self.d[f"numbmat {index}{room_number}"] = ttk.Spinbox(master=self.d[f"barrierf {index}{room_number}"],
                 from_=1, to=spinbox_max, width=5, textvariable=self.d[f"vnumbmat {index}{room_number}"],
                 command=lambda e=index, nr=room_number: self.numbmater(e, nr, t))
-            self.d[f"numbmat {index}{room_number}"].grid(row=99, column=1, padx=5, pady=6.5, sticky="w")
+            self.d[f"numbmat {index}{room_number}"].grid(row=rowm, column=1, padx=5, pady=6.5, sticky="w")
 
             # Add widgets based on room type
             if self.d[f"vselroom {t}"].get() == "CT Room":
@@ -108,12 +110,17 @@ class dep_defs():
         dist_entry.grid(row=7, column=1, padx=5, pady=6.5, sticky="w")
 
         sh_label = ttk.Label(master=self.d[f"barrierf {index}{room_number}"],
-                             text='Shielding design Goal(P)\n in air kerma(mGy∙week\u207B\u00b9):')
+                             text='Shielding Design Goal(P)\n(mGy∙week\u207B\u00b9):')
         sh_label.grid(row=11, column=0, padx=5, pady=6.5, sticky="w")
         self.d[f"sh_var {index}{room_number}"] = DoubleVar()
         sh_entry = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"],
                              textvariable=self.d[f"sh_var {index}{room_number}"], width=10)
         sh_entry.grid(row=11, column=1, padx=5, pady=6.5, sticky="w")
+        self.d[f"calbutton {index}{room_number}"] = ttk.Button(master=self.d[f"barrierf {index}{room_number}"],
+                                                               text="Calculate",
+                                                               command=lambda e=index, nr=room_number: self.choosetype(
+                                                                   e, nr, t))
+        self.d[f"calbutton {index}{room_number}"].grid(row=12, column=2, pady=6.5, padx=5, sticky="w")
 
     def _add_xray_room_widgets(self, index, room_number, t):
         """Add X-ray room specific widgets."""
@@ -171,7 +178,7 @@ class dep_defs():
                 self.d[f"radsw {index}{room_number}{i}"].grid(row=i * 10 + 1, column=2, pady=6.5, padx=5, sticky="w")
                 # Distance label and entry
                 self.d[f'lad {index}{room_number}{i}'] = ttk.Label(master=self.d[f"barrierf {index}{room_number}"],
-                    style="AL.TLabel", text="Distance from the Barrier\nto the Source (m):")
+                    style="AL.TLabel", text="Distance from the Source\nto the Barrier (m):")
                 self.d[f'lad {index}{room_number}{i}'].grid(row=i * 10 + 3, column=0, pady=6.5, padx=5, sticky="w")
                 self.d[f"entryd {index}{room_number}{i}"] = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"],
                     width=10)
@@ -189,10 +196,11 @@ class dep_defs():
                     f"radcross {index}{room_number}{i}", f"radworkl {index}{room_number}{i}",f"radnumb {index}{room_number}{i}",
                     f"worentry {index}{room_number}{i}",f"numpapwe {index}{room_number}{i}", f"airkncrp {index}{room_number}{i}",
                     f"unairk {index}{room_number}{i}",f"leak {index}{room_number}{i}", f"side {index}{room_number}{i}", f"forw {index}{room_number}{i}"
-                    f"radside {index}{room_number}{i}", f"radforward {index}{room_number}{i}", f"radleak {index}{room_number}{i}"]
+                    f"radside {index}{room_number}{i}", f"radforward {index}{room_number}{i}", f"radleak {index}{room_number}{i}",
+                    f"set {index}{room_number}{i}"]
                 vars_to_delete = [f"vselxray {index}{room_number}{i}", f"preshvar {index}{room_number}{i}",
                     f"oworkvar {index}{room_number}{i}", f"radiob_pre {index}{room_number}{i}",
-                    f"workv {index}{room_number}{i}", f"vsexroom {index}{room_number}{i}"]
+                    f"workv {index}{room_number}{i}", f"vsexroom {index}{room_number}{i}", f"setv {index}{room_number}{i}"]
                 # Destroy and delete widgets
                 for key in keys_to_destroy:
                     if key in self.d and self.d[key] is not None:
@@ -250,7 +258,7 @@ class dep_defs():
 
             # ===== Primary Unshielded Air Kerma =====
             self.d[f"laks {e}{nr}{i}"] = ttk.Label(master=self.d[barrierf_key],
-                                                   text="Primary Unshielded\nAir Kerma K (mGy/patient):")
+                                                   text="Primary Unshielded\nAir Kerma K (mGy∙patient\u207B\u00b9):")
             self.d[f"laks {e}{nr}{i}"].grid(row=i * 10 + 6, column=0, pady=6.5, padx=5, sticky="w")
             self.d[f"entk {e}{nr}{i}"] = ttk.Entry(master=self.d[barrierf_key], width=10)
             self.d[f"entk {e}{nr}{i}"].grid(row=i * 10 + 6, column=1, pady=6.5, padx=5, sticky="w")
@@ -269,11 +277,11 @@ class dep_defs():
             # Create radio buttons for unshielded secondary air kerma options
             self.d[f"unairkerv {e}{nr}{i}"] = IntVar(value=0)
             self.create_radio_button(key=f"airkncrp {e}{nr}{i}", master=self.d[barrierf_key],
-                text="Select Unshielded Secondary\nAir Kerma (mGy/patient)\nSuggested (NCRP 147)",
+                text="Select Unshielded Secondary\nAir Kerma (mGy∙patient\u207B\u00b9)\nSuggested (NCRP 147)",
                 variable=self.d[f"unairkerv {e}{nr}{i}"], value=1, row=i * 10 + 6, column=0,
                 command=lambda: self.unairk(e, nr, i))
             self.create_radio_button(key=f"unairk {e}{nr}{i}", master=self.d[barrierf_key],
-                text="Write Unshielded Secondary\nAir Kerma (mGy/patient)", variable=self.d[f"unairkerv {e}{nr}{i}"],
+                text="Write Unshielded Secondary\nAir Kerma (mGy∙patient\u207B\u00b9)", variable=self.d[f"unairkerv {e}{nr}{i}"],
                 value=2, row=i * 10 + 6, column=1, command=lambda: self.unairk(e, nr, i))
         # ===== Different Workload Option =====
         self.d[f"oworkvar {e}{nr}{i}"] = IntVar(value=0)
@@ -289,6 +297,7 @@ class dep_defs():
                 if f"setv {e}{nr}{index}" in self.d:
                     # Set all other checkbuttons' variables to 0 (unchecked)
                     self.d[f"setv {e}{nr}{index}"].set(0)
+
     def XrRoom(self, e, nr, i):
         # Access frequently used keys
         xray_key = f"vselxray {e}{nr}{i}"
@@ -477,7 +486,7 @@ class dep_defs():
         if self.d[work_key].get() == 1:
             # Create the 'Write total Workload' Radiobutton
             self.d[radwork_key] = ttk.Radiobutton(master=self.d[f"barrierf {e}{nr}"], variable=self.d[workv_key],
-                                                  text="Write total\nWorkload (mA min/week):", value=1,
+                                                  text="Write total\nWorkload (mA∙min∙week\u207B\u00b9):", value=1,
                                                   command=lambda: self.workloadbar(e, nr, i))
             # Create the 'Number of Patients' Radiobutton
             self.d[radnumb_key] = ttk.Radiobutton(master=self.d[f"barrierf {e}{nr}"], variable=self.d[workv_key],
@@ -592,7 +601,7 @@ class dep_defs():
         self.raseloccup.grid(row=106, column=0, pady=6.5, padx=5, sticky="w")
 
         self.ladike = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
-                                text="Design Kerma\nGoal (mGy/week):")
+                                text="Shielding Design\nGoal (mGy∙week\u207B\u00b9):")
         self.ladike.grid(row=107, column=0, pady=6.5, padx=5, sticky="w")
         self.d[f"dikeent {index}{room_number}"] = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"], width=10)
         self.d[f"dikeent {index}{room_number}"].grid(row=107, column=1, pady=6.5, padx=5, sticky="w")

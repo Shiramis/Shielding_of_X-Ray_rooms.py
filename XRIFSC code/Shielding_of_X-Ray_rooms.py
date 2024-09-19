@@ -48,7 +48,7 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room):
         self.newoptions.add_command(label="Design Department", command=self.creatdep)
         self.newoptions.add_command(label="Design X-Ray Room", command=self.creatroom)
         self.newoptions.add_command(label="Design CT Room", command=self.creatCTroom)
-        self.newoptions.add_command(label="Design Barrier", command=self.quickcal)
+        #self.newoptions.add_command(label="Design Barrier", command=self.quickcal)
 
         """self.file_menu.add_command(label="Open", )
         self.file_menu.add_command(label="Save as...", )"""
@@ -70,6 +70,7 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room):
         self.help_menu.add_command(label="BIR 2012", command=self.openbir)
 
         self.i=0
+        self.ep = 1 #for barrier position
         self.d = {}
         self.res = {}
         self.thm = {}
@@ -102,14 +103,14 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room):
         self.roombutton = ttk.Button(master=self.new_main_Frame,style="AL.TButton", text="X-Ray Room", command=self.creatroom)
         self.CTbutton = ttk.Button(master=self.new_main_Frame, style="AL.TButton", text="CT Room",
                                      command=self.creatCTroom)
-        self.quickbutton = ttk.Button(master=self.new_main_Frame,style="AL.TButton", text="Barrier",
-                                      command=self.quickcal)
+        #self.quickbutton = ttk.Button(master=self.new_main_Frame,style="AL.TButton", text="Barrier",
+                                      #command=self.quickcal)
 
         self.chooseCal.pack(anchor="c", pady=10, padx=700)
         self.depbutton.pack(anchor="c", pady=10, padx=700)
         self.roombutton.pack(anchor="c", pady=10, padx=700)
         self.CTbutton.pack(anchor="c", pady=10, padx=700)
-        self.quickbutton.pack(anchor="c", pady=10, padx=700)
+        #self.quickbutton.pack(anchor="c", pady=10, padx=700)
 
 
         # ====================Styles=============================================
@@ -127,6 +128,7 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room):
                              weight='bold')
         self.style.configure("AL.TLabel", background="#f7faf9", foreground='#171719', font='Helvetica 12')
         self.style.configure("BL2.TLabel", background="#f7faf9", foreground='#171719', font=('Helvetica', 12, 'bold'))
+        self.style.configure("RL.TLabel", background="#f7faf9", foreground='#f71616', font='Helvetica 12')
 
         self.style.configure("TLabel", background="#f7faf9", foreground='#171719', font='Helvetica 12')
 
