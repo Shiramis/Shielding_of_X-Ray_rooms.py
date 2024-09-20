@@ -4,11 +4,23 @@ import pandas as pd
 import math
 import os
 from openpyxl import load_workbook
+import os
+import sys
 
-# Get the current script directory
-script_dir = os.path.dirname(__file__)
+def resource_path(relative_path):
+    """ Get the absolute path to the resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temporary folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath("..")
 
-excel_path = os.path.join(script_dir, '..', 'Data Shielding.xlsx')
+    return os.path.join(base_path, relative_path)
+
+# Update the excel file path
+excel_path = resource_path('Data Shielding.xlsx')
+if not os.path.exists(excel_path):
+    print(f"Excel file not found at: {excel_path}")
 
 wb = load_workbook(excel_path)
 
@@ -16,7 +28,7 @@ class departprimsec():
 
     def choosetype(self,e,nr, t):
         if self.d["vselroom "+str(t)].get() == "CT Room":
-            self.depCTcal(e, nr, nb, t)
+            self.depCTcal(e, nr, t)
         else:
             Ktotal = 0
             ce = None
@@ -217,7 +229,6 @@ class departprimsec():
         return None  # Return None if there are missing variables
 
     def depcalc(self, e, nr, i, t):  # Barrier calculations
-
         title_key = f"titleresul {e}{nr}"
         # Destroy existing material labels if they exist
         if self.d.get(title_key) is not None:
@@ -345,94 +356,90 @@ class departprimsec():
 
         self.ep += 1
 
-    def depCTcal(self, e, nr, nb, t):
-        if self.d["titleresul " + str(e)+nr] is not None:
-            for o in range (1,7):
-                if self.res["resmat " + str(o)+str(e)] is not None:
-                    self.res["resmat " + str(o)+str(e)].destroy()
+    def depCTcal(self, e, nr, t):
+        title_key = f"titleresul {e}{nr}"
+        # Destroy existing material labels if they exist
+        if self.d.get(title_key) is not None:
+            for o in range(1, 7):
+                mat_key = f"resmat {o}{e}"
+                if self.res.get(mat_key) is not None:
+                    self.res[mat_key].destroy()
         else:
             for o in range(1, 7):
-                self.res["resmat {0}".format(str(o)) + str(e)] = None
-        for o in range(1, self.d["vnumbmat " + str(e) + nr].get() + 1):
-            k1sec_body = float(1.2 * (3 * 10 ** -4) * (1.4 * float(self.d["dlpb_var "+ str(t)].get())))
-            k1sec_head = float((9 * 10 ** -5) * (1.4 * float(self.d['dlph_var '+ str(t)].get())))
-            self.d["K "+self.barn["lab_bar " + str(e) + nr].cget("text")+nr] = float((1 / float(self.d["dist_var "+ str(e) + nr].get())) ** 2
-                                                                     * ((self.d["bp_var "+str(t)].get() * k1sec_body)
-                                                                        + (self.d["hp_var " + str(t)].get() * k1sec_head)))
-            B = float(self.d["sh_var " + str(e) + nr].get() / float(self.d["K "+self.barn["lab_bar " + str(e) + nr].cget("text")+nr]))
-            print(B)
-            if self.d["vmater "+str(e)+str(o)+nr].get() == "Lead":
-                if self.d["kvp_var "+ str(t)].get() == 120:
-                    a = 2.246
-                    b = 5.73
-                    c = 0.547
-                else:
-                    a = 2.009
-                    b = 3.99
-                    c = 0.342
-            elif self.d["vmater "+str(e)+str(o)+nr].get() == "Concrete":
-                if self.d["kvp_var "+ str(t)].get() == 120:
-                    a = 0.0383
-                    b = 0.0142
-                    c = 0.658
-                else:
-                    a = 0.0336
-                    b = 0.0122
-                    c = 0.519
-            self.thm["xbar "+str(e)+str(o)+nr] = float((1 / (a * c)) * math.log((B ** -c + (b / a)) / (1 + (b / a))))
+                self.res[f"resmat {o}{e}"] = None
+        for o in range(1, self.d[f"vnumbmat {e}{nr}"].get() + 1):
+            material = self.d[f"vmater {e}{o}{nr}"].get()
+            if (self.d[f"dist_var {e}{nr}"].get() != "" and float(self.d[f"dist_var {e}{nr}"].get()) != 0 and float(
+                self.d[f"bp_var {t}"].get()) != 0 and float(self.d[f"hp_var {t}"].get()) != 0 and float(
+                self.d[f"sh_var {e}{nr}"].get()) != 0 and (float(self.d[f"dlpb_var {t}"].get()) != 0 or float(
+                self.d[f"dlph_var {t}"].get()) != 0)):
+                k1sec_body = float(1.2 * (3 * 10 ** -4) * (1.4 * float(self.d[f"dlpb_var {t}"].get())))
+                k1sec_head = float((9 * 10 ** -5) * (1.4 * float(self.d[f"dlph_var {t}"].get())))
+                self.d["K "+self.barn[f"lab_bar {e}{nr}"].cget("text")+nr] = float((1 / float(self.d[f"dist_var {e}{nr}"].get())) ** 2
+                                                                         * ((self.d[f"bp_var {t}"].get() * k1sec_body)
+                                                                            + (self.d[f"hp_var {t}"].get() * k1sec_head)))
+                B = float(self.d[f"sh_var {e}{nr}"].get() / float(self.d["K "+self.barn[f"lab_bar {e}{nr}"].cget("text")+nr]))
 
-            if self.d["titleresul " + str(e) + nr] is None:
-                self.res["resmat " + str(o) + str(e)] = ttk.Label(self.d["resultframe " + str(t) + nr],
-                                                                  style="AL.TLabel", text=self.d[
-                                                                                              "vmater " + str(e) + str(
-                                                                                                  o) + nr].get() + ": " + str(
-                        round(self.thm["xbar " + str(e) + str(o) + nr], 2)) + " mm")
-                if o < 3:
-                    self.res["resmat " + str(o) + str(e)].grid(row=str(self.ep), column=o, pady=3, padx=3, sticky="w")
-                    self.op= 0
-                elif 2 < o < 5:
-                    if o == 3:
-                        self.ep += 1
-                        self.op+= 1
-                    self.res["resmat " + str(o) + str(e)].grid(row=str(self.ep), column=o - 2, pady=3, padx=3,
-                                                               sticky="w")
+                if material == "Lead":
+                    if self.d[f"kvp_var {t}"].get() == 120:
+                        a = 2.246
+                        b = 5.73
+                        c = 0.547
+                    else:
+                        a = 2.009
+                        b = 3.99
+                        c = 0.342
+                    self.thm[f"xbar {e}{o}{nr}"] = float((1 / (a * c)) * math.log((B ** -c + (b / a)) / (1 + (b / a))))
+                elif material == "Concrete":
+                    if self.d[f"kvp_var {t}"].get() == 120:
+                        a = 0.0383
+                        b = 0.0142
+                        c = 0.658
+                    else:
+                        a = 0.0336
+                        b = 0.0122
+                        c = 0.519
+                    self.thm[f"xbar {e}{o}{nr}"] = float((1 / (a * c)) * math.log((B ** -c + (b / a)) / (1 + (b / a))))
                 else:
-                    if o == 5:
-                        self.ep += 1
-                        self.op+= 1
-                    self.res["resmat " + str(o) + str(e)].grid(row=str(self.ep), column=o - 4, pady=3, padx=3,
-                                                               sticky="w")
+                    self.thm[f"xbar {e}{o}{nr}"] = "Select Material"
+
+                self.display_results(e, o, nr, t)
             else:
-                self.res["resmat " + str(o) + str(e)] = ttk.Label(self.d["resultframe " + str(t) + nr],
-                                                                  style="AL.TLabel", text=self.d[
-                                                                                              "vmater " + str(e) + str(
-                                                                                                  o) + nr].get() + ": " + str(
-                        round(self.thm["xbar " + str(e) + str(o) + nr], 2)) + " mm")
-                if o < 3:
-                    self.res["resmat " + str(o) + str(e)].grid(row=str(self.d["spot " + str(e)]), column=o, pady=3,
-                                                               padx=3, sticky="w")
-                elif 2 < o < 5:
-                    self.res["resmat " + str(o) + str(e)].grid(row=str(self.d["spot " + str(e)] + 1), column=o - 2,
-                                                               pady=3, padx=3, sticky="w")
-                else:
-                    self.res["resmat " + str(o) + str(e)].grid(row=str(self.d["spot " + str(e)] + 2), column=o - 4,
-                                                               pady=3, padx=3, sticky="w")
-
-        if self.d["titleresul " + str(e) + nr] is None:
-            self.d["titleresul " + str(e) + nr] = ttk.Label(self.d["resultframe " + str(t) + nr], style="AL.TLabel",
-                                                            text=self.barn["lab_bar " + str(e) + nr].cget(
-                                                                "text") + ": ")
-            self.d["titleresul " + str(e) + nr].grid(row=str(self.ep - op), column=0, pady=3, padx=3, sticky="s")
-            self.d["spot {0}".format(str(e))] = self.ep
+                self.need = []
+                if self.d[f"dlpb_var {t}"].get() == 0 and self.d[f"dlph_var {t}"].get() == 0:
+                    self.need.append("zero entries")
+                if self.d[f"dist_var {e}{nr}"].get() == "":
+                    self.need.append("Distance")
+                if self.d[f"bp_var {t}"].get() == 0:
+                    self.need.append("zero entries")
+                if self.d[f"hp_var {t}"].get() == 0:
+                    self.need.append("zero entries")
+                if self.d[f"sh_var {e}{nr}"].get() == 0:
+                    self.need.append("zero entries")
+                if material == "Select Material":
+                    self.need.append("Select Material")
+                self.need = list(dict.fromkeys(self.need))
+                self.thm[f"xbar {e}{o}{nr}"] = "\n".join(self.need)
+                self.display_results(e, o, nr, t)
+        # If there's no existing title result, create a new title
+        if self.d.get(title_key) is None:
+            self.op = 0
+            self.d[title_key] = ttk.Label(self.d[f"resultframe {t}{nr}"], style="AL.TLabel",
+                                          text=self.barn[f"lab_bar {e}{nr}"].cget("text") + ": ")
+            self.d[title_key].grid(row=str(self.ep - self.op), column=0, pady=3, padx=3, sticky="s")
+            self.d[f"spot {e}{nr}"] = self.ep
         else:
-            self.d["titleresul " + str(e) + nr].destroy()
-            self.d["titleresul " + str(e) + nr] = ttk.Label(self.d["resultframe " + str(t) + nr], style="AL.TLabel",
-                                                            text=self.barn["lab_bar " + str(e) + nr].cget(
-                                                                "text") + ": ")
-            self.d["titleresul " + str(e) + nr].grid(row=str(self.d["spot " + str(e)]), column=0, pady=3, padx=3,
-                                                     sticky="s")
+            # If it exists, update it
+            self.d[title_key].destroy()
+            self.d[title_key] = ttk.Label(self.d[f"resultframe {t}{nr}"], style="AL.TLabel",
+                                          text=self.barn[f"lab_bar {e}{nr}"].cget("text") + ": ")
+            self.d[title_key].grid(row=str(self.d[f"spot {e}{nr}"]), column=0, pady=3, padx=3, sticky="s")
 
-        print(self.d["K " + self.barn["lab_bar " + str(e) + nr].cget("text") + nr])
+        # Store the results for further use
+        if isinstance(self.thm[f'xbar {e}{o}{nr}'], float):
+            self.rdata = {self.barn[f"lab_bar {e}{nr}"].cget("text"): {
+                self.d[f"vmater {e}{o}{nr}"].get(): str(round(self.thm[f"xbar {e}{o}{nr}"], 3))}}
+
         self.ep += 1
 
     def display_results(self, e, o, nr, t):
@@ -443,10 +450,12 @@ class departprimsec():
         if self.d[title_key] is None:
             if isinstance(self.thm[f'xbar {e}{o}{nr}'], str):
                 if self.need:
-                    self.res[f"resmat {o}{e}"] = Text(self.d[f"resultframe {t}{nr}"], height=9, width=40,
+                    # Calculate the number of elements in the list or string
+                    num_elements = len(self.need)
+                    self.res[f"resmat {o}{e}"] = Text(self.d[f"resultframe {t}{nr}"], height=num_elements, width=40,
                                                       borderwidth=0, background="#f7faf9", font='Helvetica 12')
                     # Insert "You must enter:" in black
-                    self.res[f"resmat {o}{e}"].insert(END, "You must enter:", "black")
+                    self.res[f"resmat {o}{e}"].insert(END, "Invalid:", "black")
                     # Insert the rest of the text in red
                     self.res[f"resmat {o}{e}"].insert(END, f"\n{self.thm[f'xbar {e}{o}{nr}']}", "red")
                     # Configure the tags for text styles
@@ -478,10 +487,12 @@ class departprimsec():
             # If the title already exists, update it
             if isinstance(self.thm[f'xbar {e}{o}{nr}'], str):
                 if self.need:
-                    self.res[f"resmat {o}{e}"] = Text(self.d[f"resultframe {t}{nr}"], height=9, width=40,
+                    # Calculate the number of elements in the list or string
+                    num_elements = len(self.need)
+                    self.res[f"resmat {o}{e}"] = Text(self.d[f"resultframe {t}{nr}"], height=num_elements+1, width=40,
                                                       borderwidth=0, background="#f7faf9", font='Helvetica 12')
                     # Insert "You must enter:" in black
-                    self.res[f"resmat {o}{e}"].insert(END, "You must enter:", "black")
+                    self.res[f"resmat {o}{e}"].insert(END, "Invalid:", "black")
                     # Insert the rest of the text in red
                     self.res[f"resmat {o}{e}"].insert(END, f"\n{self.thm[f'xbar {e}{o}{nr}']}", "red")
                     # Configure the tags for text styles
