@@ -46,9 +46,9 @@ class  CT_Room():
         self.d["numpapwe {0}".format(str(t))] = None
         self.ep = 1
         self.d["x {0}".format(str(t))] = 0
-        self.d["vselroom {0}".format(str(t))] = StringVar()
+        self.var["vselroom {0}".format(str(t))] = StringVar()
         self.d["selroom {0}".format(str(t))] = ttk.Combobox(master=self.d["frame_1 " + str(t)],
-                                                            textvariable=self.d["vselroom " + str(t)],
+                                                            textvariable=self.var["vselroom " + str(t)],
                                                             values=["X-Ray room", "From X-Ray room","CT Room"], state="readonly")
         self.d["selroom {0}".format(str(t))].set("CT Room")
         self.d["nr {0}".format(str(t))] = "Design CT room"
@@ -59,38 +59,38 @@ class  CT_Room():
         self.lanumwall.grid(row=0, column=0, pady=10, padx=10, sticky="w")
         self.d["vnumwall {0}".format(str(t))] = IntVar(value=7)
         self.d["numwall {0}".format(str(t))] = ttk.Spinbox(master=self.d["frame_1 " + str(t)],
-                                                           textvariable=self.d["vnumwall " + str(t)], from_=7,
+                                                           textvariable=self.var["vnumwall " + str(t)], from_=7,
                                                            to=50, width=5, command=lambda: self.barriers(t))
         self.d["numwall " + str(t)].grid(row=0, column=1, pady=10, padx=10, sticky="w")
         self.barriers(t)
 
         self.bp_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='Body Procedures (weekly):')
         self.bp_label.grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        self.d[f"bp_var {str(t)}"] = IntVar()
-        self.bp_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.d[f"bp_var "+str(t)], width=10)
+        self.var[f"bp_var {str(t)}"] = IntVar()
+        self.bp_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.var[f"bp_var "+str(t)], width=10)
         self.bp_entry.grid(row=1, column=1, padx=10, pady=10, sticky="w")
         self.hp_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='Head Procedures (weekly):')
         self.hp_label.grid(row=2, column=0, padx=10, pady=10, sticky="w")
-        self.d[f"hp_var {str(t)}"] = IntVar()
-        self.hp_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.d[f"hp_var "+str(t)], width=10)
+        self.var[f"hp_var {str(t)}"] = IntVar()
+        self.hp_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.var[f"hp_var "+str(t)], width=10)
         self.hp_entry.grid(row=2, column=1, padx=10, pady=10, sticky="w")
         self.dlpb_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='DLP for body (mGy\u2022cm):')
         self.dlpb_label.grid(row=4, column=0, padx=10, pady=10, sticky="w")
-        self.d[f"dlpb_var {str(t)}"] = IntVar()
-        self.dlpb_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.d[f"dlpb_var "+str(t)], width=10)
+        self.var[f"dlpb_var {str(t)}"] = IntVar()
+        self.dlpb_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.var[f"dlpb_var "+str(t)], width=10)
         self.dlpb_entry.grid(row=4, column=1, padx=10, pady=10, sticky="w")
 
         self.dlph_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='DLP for head (mGy\u2022cm):')
         self.dlph_label.grid(row=5, column=0, padx=10, pady=10, sticky="w")
-        self.d[f"dlph_var {str(t)}"] = IntVar()
-        self.dlph_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.d[f"dlph_var "+str(t)], width=10)
+        self.var[f"dlph_var {str(t)}"] = IntVar()
+        self.dlph_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.var[f"dlph_var "+str(t)], width=10)
         self.dlph_entry.grid(row=5, column=1, padx=10, pady=10, sticky="w")
 
         self.kvp_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='Give kVp:')
         self.kvp_label.grid(row=6, column=0, padx=10, pady=10, sticky="w")
-        self.d[f"kvp_var {str(t)}"] = IntVar()
-        self.d[f"kvp_var "+str(t)].set(120)  # default value
-        self.kvp_dropdown = ttk.Combobox(master=self.d["frame_1 " + str(t)], textvariable=self.d[f"kvp_var "+str(t)], values=[120, 140],
+        self.var[f"kvp_var {str(t)}"] = IntVar()
+        self.var[f"kvp_var "+str(t)].set(120)  # default value
+        self.kvp_dropdown = ttk.Combobox(master=self.d["frame_1 " + str(t)], textvariable=self.var[f"kvp_var "+str(t)], values=[120, 140],
                                          state="readonly", width=7)
         self.kvp_dropdown.grid(row=6, column=1, padx=10, pady=10, sticky="w")
         # ==========Results==============

@@ -3,9 +3,12 @@ from tkinter import ttk
 import pandas as pd
 import math
 import os
+
+from numpy.ma.core import append
 from openpyxl import load_workbook
 import os
 import sys
+
 
 def resource_path(relative_path):
     """ Get the absolute path to the resource, works for dev and for PyInstaller """
@@ -27,18 +30,18 @@ wb = load_workbook(excel_path)
 class departprimsec():
 
     def choosetype(self,e,nr, t):
-        if self.d["vselroom "+str(t)].get() == "CT Room":
+        if self.var["vselroom "+str(t)].get() == "CT Room":
             self.depCTcal(e, nr, t)
         else:
             Ktotal = 0
             ce = None
-            for i in range(0,self.d[f"num_barriers_var {e}{nr}"].get()):
+            for i in range(0,self.var[f"num_barriers_var {e}{nr}"].get()):
                 K = self.calkerma(e, nr, i, t)
                 if K is not None:
                     Ktotal += K
                 print ("Kt="+str(Ktotal))
-                if f"setv {e}{nr}{i}" in self.d:
-                    if self.d[f"setv {e}{nr}{i}"].get() == 1:
+                if f"setv {e}{nr}{i}" in self.var:
+                    if self.var[f"setv {e}{nr}{i}"].get() == 1:
                         ce = e
                         cnr = nr
                         ci = i
@@ -49,8 +52,12 @@ class departprimsec():
                 if ce is None:
                     self.need.append("You must set a Workload Distribution")
                     self.depcalc(e, nr, i, t)
+
                 else:
-                    self.B = (float(self.d["dikeent " + str(e) + nr].get()))/Ktotal
+                    if Ktotal == 0:
+                        self.depcalc(e, nr, i, t)
+                    else:
+                        self.B = (float(self.d["dikeent " + str(e) + nr].get()))/Ktotal
             if ce is None:
                 self.need.append("You must set a Workload Distribution")
                 self.depcalc(e, nr, i, t)
@@ -70,64 +77,63 @@ class departprimsec():
             D = None
         # ======== Workload ===========
         if f"othwork {e}{nr}{i}" in self.d:
-            if self.d[f"oworkvar {e}{nr}{i}"] == 1: #If checks different workload
-                if self.d[f"workv {e}{nr}{i}"].get() == 2:
+            if self.var[f"oworkvar {e}{nr}{i}"] == 1: #If checks different workload
+                if self.var[f"workv {e}{nr}{i}"].get() == 2:
                     if self.d[f"numpapwe {e}{nr}{i}"].get() != '':
                         n = int(self.d[f"numpapwe {e}{nr}{i}"].get())  # Number of patients (numpapwe)
                     else:
                         n =None
-                elif self.d[f"workv {e}{nr}{i}"].get() == 1:# Workload option
+                elif self.var[f"workv {e}{nr}{i}"].get() == 1:# Workload option
                     ws = wb['Workload']
                     for x in range(1, 13):
-                        if self.d[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:  # X-ray room selection (vsexroom)
+                        if self.var[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:  # X-ray room selection (vsexroom)
                             if self.d[f"worentry {e}{nr}{i}"].get() != '':
                                 n = float(self.d[f"worentry {e}{nr}{i}"].get()) / ws['B' + str(x)].value  # Workload entry (worentry)
                             else:
                                 n = None
-                    if self.d[f"vselxray {e}{nr}{i}"].get() == 2:  # X-ray selection (vselxray)
+                    if self.var[f"vselxray {e}{nr}{i}"].get() == 2:  # X-ray selection (vselxray)
                         if self.d[f"worentry {e}{nr}{i}"].get() != '':
                             n = float(self.d[f"worentry {e}{nr}{i}"].get()) / 2.5  # Workload entry (worentry)
                         else:
                             n = None
             else:
                 # The general workload
-                if self.d[f"vrawork {t}"].get() == 2:
+                if self.var[f"vrawork {t}"].get() == 2:
                     if self.d[f"numpapwe {t}"].get() != '':
                         n = int(self.d[f"numpapwe {t}"].get())
                     else:
                         n = None
-                elif self.d[f"vrawork {t}"].get() == 1:
+                elif self.var[f"vrawork {t}"].get() == 1:
                     ws = wb['Workload']
                     for x in range(1, 13):
-                        if self.d[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:
+                        if self.var[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:
                             if self.d[f"worentry {t}"].get() != '':
                                 n = float(self.d[f"worentry {t}"].get()) / ws['B' + str(x)].value
                             else:
                                 n = None
-                    if self.d[f"vselxray {t}"].get() == 2:
+                    if self.var[f"vselxray {e}{nr}{i}"].get() == 2:
                         if self.d[f"worentry {t}"].get() != '':
                             n = float(self.d[f"worentry {t}"].get()) / 2.5
                         else:
                             n = None
                 else:
                     n = None
-            
         else:
             # The general workload
-            if self.d[f"vrawork {t}"].get() == 2:
+            if self.var[f"vrawork {t}"].get() == 2:
                 if self.d[f"numpapwe {t}"].get() != '':
                     n = int(self.d[f"numpapwe {t}"].get())
                 else:
                     n = None
-            elif self.d[f"vrawork {t}"].get() == 1:
+            elif self.var[f"vrawork {t}"].get() == 1:
                 ws = wb['Workload']
                 for x in range(1, 13):
-                    if self.d[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:
+                    if self.var[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:
                         if self.d[f"worentry {t}"].get() != '':
                             n = float(self.d[f"worentry {t}"].get()) / ws['B' + str(x)].value
                         else:
                             n = None
-                if self.d[f"vselxray {t}"].get() == 2:
+                if self.var[f"vselxray {t}"].get() == 2:
                     if self.d[f"worentry {t}"].get() != '':
                         n = float(self.d[f"worentry {t}"].get()) / 2.5
                     else:
@@ -135,37 +141,37 @@ class departprimsec():
             else:
                 n = None
         # ======== Occupancy Factor T ===========
-        if self.d[f"vraoccup {e}{nr}"].get() == 1:  # Occupancy option (vraoccup)
+        if self.var[f"vraoccup {e}{nr}"].get() == 1:  # Occupancy option (vraoccup)
             if self.d[f"occupentry {e}{nr}"].get() != '':
                 T = float(self.d[f"occupentry {e}{nr}"].get())  # Occupancy entry (occupentry)
             else:
                 T = None
-        elif self.d[f"vraoccup {e}{nr}"].get() == 2:
+        elif self.var[f"vraoccup {e}{nr}"].get() == 2:
             ws = wb['Occupancy Factor ( T )']
             for x in range(2, 32):
-                if self.d[f"vselocation {e}{nr}"].get() == ws['A' + str(x)].value:  # Location selection (vselocation)
+                if self.var[f"vselocation {e}{nr}"].get() == ws['A' + str(x)].value:  # Location selection (vselocation)
                     T = float(ws['B' + str(x)].value)
         else:
             T = None
         # ======== K1 "air kerma" ===========
-        if self.d[f"radiob_w {e}{nr}{i}"].get() == 1:
+        if self.var[f"radiob_w {e}{nr}{i}"].get() == 1:
         # primary unshielded air kerma
             if self.d[f"entk {e}{nr}{i}"].get() != "":
                 K1 = float(self.d[f"entk {e}{nr}{i}"].get())  # Entered kerma value (entk)
             else:
                 K1 = None
-        elif self.d[f"radiob_w {e}{nr}{i}"].get() == 2:
-            if self.d[f"unairkerv {e}{nr}{i}"].get() == 1: #Selects fron NCRP 147
+        elif self.var[f"radiob_w {e}{nr}{i}"].get() == 2:
+            if self.var[f"unairkerv {e}{nr}{i}"].get() == 1: #Selects fron NCRP 147
                 # Secondary air kerma calculations based on the 'airkerv' value
                 ws = wb["Uns Air Kerma"]
-                room_type = self.d[f"vsexroom {e}{nr}{i}"].get()  # Fetching X-ray room type
-                if self.d[f"airkerv {e}{nr}{i}"].get() == 1:
+                room_type = self.var[f"vsexroom {e}{nr}{i}"].get()  # Fetching X-ray room type
+                if self.var[f"airkerv {e}{nr}{i}"].get() == 1:
                     # Leakage air kerma calculation
-                    if self.d[f"radiob_leak {e}{nr}{i}"].get() == 1:
+                    if self.var[f"radiob_leak {e}{nr}{i}"].get() == 1:
                         for j in range(1, 11):
                             if room_type == ws['A' + str(j)].value:
                                 K1 = float(ws['G' + str(j)].value)  # Leak & side scatter
-                    elif self.d[f"radiob_leak {e}{nr}{i}"].get() == 2:
+                    elif self.var[f"radiob_leak {e}{nr}{i}"].get() == 2:
                         for j in range(1, 11):
                             if room_type == ws['A' + str(j)].value:
                                 K1 = float(ws['I' + str(j)].value)  # Leakage and Forward/ Backscatter (Ksec)
@@ -174,17 +180,17 @@ class departprimsec():
                             if room_type == ws['A' + str(j)].value:
                                 K1 = float(ws['E' + str(j)].value)  # Only Leakage
 
-                elif self.d[f"airkerv {e}{nr}{i}"].get() == 2:
+                elif self.var[f"airkerv {e}{nr}{i}"].get() == 2:
                     # Side-Scatter
                     for j in range(1, 11):
                         if room_type == ws['A' + str(j)].value:
                             K1 = float(ws['F' + str(j)].value)
-                elif self.d[f"airkerv {e}{nr}{i}"].get() == 3:
+                elif self.var[f"airkerv {e}{nr}{i}"].get() == 3:
                     # Forward/ Backscatter
                     for j in range(1, 11):
                         if room_type == ws['A' + str(j)].value:
                             K1 = float(ws['H' + str(j)].value)
-            elif self.d[f"unairkerv {e}{nr}{i}"].get() == 2:
+            elif self.var[f"unairkerv {e}{nr}{i}"].get() == 2:
                 # User-entered air kerma
                 if self.d[f"entk {e}{nr}{i}"].get() != "":
                     K1 = float(self.d[f"entk {e}{nr}{i}"].get())  # Entered kerma value (entk)
@@ -195,12 +201,12 @@ class departprimsec():
         else:
             K1 = None
         # ======== Use Factor ===========
-        if self.d[f"radiob_w {e}{nr}{i}"].get() == 1:
+        if self.var[f"radiob_w {e}{nr}{i}"].get() == 1:
             if self.d[f"use_ent {e}{nr}{i}"].get()!= "":
                 Us = float(self.d[f"use_ent {e}{nr}{i}"].get())  # Use factor (use_ent)
             else:
                 Us =None
-        elif self.d[f"radiob_w {e}{nr}{i}"].get() == 2:
+        elif self.var[f"radiob_w {e}{nr}{i}"].get() == 2:
             Us = 1
         else:
             Us = None
@@ -241,8 +247,8 @@ class departprimsec():
                 self.res[f"resmat {o}{e}"] = None
 
         # Iterate over materials and perform calculations
-        for o in range(1, self.d[f"vnumbmat {e}{nr}"].get() + 1):
-            material = self.d[f"vmater {e}{o}{nr}"].get()
+        for o in range(1, self.var[f"vnumbmat {e}{nr}"].get() + 1):
+            material = self.var[f"vmater {e}{o}{nr}"].get()
             if self.need:
                 if material == "Select Material":
                     self.need.append("Select Material")
@@ -250,10 +256,10 @@ class departprimsec():
                 self.thm[f"xbar {e}{o}{nr}"] = "\n".join(self.need)
                 self.display_results(e, o, nr, t)
             else:
-                if self.d[f"radiob_w {e}{nr}{i}"].get() == 1:
+                if self.var[f"radiob_w {e}{nr}{i}"].get() == 1:
                     ws = wb['prim abc']
                     for x in range(2, 39):
-                        if self.d[f"vsexroom {e}{nr}{i}"].get() == ws[f'A{x}'].value:
+                        if self.var[f"vsexroom {e}{nr}{i}"].get() == ws[f'A{x}'].value:
                             self.al = ws[f'B{x}'].value
                             self.bl = ws[f'C{x}'].value
                             self.cl = float(ws[f'D{x}'].value)
@@ -274,24 +280,24 @@ class departprimsec():
                             self.cw = float(ws[f'S{x}'].value)
 
                     # Preshielding calculations
-                    if self.d[f"preshvar {e}{nr}{i}"].get() == 1:
+                    if self.var[f"preshvar {e}{nr}{i}"].get() == 1:
                         ws = wb["Equiv. thickness of prim pres"]
-                        if self.d[f"radiob_pre {e}{nr}{i}"].get() == 1:
+                        if self.var[f"radiob_pre {e}{nr}{i}"].get() == 1:
                             self.xlead = float(ws['B3'].value)
                             self.xconc = float(ws['C3'].value)
                             self.xsteel = float(ws['D3'].value)
-                        elif self.d[f"radiob_pre {e}{nr}{i}"].get() == 2:
+                        elif self.var[f"radiob_pre {e}{nr}{i}"].get() == 2:
                             self.xlead = float(ws['B4'].value)
                             self.xconc = float(ws['C4'].value)
                             self.xsteel = float(ws['D4'].value)
                     else:
                         self.xlead, self.xconc, self.xsteel = 0, 0, 0
 
-                elif self.d[f"radiob_w {e}{nr}{i}"].get() == 2:
+                elif self.var[f"radiob_w {e}{nr}{i}"].get() == 2:
                     self.xlead, self.xconc, self.xsteel = 0, 0, 0
                     ws = wb['sec abc']
                     for x in range(3, 18):
-                        if self.d[f"vsexroom {e}{nr}{i}"].get() == ws[f'A{x}'].value:
+                        if self.var[f"vsexroom {e}{nr}{i}"].get() == ws[f'A{x}'].value:
                             self.al = ws[f'B{x}'].value
                             self.bl = ws[f'C{x}'].value
                             self.cl = float(ws[f'D{x}'].value)
@@ -348,12 +354,20 @@ class departprimsec():
             self.d[title_key] = ttk.Label(self.d[f"resultframe {t}{nr}"], style="AL.TLabel",
                 text=self.barn[f"lab_bar {e}{nr}"].cget("text") + ": ")
             self.d[title_key].grid(row=str(self.d[f"spot {e}{nr}"]), column=0, pady=3, padx=3, sticky="s")
-
+        if not hasattr(self, 'rdata'):
+            self.rdata = {}
         # Store the results for further use
         if isinstance(self.thm[f'xbar {e}{o}{nr}'], float):
-            self.rdata = {self.barn[f"lab_bar {e}{nr}"].cget("text"): {
-                self.d[f"vmater {e}{o}{nr}"].get(): str(round(self.thm[f"xbar {e}{o}{nr}"], 3))}}
-
+            barrier = self.barn[f"lab_bar {e}{nr}"].cget("text")
+            material = self.var[f"vmater {e}{o}{nr}"].get()
+            thickness = str(round(self.thm[f"xbar {e}{o}{nr}"], 3))
+            if f'{nr}' not in self.rdata:
+                self.rdata[f'{nr}'] = {}  # Create a dictionary for the room number if it doesn't exist
+            if barrier not in self.rdata[f'{nr}']:
+                self.rdata[f'{nr}'][barrier] = {}
+            # Add or update the inner dictionary with the material and thickness
+            self.rdata[f'{nr}'][barrier][material + " (mm)"] = thickness
+        print(self.rdata)
         self.ep += 1
 
     def depCTcal(self, e, nr, t):
@@ -367,21 +381,21 @@ class departprimsec():
         else:
             for o in range(1, 7):
                 self.res[f"resmat {o}{e}"] = None
-        for o in range(1, self.d[f"vnumbmat {e}{nr}"].get() + 1):
-            material = self.d[f"vmater {e}{o}{nr}"].get()
-            if (self.d[f"dist_var {e}{nr}"].get() != "" and float(self.d[f"dist_var {e}{nr}"].get()) != 0 and float(
-                self.d[f"bp_var {t}"].get()) != 0 and float(self.d[f"hp_var {t}"].get()) != 0 and float(
-                self.d[f"sh_var {e}{nr}"].get()) != 0 and (float(self.d[f"dlpb_var {t}"].get()) != 0 or float(
-                self.d[f"dlph_var {t}"].get()) != 0)):
-                k1sec_body = float(1.2 * (3 * 10 ** -4) * (1.4 * float(self.d[f"dlpb_var {t}"].get())))
-                k1sec_head = float((9 * 10 ** -5) * (1.4 * float(self.d[f"dlph_var {t}"].get())))
-                self.d["K "+self.barn[f"lab_bar {e}{nr}"].cget("text")+nr] = float((1 / float(self.d[f"dist_var {e}{nr}"].get())) ** 2
-                                                                         * ((self.d[f"bp_var {t}"].get() * k1sec_body)
-                                                                            + (self.d[f"hp_var {t}"].get() * k1sec_head)))
-                B = float(self.d[f"sh_var {e}{nr}"].get() / float(self.d["K "+self.barn[f"lab_bar {e}{nr}"].cget("text")+nr]))
+        for o in range(1, self.var[f"vnumbmat {e}{nr}"].get() + 1):
+            material = self.var[f"vmater {e}{o}{nr}"].get()
+            if (self.var[f"dist_var {e}{nr}"].get() != "" and float(self.var[f"dist_var {e}{nr}"].get()) != 0 and float(
+                self.var[f"bp_var {t}"].get()) != 0 and float(self.var[f"hp_var {t}"].get()) != 0 and float(
+                self.var[f"sh_var {e}{nr}"].get()) != 0 and (float(self.var[f"dlpb_var {t}"].get()) != 0 or float(
+                self.var[f"dlph_var {t}"].get()) != 0)):
+                k1sec_body = float(1.2 * (3 * 10 ** -4) * (1.4 * float(self.var[f"dlpb_var {t}"].get())))
+                k1sec_head = float((9 * 10 ** -5) * (1.4 * float(self.var[f"dlph_var {t}"].get())))
+                self.d["K "+self.barn[f"lab_bar {e}{nr}"].cget("text")+nr] = float((1 / float(self.var[f"dist_var {e}{nr}"].get())) ** 2
+                                                                         * ((self.var[f"bp_var {t}"].get() * k1sec_body)
+                                                                            + (self.var[f"hp_var {t}"].get() * k1sec_head)))
+                B = float(self.var[f"sh_var {e}{nr}"].get() / float(self.d["K "+self.barn[f"lab_bar {e}{nr}"].cget("text")+nr]))
 
                 if material == "Lead":
-                    if self.d[f"kvp_var {t}"].get() == 120:
+                    if self.var[f"kvp_var {t}"].get() == 120:
                         a = 2.246
                         b = 5.73
                         c = 0.547
@@ -391,7 +405,7 @@ class departprimsec():
                         c = 0.342
                     self.thm[f"xbar {e}{o}{nr}"] = float((1 / (a * c)) * math.log((B ** -c + (b / a)) / (1 + (b / a))))
                 elif material == "Concrete":
-                    if self.d[f"kvp_var {t}"].get() == 120:
+                    if self.var[f"kvp_var {t}"].get() == 120:
                         a = 0.0383
                         b = 0.0142
                         c = 0.658
@@ -406,15 +420,15 @@ class departprimsec():
                 self.display_results(e, o, nr, t)
             else:
                 self.need = []
-                if self.d[f"dlpb_var {t}"].get() == 0 and self.d[f"dlph_var {t}"].get() == 0:
+                if self.var[f"dlpb_var {t}"].get() == 0 and self.var[f"dlph_var {t}"].get() == 0:
                     self.need.append("zero entries")
-                if self.d[f"dist_var {e}{nr}"].get() == "":
+                if self.var[f"dist_var {e}{nr}"].get() == "":
                     self.need.append("Distance")
-                if self.d[f"bp_var {t}"].get() == 0:
+                if self.var[f"bp_var {t}"].get() == 0:
                     self.need.append("zero entries")
-                if self.d[f"hp_var {t}"].get() == 0:
+                if self.var[f"hp_var {t}"].get() == 0:
                     self.need.append("zero entries")
-                if self.d[f"sh_var {e}{nr}"].get() == 0:
+                if self.var[f"sh_var {e}{nr}"].get() == 0:
                     self.need.append("zero entries")
                 if material == "Select Material":
                     self.need.append("Select Material")
@@ -438,7 +452,7 @@ class departprimsec():
         # Store the results for further use
         if isinstance(self.thm[f'xbar {e}{o}{nr}'], float):
             self.rdata = {self.barn[f"lab_bar {e}{nr}"].cget("text"): {
-                self.d[f"vmater {e}{o}{nr}"].get(): str(round(self.thm[f"xbar {e}{o}{nr}"], 3))}}
+                self.var[f"vmater {e}{o}{nr}"].get(): str(round(self.thm[f"xbar {e}{o}{nr}"], 3))}}
 
         self.ep += 1
 
@@ -467,8 +481,7 @@ class departprimsec():
                                                            text=f"{self.thm[f'xbar {e}{o}{nr}']}")
             else:
                 self.res[f"resmat {o}{e}"] = ttk.Label(self.d[f"resultframe {t}{nr}"], style="AL.TLabel",
-                                                       text=f"{self.d[f'vmater {e}{o}{nr}'].get()}: {round(self.thm[f'xbar {e}{o}{nr}'], 2)} mm")
-
+                                                       text=f"{self.var[f'vmater {e}{o}{nr}'].get()}: {round(self.thm[f'xbar {e}{o}{nr}'], 2)} mm")
             # Handle grid placement and manage row/column positions with op
             if o < 3:
                 self.res[f"resmat {o}{e}"].grid(row=self.ep, column=o, pady=3, padx=3, sticky="w")
@@ -504,7 +517,7 @@ class departprimsec():
                                                            text=f"{self.thm[f'xbar {e}{o}{nr}']}")
             else:
                 self.res[f"resmat {o}{e}"] = ttk.Label(self.d[f"resultframe {t}{nr}"], style="AL.TLabel",
-                                                       text=f"{self.d[f'vmater {e}{o}{nr}'].get()}: {round(self.thm[f'xbar {e}{o}{nr}'], 2)} mm")
+                                                       text=f"{self.var[f'vmater {e}{o}{nr}'].get()}: {round(self.thm[f'xbar {e}{o}{nr}'], 2)} mm")
 
             # Use stored row information (spot) for placing result labels
             if o < 3:
@@ -513,4 +526,3 @@ class departprimsec():
                 self.res[f"resmat {o}{e}"].grid(row=self.d[spot_key] + 1, column=o - 2, pady=3, padx=3, sticky="w")
             else:
                 self.res[f"resmat {o}{e}"].grid(row=self.d[spot_key] + 2, column=o - 4, pady=3, padx=3, sticky="w")
-

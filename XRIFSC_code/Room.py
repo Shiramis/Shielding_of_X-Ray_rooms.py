@@ -47,9 +47,9 @@ class droom():
         self.ep = 1
         self.d["x {0}".format(str(t))] = 0
 
-        self.d["vselroom {0}".format(str(t))] = StringVar()
+        self.var["vselroom {0}".format(str(t))] = StringVar()
         self.d["selroom {0}".format(str(t))] = ttk.Combobox(master=self.d["frame_1 " + str(t)],
-                                                            textvariable=self.d["vselroom " + str(t)],
+                                                            textvariable=self.var["vselroom " + str(t)],
                                                             values=["X-Ray room", "From X-Ray room"], state="readonly")
         self.d["selroom {0}".format(str(t))].set("X-Ray room")
         self.d["nr {0}".format(str(t))]= "Design x-ray room"
@@ -59,9 +59,9 @@ class droom():
         # ==============Number of Barriers in the Room==========
         self.lanumwall = ttk.Label(master=self.d["frame_1 " + str(t)], style="AL.TLabel", text="Number of Barriers")
         self.lanumwall.grid(row=0, column=0, pady=10, padx=10, sticky="w")
-        self.d["vnumwall {0}".format(str(t))] = IntVar(value=7)
+        self.var["vnumwall {0}".format(str(t))] = IntVar(value=7)
         self.d["numwall {0}".format(str(t))] = ttk.Spinbox(master=self.d["frame_1 " + str(t)],
-                                                           textvariable=self.d["vnumwall " + str(t)], from_=7, to=50,
+                                                           textvariable=self.var["vnumwall " + str(t)], from_=7, to=50,
                                                            width=5, command=lambda: self.barriers(t))
         self.d["numwall " + str(t)].grid(row=0, column=1, pady=10, padx=10, sticky="w")
         self.barriers(t)
@@ -70,12 +70,12 @@ class droom():
         self.title_workload.grid(row=1, column=0, pady=5, padx=5, sticky="w")
         # Additional workload entry options
         self.d[f"worentry {t}"] = None
-        self.d[f"vrawork {t}"] = IntVar(value=0)
+        self.var["vrawork {t}"] = IntVar(value=0)
         self.raworkl = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Write total\nWorkload (mA min/week):",
-                                       variable=self.d[f"vrawork {t}"], value=1, command=lambda: self.workload(t))
+                                       variable=self.var["vrawork {t}"], value=1, command=lambda: self.workload(t))
         self.raworkl.grid(row=1, column=1, pady=5, padx=5, sticky="w")
         self.ranumb = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="The Number of\nPatients per week:",
-                                      variable=self.d[f"vrawork {t}"], value=2, command=lambda: self.workload(t))
+                                      variable=self.var["vrawork {t}"], value=2, command=lambda: self.workload(t))
         self.ranumb.grid(row=1, column=3, pady=5, padx=5, sticky="w")
 
         #======Export to excel========
@@ -114,7 +114,7 @@ class droom():
         numpapwe_key = f"numpapwe {t}"
         vrawork_key = f"vrawork {t}"
         # Get the value for workload type
-        workload_type = self.d.get(vrawork_key).get()
+        workload_type = self.var.get(vrawork_key).get()
         # Handle workload "Total workload"
         if workload_type == 1:
             destroy_widget(numpapwe_key)
@@ -132,7 +132,7 @@ class droom():
         import pandas as pd
 
         p = "Design x-ray room"
-        for a in range(1, self.d["vnumwall " + str(t)].get() + 1):
+        for a in range(1, self.var["vnumwall " + str(t)].get() + 1):
             self.wa[self.barn["lab_bar " + str(a) + p].cget("text")] = [
                 str(self.xlmat["thic " + str(a) + str(1) + p]), str(self.xlmat["thic " + str(a) + str(2) + p]),
                 str(self.xlmat["thic " + str(a) + str(3) + p]), str(self.xlmat["thic " + str(a) + str(4) + p]),
