@@ -3,7 +3,6 @@ from tkinter import ttk
 import pandas as pd
 import math
 import os
-
 from numpy.ma.core import append
 from openpyxl import load_workbook
 import os
@@ -65,8 +64,8 @@ class departprimsec():
                 self.depcalc(ce, cnr, ci, t)
 
     def calkerma(self, e, nr, i, t):
-        if self.d[f"entryd {e}{nr}{i}"].get() != "":
-            D = float(self.d[f"entryd {e}{nr}{i}"].get()) # Distance (entryd)
+        if self.ent[f"entryd {e}{nr}{i}"].get() != "":
+            D = float(self.ent[f"entryd {e}{nr}{i}"].get()) # Distance (entryd)
             if self.barn[f"lab_bar {e}{nr}"].cget("text") == "Floor": #from fig. 4.4 NCRP 147
                 D += 1.7
             elif self.barn[f"lab_bar {e}{nr}"].cget("text") == "Ceiling":
@@ -77,69 +76,21 @@ class departprimsec():
             D = None
         # ======== Workload ===========
         if f"othwork {e}{nr}{i}" in self.d:
-            if self.var[f"oworkvar {e}{nr}{i}"] == 1: #If checks different workload
-                if self.var[f"workv {e}{nr}{i}"].get() == 2:
-                    if self.d[f"numpapwe {e}{nr}{i}"].get() != '':
-                        n = int(self.d[f"numpapwe {e}{nr}{i}"].get())  # Number of patients (numpapwe)
-                    else:
-                        n =None
-                elif self.var[f"workv {e}{nr}{i}"].get() == 1:# Workload option
-                    ws = wb['Workload']
-                    for x in range(1, 13):
-                        if self.var[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:  # X-ray room selection (vsexroom)
-                            if self.d[f"worentry {e}{nr}{i}"].get() != '':
-                                n = float(self.d[f"worentry {e}{nr}{i}"].get()) / ws['B' + str(x)].value  # Workload entry (worentry)
-                            else:
-                                n = None
-                    if self.var[f"vselxray {e}{nr}{i}"].get() == 2:  # X-ray selection (vselxray)
-                        if self.d[f"worentry {e}{nr}{i}"].get() != '':
-                            n = float(self.d[f"worentry {e}{nr}{i}"].get()) / 2.5  # Workload entry (worentry)
-                        else:
-                            n = None
-            else:
-                # The general workload
-                if self.var[f"vrawork {t}"].get() == 2:
-                    if self.d[f"numpapwe {t}"].get() != '':
-                        n = int(self.d[f"numpapwe {t}"].get())
-                    else:
-                        n = None
-                elif self.var[f"vrawork {t}"].get() == 1:
-                    ws = wb['Workload']
-                    for x in range(1, 13):
-                        if self.var[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:
-                            if self.d[f"worentry {t}"].get() != '':
-                                n = float(self.d[f"worentry {t}"].get()) / ws['B' + str(x)].value
-                            else:
-                                n = None
-                    if self.var[f"vselxray {e}{nr}{i}"].get() == 2:
-                        if self.d[f"worentry {t}"].get() != '':
-                            n = float(self.d[f"worentry {t}"].get()) / 2.5
-                        else:
-                            n = None
+            if self.var[f"workv {e}{nr}{i}"].get() == 2: # Number of patient
+                if self.d[f"numpapwe {e}{nr}{i}"].get() != '':
+                    n = int(self.d[f"numpapwe {e}{nr}{i}"].get())  # Number of patients (numpapwe)
                 else:
-                    n = None
-        else:
-            # The general workload
-            if self.var[f"vrawork {t}"].get() == 2:
-                if self.d[f"numpapwe {t}"].get() != '':
-                    n = int(self.d[f"numpapwe {t}"].get())
-                else:
-                    n = None
-            elif self.var[f"vrawork {t}"].get() == 1:
+                    n =None
+            elif self.var[f"workv {e}{nr}{i}"].get() == 1:# total Workload option
                 ws = wb['Workload']
                 for x in range(1, 13):
-                    if self.var[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:
-                        if self.d[f"worentry {t}"].get() != '':
-                            n = float(self.d[f"worentry {t}"].get()) / ws['B' + str(x)].value
+                    if self.var[f"vsexroom {e}{nr}{i}"].get() == ws['A' + str(x)].value:  # X-ray room selection (vsexroom)
+                        if self.d[f"worentry {e}{nr}{i}"].get() != '':
+                            n = float(self.d[f"worentry {e}{nr}{i}"].get()) / ws['B' + str(x)].value  # Workload entry (worentry)
                         else:
                             n = None
-                if self.var[f"vselxray {t}"].get() == 2:
-                    if self.d[f"worentry {t}"].get() != '':
-                        n = float(self.d[f"worentry {t}"].get()) / 2.5
-                    else:
-                        n = None
-            else:
-                n = None
+        else:
+            n = None
         # ======== Occupancy Factor T ===========
         if self.var[f"vraoccup {e}{nr}"].get() == 1:  # Occupancy option (vraoccup)
             if self.d[f"occupentry {e}{nr}"].get() != '':
@@ -156,8 +107,8 @@ class departprimsec():
         # ======== K1 "air kerma" ===========
         if self.var[f"radiob_w {e}{nr}{i}"].get() == 1:
         # primary unshielded air kerma
-            if self.d[f"entk {e}{nr}{i}"].get() != "":
-                K1 = float(self.d[f"entk {e}{nr}{i}"].get())  # Entered kerma value (entk)
+            if self.ent[f"entk {e}{nr}{i}"].get() != "":
+                K1 = float(self.ent[f"entk {e}{nr}{i}"].get())  # Entered kerma value (entk)
             else:
                 K1 = None
         elif self.var[f"radiob_w {e}{nr}{i}"].get() == 2:
@@ -192,8 +143,8 @@ class departprimsec():
                             K1 = float(ws['H' + str(j)].value)
             elif self.var[f"unairkerv {e}{nr}{i}"].get() == 2:
                 # User-entered air kerma
-                if self.d[f"entk {e}{nr}{i}"].get() != "":
-                    K1 = float(self.d[f"entk {e}{nr}{i}"].get())  # Entered kerma value (entk)
+                if self.ent[f"entk {e}{nr}{i}"].get() != "":
+                    K1 = float(self.ent[f"entk {e}{nr}{i}"].get())  # Entered kerma value (entk)
                 else:
                     K1 = None
             else:
@@ -202,8 +153,8 @@ class departprimsec():
             K1 = None
         # ======== Use Factor ===========
         if self.var[f"radiob_w {e}{nr}{i}"].get() == 1:
-            if self.d[f"use_ent {e}{nr}{i}"].get()!= "":
-                Us = float(self.d[f"use_ent {e}{nr}{i}"].get())  # Use factor (use_ent)
+            if self.ent[f"use_ent {e}{nr}{i}"].get()!= "":
+                Us = float(self.ent[f"use_ent {e}{nr}{i}"].get())  # Use factor (use_ent)
             else:
                 Us =None
         elif self.var[f"radiob_w {e}{nr}{i}"].get() == 2:
@@ -354,21 +305,32 @@ class departprimsec():
             self.d[title_key] = ttk.Label(self.d[f"resultframe {t}{nr}"], style="AL.TLabel",
                 text=self.barn[f"lab_bar {e}{nr}"].cget("text") + ": ")
             self.d[title_key].grid(row=str(self.d[f"spot {e}{nr}"]), column=0, pady=3, padx=3, sticky="s")
-        if not hasattr(self, 'rdata'):
-            self.rdata = {}
-        # Store the results for further use
-        if isinstance(self.thm[f'xbar {e}{o}{nr}'], float):
-            barrier = self.barn[f"lab_bar {e}{nr}"].cget("text")
-            material = self.var[f"vmater {e}{o}{nr}"].get()
-            thickness = str(round(self.thm[f"xbar {e}{o}{nr}"], 3))
-            if f'{nr}' not in self.rdata:
-                self.rdata[f'{nr}'] = {}  # Create a dictionary for the room number if it doesn't exist
-            if barrier not in self.rdata[f'{nr}']:
-                self.rdata[f'{nr}'][barrier] = {}
-            # Add or update the inner dictionary with the material and thickness
-            self.rdata[f'{nr}'][barrier][material + " (mm)"] = thickness
-        print(self.rdata)
         self.ep += 1
+
+        for o in range(1, self.var[f"vnumbmat {e}{nr}"].get() + 1):
+            if not hasattr(self, 'rdata'):
+                self.rdata = {}
+            # Store the results for further use
+            if isinstance(self.thm[f'xbar {e}{o}{nr}'], float):
+                barrier = self.barn[f"lab_bar {e}{nr}"].cget("text")
+                material = self.var[f"vmater {e}{o}{nr}"].get()
+                thickness = str(round(self.thm[f"xbar {e}{o}{nr}"], 3))
+                # Ensure room number exists in rdata
+                if f'{nr}' not in self.rdata:
+                    self.rdata[f'{nr}'] = {}
+                # Ensure barrier exists for the room
+                if barrier not in self.rdata[f'{nr}']:
+                    self.rdata[f'{nr}'][barrier] = {}
+                # Add or update the material thickness without overwriting
+                material_key = material + " (mm)"
+                if material_key in self.rdata[f'{nr}'][barrier]:
+                    # Material already exists, update its value
+                    self.rdata[f'{nr}'][barrier][material_key] = thickness
+                else:
+                    # Add new material to the barrier
+                    self.rdata[f'{nr}'][barrier][material_key] = thickness
+            print(self.rdata)
+
 
     def depCTcal(self, e, nr, t):
         title_key = f"titleresul {e}{nr}"
@@ -461,6 +423,8 @@ class departprimsec():
         spot_key = f"spot {e}{nr}"
         if spot_key not in self.d:
             self.d[spot_key] = self.ep  # or another default value
+        if title_key not in self.d:
+            self.d[title_key] = None
         if self.d[title_key] is None:
             if isinstance(self.thm[f'xbar {e}{o}{nr}'], str):
                 if self.need:

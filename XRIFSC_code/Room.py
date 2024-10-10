@@ -13,15 +13,29 @@ class droom():
         #self.quickbutton.destroy()
         self.chooseCal.destroy()
         p = "Design x-ray room"
-        t = 0
+        self.i += 1
+        t = self.i
         if self.depnote is None:
             self.depnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-            self.depnote.configure(width=955, height=728)
+            self.depnote.configure(width=980, height=728)
             self.depnote.grid(row=0, sticky="w")
-        self.roomframe = ttk.Frame(self.depnote)
-        self.roomframe.pack(fill=BOTH, expand=1)
-        self.depnote.add(self.roomframe, text="X-Ray Room")
-        #======Room scrollbar=========
+            # Bind the tab change event to sync with results
+            self.depnote.bind("<<NotebookTabChanged>>", self.sync_results_tab)
+        self.roomsframe = ttk.Frame(self.depnote)
+        self.roomsframe.pack(fill=BOTH, expand=1)
+        self.depnote.add(self.roomsframe, text=p)
+
+        self.d[f"labelname {self.i}"] = ttk.Label(master=self.roomsframe, style="AL.TLabel",
+                                                  text=f"X-Ray Room{self.i}:")
+        self.d[f"resframe {self.i}"] = None
+        self.var["numrooms"] = IntVar(value=2)
+        self.var[f"vselroom {self.i}"] = StringVar(value = "X-Ray room")
+        self.ent[f"name_room {self.i}"] = StringVar(value = "X-Ray Room")
+        self.d[f"run {self.i}"] = False
+        self.desroom(self.i)
+        self.roomsframe.destroy()
+
+        '''#======Room scrollbar=========
         self.roomcanv= Canvas(self.roomframe)
 
         self.xscrollroom = ttk.Scrollbar(self.roomframe, orient=HORIZONTAL, command=self.roomcanv.xview)
@@ -34,10 +48,7 @@ class droom():
         self.d["frame_1 {0}".format(str(t))] = ttk.Frame(self.roomcanv)
         self.d["frame_1 " + str(t)].bind('<Configure>', lambda e: self.roomcanv.configure(scrollregion=self.roomcanv.bbox("all")))
         self.roomcanv.create_window((0,0), window=self.d["frame_1 " + str(t)], anchor="nw")
-        if self.resnote is None:
-            self.resnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-            self.resnote.grid(row=0, column=1, sticky="w")
-            self.resnote.configure(width=562, height=728)
+        
 
         #==========αρχικοποίηση τιμών =================
         self.d["selxroom {0}".format(str(t))] = None
@@ -65,23 +76,9 @@ class droom():
                                                            width=5, command=lambda: self.barriers(t))
         self.d["numwall " + str(t)].grid(row=0, column=1, pady=10, padx=10, sticky="w")
         self.barriers(t)
-        # Add workload
-        self.title_workload = ttk.Label(self.d[f"frame_1 {t}"], style="BL.TLabel", text="Workload:")
-        self.title_workload.grid(row=1, column=0, pady=5, padx=5, sticky="w")
-        # Additional workload entry options
-        self.d[f"worentry {t}"] = None
-        self.var["vrawork {t}"] = IntVar(value=0)
-        self.raworkl = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="Write total\nWorkload (mA min/week):",
-                                       variable=self.var["vrawork {t}"], value=1, command=lambda: self.workload(t))
-        self.raworkl.grid(row=1, column=1, pady=5, padx=5, sticky="w")
-        self.ranumb = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="The Number of\nPatients per week:",
-                                      variable=self.var["vrawork {t}"], value=2, command=lambda: self.workload(t))
-        self.ranumb.grid(row=1, column=3, pady=5, padx=5, sticky="w")
-
         #======Export to excel========
-        self.exp_but = ttk.Button(master=self.d["frame_1 " + str(t)], text="Export to Excel", command=lambda : self.exp_room(t))
-        self.exp_but.grid(row=1, column=5, pady=10, padx=10, sticky="w")
-
+        self.exp_but = ttk.Button(master=self.d["frame_1 " + str(t)], text="Export to Excel", command=lambda : self.exp_dep(t))
+        self.exp_but.grid(row=0, column=5, pady=10, padx=10, sticky="w")
         # ==========Results==============
         self.d["resframe {0}".format(str(t))] = ttk.Frame(self.resnote)
         self.d["resframe " + str(t)].pack()
@@ -102,35 +99,10 @@ class droom():
         self.reshield.grid(sticky="w")
         #======Destroy button======
         self.closBut = ttk.Button(self.roomframe, text="X", width=4, command=lambda:self.closeroom(t) )
-        self.closBut.pack()
-
-    def workload(self, t):
-        def destroy_widget(widget_key):
-            if self.d.get(widget_key) is not None:
-                self.d[widget_key].destroy()
-        # Widget keys
-        frame_key = f"frame_1 {t}"
-        worentry_key = f"worentry {t}"
-        numpapwe_key = f"numpapwe {t}"
-        vrawork_key = f"vrawork {t}"
-        # Get the value for workload type
-        workload_type = self.var.get(vrawork_key).get()
-        # Handle workload "Total workload"
-        if workload_type == 1:
-            destroy_widget(numpapwe_key)
-            destroy_widget(worentry_key)
-            self.d[worentry_key] = ttk.Entry(master=self.d[frame_key], width=10)
-            self.d[worentry_key].grid(row=1, column=2, pady=5, padx=5)
-        # Handle workload "Number of Patients"
-        elif workload_type == 2:
-            destroy_widget(worentry_key)
-            destroy_widget(numpapwe_key)
-            self.d[numpapwe_key] = ttk.Entry(master=self.d[frame_key], width=10)
-            self.d[numpapwe_key].grid(row=1, column=4, pady=5, padx=5, sticky="w")
+        self.closBut.pack()'''
 
     def exp_room(self, t):
         import pandas as pd
-
         p = "Design x-ray room"
         for a in range(1, self.var["vnumwall " + str(t)].get() + 1):
             self.wa[self.barn["lab_bar " + str(a) + p].cget("text")] = [
@@ -140,7 +112,6 @@ class droom():
         self.d["room_data {0}".format(str(t))] = pd.DataFrame(data=self.wa,
                                                               index=["Lead", "Concrete", "Gypsum Wallboard",
                                                                      "Steel", "Plate Glass", "Wood"])
-
         user_home = os.path.expanduser('~')  # Get user's home directory
         excel_file_path = os.path.join(user_home, 'Department.xlsx')
 

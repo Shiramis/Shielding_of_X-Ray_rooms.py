@@ -5,11 +5,13 @@ from tkinter import font
 from tkinter import filedialog
 from Department import ddepartment
 from Depcalculations import departprimsec
-from QuickCalculations import dqprimsec
-from Quickcal import dquick
 from Department_defs import dep_defs
+from Secondary import sec_widgets
+from Primary import prim_widgets
+from OccupancyFactor import occupation_widgets
 from Room import droom
 from CTroom import CT_Room
+
 import json
 
 root = Tk()
@@ -23,7 +25,7 @@ style.configure(root, background="#f7faf9")
 
 
 
-class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room):
+class App(ddepartment, dep_defs, sec_widgets, prim_widgets, occupation_widgets, departprimsec, droom, CT_Room):
 
     def __init__(self, master):
         # ============Menu Bar==================
@@ -46,6 +48,7 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room):
         self.wa = {}
         self.col = {}
         self.var = {}
+        self.ent = {}
         # ===========File=============
         self.file_menu = Menu(main_menubar, tearoff=0)
         self.newoptions = Menu(main_menubar, tearoff=0)
@@ -129,7 +132,7 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room):
 
         self.style.configure("TRadiobutton", background="#f7faf9", foreground='#171719', font='Helvetica 11')
         self.style.configure("TCheckbutton", background="#f7faf9", foreground='#171719', font='Helvetica 11')
-        self.style.configure("TSpinbox", background="#f7faf9", foreground='#000000', font='Helvetica 11')
+        self.style.configure("TSpinbox", background="#f7faf9", foreground='#171719', font='Helvetica 11')
         self.style.configure("TCombobox", background="#f7faf9", foreground='#000000', font='Helvetica 11')
         self.style.configure("TMenubutton", background="#ffffff", foreground='#000000', font='Helvetica 9')
         self.style.configure("TScrollbar", background="#f7faf9", foreground="#f7faf9")
@@ -180,7 +183,6 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room):
                 for key, value in loaded_data.items():
                     if key in self.d:
                         widget = self.d[key]
-
                         # Handle different widget types
                         if isinstance(widget, Entry):  # For Entry widgets
                             widget.delete(0, END)  # Clear the existing content
