@@ -2,10 +2,9 @@ import tkinter
 import subprocess
 from tkinter import *
 from tkinter import ttk
-from XRIFSC_code.Department import ddepartment
 from idlelib.tooltip import Hovertip
 
-class dep_defs(ddepartment):
+class dep_defs():
 
     def barriers(self, t):
         current_barriers = self.d[f"x {t}"]

@@ -46,7 +46,6 @@ class ddepartment():
         self.num_rooms = ttk.Spinbox(master=self.roomsframe, from_=0, to=10000, increment=1,
                                      textvariable=self.var["numrooms"], width=5, command=self.createrooms)
         self.num_rooms.grid(row=1, column=1, pady=10, padx=20, sticky="e")
-
         # Call to create rooms
         self.createrooms()
 
@@ -65,7 +64,7 @@ class ddepartment():
                 # Create and place the room selection combobox
                 self.var[f"vselroom {self.i}"] = StringVar()
                 self.d[f"selroom {self.i}"] = ttk.Combobox(master=self.roomsframe,
-                    textvariable=self.var[f"vselroom {self.i}"], values=["X-Ray room", "CT Room"], state="readonly")
+                    textvariable=self.var[f"vselroom {self.i}"], values=["X-Ray Room", "CT Room"], state="readonly")
                 self.d[f"selroom {self.i}"].grid(row=2 + self.i, column=2, pady=10, padx=20, sticky="w")
                 self.d[f"selroom {self.i}"].set("Shield room")
                 # Create and place the design button
@@ -84,9 +83,6 @@ class ddepartment():
             while self.i > self.var["numrooms"].get():
                 # Destroy room components for the current room
                 self.destroy_widgets([f"labelname {self.i}", f"name_room {self.i}", f"selroom {self.i}", f"crroomb {self.i}"])
-                # Destroy method selection if uncommented
-                # self.d[f"method {self.i}"].destroy()
-                # If room has been run, destroy additional components
                 if self.d[f"run {self.i}"]:
                     self.destroy_widgets([f"newroomf {self.i}", f"resframe {self.i}"])
                     # If only one room exists, destroy the result note
@@ -154,51 +150,50 @@ class ddepartment():
                 self.closBut = ttk.Button(self.d[f"frame_1 {t}"], text="X", width=4,
                                           command=lambda: self.closedeproom(t))
                 self.closBut.grid(row=0, column=100, pady=5, padx=5, sticky="e")
+                # Setup the results tab
+                self.setup_results(t)
                 # Setup for CT Room type
                 if room_type == "CT Room":
                     self.setup_ct_room(t)
-                # Setup the results tab
-                self.setup_results(t)
             # Select the current room and results in the notebook
             self.depnote.select(self.d[f"newroomf {t}"])
             self.resnote.select(self.d[f"resframe {t}"])
 
     def setup_results(self, t):
-        # Add result frame for each room
-        self.d[f"resframe {t}"] = ttk.Frame(self.resnote)
-        self.d[f"resframe {t}"].pack()
-        self.resnote.add(self.d[f"resframe {t}"], text=f"Results of {self.ent[f'name_room {t}'].get()}")
+        """Set up the results tab and associated widgets for the given room."""
         # ==========Results==============
         if self.d[f"resframe {t}"] is None:
             self.d[f"resframe {t}"] = ttk.Frame(self.resnote)
             self.d[f"resframe {t}"].pack()
-
         self.resnote.add(self.d[f"resframe {t}"], text=f"Results of {self.ent[f'name_room {t}'].get()}")
-
-        # ======Results scrollbar=========
-        self.rescanv = Canvas(self.d[f"resframe {t}"])
-
-        self.scrollres = ttk.Scrollbar(self.d[f"resframe {t}"], orient=VERTICAL, command=self.rescanv.yview)
-        self.scrollres.pack(side=RIGHT, fill=Y)
-
-        self.xscrollres = ttk.Scrollbar(self.d[f"resframe {t}"], orient=HORIZONTAL, command=self.rescanv.xview)
-        self.xscrollres.pack(side=BOTTOM, fill=X)
-
-        self.rescanv.configure(yscrollcommand=self.scrollres.set, xscrollcommand=self.xscrollres.set, bg="#f7faf9")
-        self.rescanv.pack(side=LEFT, fill=BOTH, expand=1)
-
-        # =========Results tab===========================
-        self.d[f"resultframe {t}{self.d[f'nr {t}']}"] = ttk.Frame(self.rescanv)
-        self.d[f"resultframe {t}{self.d[f'nr {t}']}"].bind('<Configure>', lambda e: self.rescanv.configure(
-            scrollregion=self.rescanv.bbox("all")))
-        self.rescanv.create_window((0, 0), window=self.d[f"resultframe {t}{self.d[f'nr {t}']}"], anchor="nw")
-
-        self.reshield = ttk.Label(self.d[f"resultframe {t}{self.d[f'nr {t}']}"], style="BL.TLabel",
-                                  text="The Shielding of:")
+        self.d[f"resframe {t}"].bind("<MouseWheel>", lambda event: self.on_vertical_scroll(event, t))
+        # Set up the results canvas and scrollbars
+        self.setup_results_scrollbars(t)
+        # Create the content frame inside the results tab
+        result_frame_key = f"resultframe {t}{self.d[f'nr {t}']}"
+        self.d[result_frame_key] = ttk.Frame(self.rescanv)
+        self.d[result_frame_key].bind('<Configure>',
+                                      lambda e: self.rescanv.configure(scrollregion=self.rescanv.bbox("all")))
+        # Add the result frame to the canvas
+        self.rescanv.create_window((0, 0), window=self.d[result_frame_key], anchor="nw")
+        # Add result label
+        self.reshield = ttk.Label(self.d[result_frame_key], style="BL.TLabel", text="The Shielding of:")
         self.reshield.grid(sticky="w")
+        # Mark the room as initialized and select the relevant tabs
         self.d[f"run {t}"] = True
         self.depnote.select(self.d[f"newroomf {t}"])
         self.resnote.select(self.d[f"resframe {t}"])
+
+    def setup_results_scrollbars(self, t):
+        """Set up the scrollbars for the results frame."""
+        self.rescanv = Canvas(self.d[f"resframe {t}"])
+        self.scrollres = ttk.Scrollbar(self.d[f"resframe {t}"], orient=VERTICAL, command=self.rescanv.yview)
+        self.scrollres.pack(side=RIGHT, fill=Y)
+        self.xscrollres = ttk.Scrollbar(self.d[f"resframe {t}"], orient=HORIZONTAL, command=self.rescanv.xview)
+        self.xscrollres.pack(side=BOTTOM, fill=X)
+        # Configure the canvas to use the scrollbars
+        self.rescanv.configure(yscrollcommand=self.scrollres.set, xscrollcommand=self.xscrollres.set, bg="#f7faf9")
+        self.rescanv.pack(side=LEFT, fill=BOTH, expand=1)
 
     def sync_results_tab(self, event):
         selected_room_tab = self.depnote.index(self.depnote.select())
@@ -250,7 +245,6 @@ class ddepartment():
                     del self.ent[key]
                 except:
                     del self.ent[key]
-
     # Centralized scroll functions
     def on_vertical_scroll(self, event, t):
         system = platform.system()

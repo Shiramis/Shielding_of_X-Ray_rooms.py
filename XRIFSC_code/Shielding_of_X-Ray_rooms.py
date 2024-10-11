@@ -58,7 +58,6 @@ class App(ddepartment, dep_defs, sec_widgets, prim_widgets, occupation_widgets, 
         """Setup the menu bar and its associated commands."""
         main_menubar = Menu(self.master)
         self.master.configure(menu=main_menubar)
-
         # File Menu
         self.file_menu = Menu(main_menubar, tearoff=0)
         main_menubar.add_cascade(label="File", menu=self.file_menu)
@@ -73,12 +72,10 @@ class App(ddepartment, dep_defs, sec_widgets, prim_widgets, occupation_widgets, 
         self.file_menu.add_command(label="Save as...", command=self.save)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Exit", command=self.master.quit)
-
         # Help Menu
         self.help_menu = Menu(main_menubar, tearoff=0)
         main_menubar.add_cascade(label="Help", menu=self.help_menu)
         self.help_menu.add_command(label="NCRP Report No. 147", command=self.opencpr)
-        self.help_menu.add_command(label="BIR 2012", command=self.openbir)
 
     def setup_main_frame_and_scrollbar(self):
         """Set up the main frame and the scrollbar for the main window."""
@@ -108,7 +105,6 @@ class App(ddepartment, dep_defs, sec_widgets, prim_widgets, occupation_widgets, 
                                      command=self.creatroom)
         self.CTbutton = ttk.Button(master=self.new_main_Frame, style="AL.TButton", text="CT Room",
                                    command=self.creatCTroom)
-
         # Packing buttons
         self.chooseCal.pack(anchor="c", pady=10, padx=700)
         self.depbutton.pack(anchor="c", pady=10, padx=700)
@@ -132,6 +128,7 @@ class App(ddepartment, dep_defs, sec_widgets, prim_widgets, occupation_widgets, 
         self.style.configure("BL.TNotebook", background="#f7faf9", foreground="#f7faf9")
 
         # Label Styles
+        self.style.configure("TLabel", background="#f7faf9", foreground='#171719', font='Helvetica 12')
         self.style.configure("BL.TLabel", background="#f7faf9", foreground='#171719', font='Helvetica 14',
                              weight='bold')
         self.style.configure("CL.TLabel", background="#2c3b47", foreground='#f6f8f8', font='Helvetica 14',
@@ -151,9 +148,6 @@ class App(ddepartment, dep_defs, sec_widgets, prim_widgets, occupation_widgets, 
     def opencpr(self):
             self.path= "5_NCRP_147_2004.pdf"
             os.system(self.path)
-    def openbir(self):
-        self.path= "book.9780905749747.pdf"
-        os.system(self.path)
 
     def save(self):
         # Open a file dialog to select the file to save
