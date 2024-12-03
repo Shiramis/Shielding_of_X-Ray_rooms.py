@@ -41,7 +41,7 @@ class droom():
         labb.grid(row=0, column=0, pady=6.5, padx=5, sticky="w")
 
         # Initialize tracking of the previous number of barriers
-        self.d[f"prev_num_barriers {index}{room_number}"] = 0
+        self.var[f"prev_num_barriers {index}{room_number}"] = 0
 
         # Spinbox for the number of barriers
         self.var[f"num_barriers_var {index}{room_number}"] = IntVar(value=1)  # Default to 1
@@ -61,7 +61,7 @@ class droom():
     def _create_barrier_widgets(self, index, room_number, t):
         """Dynamically create or delete barrier-related widgets based on the selected number in the Spinbox."""
         num_barriers = self.var[f"num_barriers_var {index}{room_number}"].get()
-        prev_num_barriers = self.d[f"prev_num_barriers {index}{room_number}"]
+        prev_num_barriers = self.var[f"prev_num_barriers {index}{room_number}"]
 
         if num_barriers > prev_num_barriers:
             # Create widgets for the new barriers
@@ -106,7 +106,7 @@ class droom():
                 self.destroy_widgets(vars_to_delete)
 
         # Update the previous number of barriers
-        self.d[f"prev_num_barriers {index}{room_number}"] = num_barriers
+        self.var[f"prev_num_barriers {index}{room_number}"] = num_barriers
 
     def XrRoom(self, e, nr, i):
         # Access frequently used keys

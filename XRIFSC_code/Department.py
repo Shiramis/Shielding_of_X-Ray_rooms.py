@@ -196,12 +196,23 @@ class ddepartment():
         self.rescanv.pack(side=LEFT, fill=BOTH, expand=1)
 
     def sync_results_tab(self, event):
-        selected_room_tab = self.depnote.index(self.depnote.select())
-        result_frame_key = f"resframe {selected_room_tab}"
-        if result_frame_key in self.d:
-            self.resnote.select(self.d[result_frame_key])
-        else:
-            pass
+        # Ensure self.depnote is initialized
+        if not self.depnote or not self.depnote.tabs():
+            print("Depnote is not properly initialized or has no tabs.")
+            return
+
+        try:
+            # Get the selected tab index
+            selected_room_tab = self.depnote.index(self.depnote.select())
+            result_frame_key = f"resframe {selected_room_tab}"
+
+            # Check if the key exists in self.d
+            if result_frame_key in self.d:
+                self.resnote.select(self.d[result_frame_key])
+            else:
+                print(f"No corresponding result frame for key: {result_frame_key}")
+        except _tkinter.TclError as e:
+            print(f"Error in sync_results_tab: {e}")
 
     def exp_dep(self, t):
         # Prepare data for export

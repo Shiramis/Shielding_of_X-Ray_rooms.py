@@ -35,7 +35,7 @@ class dep_defs():
             # Select Materials label
             self.d[f"matlab {index}{room_number}"] = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
                                     text="Select Materials:")
-            rowm = 8 if self.var[f"vselroom {t}"].get() == "CT Room" else 99
+            rowm = 1 if self.var[f"vselroom {t}"].get() == "CT Room" else 99
 
             self.d[f"matlab {index}{room_number}"].grid(row=rowm, column=0, padx=5, pady=6.5, sticky="w")
 
@@ -207,8 +207,8 @@ class dep_defs():
                     if self.d[m_key] < 3:
                         self.d[f"matlab {e}{self.d[m_key]}"] = ttk.Label(self.d[f"barrierf {e}{nr}"],
                             text=f"#{self.d[m_key]}:")
-                        self.d[f"matlab {e}{self.d[m_key]}"].grid(row=10, column=-1 + self.d[m_key], sticky="w")
-                        self.d[f"mater {e}{self.d[m_key]}"].grid(row=10, column=-1 + self.d[m_key], pady=6.5, padx=25,
+                        self.d[f"matlab {e}{self.d[m_key]}"].grid(row=2, column=-1 + self.d[m_key], sticky="w")
+                        self.d[f"mater {e}{self.d[m_key]}"].grid(row=2, column=-1 + self.d[m_key], pady=6.5, padx=25,
                             sticky="s")
 
             # Destroy extra widgets if material count exceeds the required number

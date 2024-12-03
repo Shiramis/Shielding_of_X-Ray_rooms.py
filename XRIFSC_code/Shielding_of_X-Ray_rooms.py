@@ -134,6 +134,7 @@ class App(ddepartment, dep_defs, sec_widgets, prim_widgets, occupation_widgets, 
         self.style.configure("CL.TLabel", background="#2c3b47", foreground='#f6f8f8', font='Helvetica 14',
                              weight='bold')
         self.style.configure("AL.TLabel", background="#f7faf9", foreground='#171719', font='Helvetica 12')
+        self.style.configure("AL2.TLabel", background="#ebf2f2", foreground='#171719', font='Helvetica 12')
         self.style.configure("BL2.TLabel", background="#f7faf9", foreground='#171719', font=('Helvetica', 12, 'bold'))
         self.style.configure("RL.TLabel", background="#f7faf9", foreground='#f71616', font='Helvetica 12')
 
