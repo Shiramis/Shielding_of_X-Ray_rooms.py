@@ -331,9 +331,19 @@ class departprimsec():
                     self.rdata[f'{nr}'][barrier][material_key] = thickness
             print(self.rdata)
 
-
     def depCTcal(self, e, nr, t):
         title_key = f"titleresul {e}{nr}"
+        # Assign variable names for better readability
+        dist_var = self.var[f"dist_var {e}{nr}"].get()
+        bp_var = self.var[f"bp_var {t}"].get()
+        hp_var = self.var[f"hp_var {t}"].get()
+        sh_var = self.var[f"sh_var {e}{nr}"].get()
+        dlpb_var = self.var[f"dlpb_var {t}"].get()
+        dlph_var = self.var[f"dlph_var {t}"].get()
+        numbodyp = self.var[f"numbodyscans {t}"].get() # the number of body phases
+        numheadp = self.var[f"numheadscans {t}"].get() # the number of head phases
+        kvp_var = self.var[f"kvp_var {t}"].get()
+        T = self.var[f"occup {e}{nr}"].get()
         # Destroy existing material labels if they exist
         if self.d.get(title_key) is not None:
             for o in range(1, 7):
@@ -343,61 +353,76 @@ class departprimsec():
         else:
             for o in range(1, 7):
                 self.res[f"resmat {o}{e}"] = None
+
         for o in range(1, self.var[f"vnumbmat {e}{nr}"].get() + 1):
             material = self.var[f"vmater {e}{o}{nr}"].get()
-            if (self.var[f"dist_var {e}{nr}"].get() != "" and float(self.var[f"dist_var {e}{nr}"].get()) != 0 and float(
-                self.var[f"bp_var {t}"].get()) != 0 and float(self.var[f"hp_var {t}"].get()) != 0 and float(
-                self.var[f"sh_var {e}{nr}"].get()) != 0 and (float(self.var[f"dlpb_var {t}"].get()) != 0 or float(
-                self.var[f"dlph_var {t}"].get()) != 0)):
-                k1sec_body = float(1.2 * (3 * 10 ** -4) * (1.4 * float(self.var[f"dlpb_var {t}"].get())))
-                k1sec_head = float((9 * 10 ** -5) * (1.4 * float(self.var[f"dlph_var {t}"].get())))
-                self.d["K "+self.barn[f"lab_bar {e}{nr}"].cget("text")+nr] = float((1 / float(self.var[f"dist_var {e}{nr}"].get())) ** 2
-                                                                         * ((self.var[f"bp_var {t}"].get() * k1sec_body)
-                                                                            + (self.var[f"hp_var {t}"].get() * k1sec_head)))
-                B = float(self.var[f"sh_var {e}{nr}"].get() / float(self.d["K "+self.barn[f"lab_bar {e}{nr}"].cget("text")+nr]))
 
+            # Calculation condition check
+            if (dist_var != "" and float(dist_var) != 0 and float(bp_var) != 0 and float(hp_var) != 0 and float(
+                sh_var) != 0 and (float(dlpb_var) != 0 or float(dlph_var) != 0)):
+                # Calculate total contributions for body scans
+                total_k1_body = 0
+                k1_body = 1.2 * (3e-4) * float(dlpb_var)
+                for i in range(1, numbodyp + 1):
+                    # Fetch the user-defined percentage for phase i
+                    per_phase_body = self.var[
+                        f"perbodyscans {t}{i - 1}"].get()  # Use i-1 because phases are zero-indexed the code
+                    # Body scans contribution for phase i
+                    total_k1_body += (per_phase_body / 100) * k1_body
+                # Calculate total contributions for head scans
+                total_k1_head = 0
+                k1_head = (9e-5) * float(dlph_var)
+                for i in range(1, numheadp + 1):
+                    # Fetch the user-defined percentage for phase i
+                    per_phase_head = self.var[
+                        f"perheadscans {t}{i - 1}"].get()
+                    # Head scans contribution for phase i
+                    total_k1_head += (per_phase_head / 100) * k1_head
+
+                K_l = f"K {self.barn[f'lab_bar {e}{nr}'].cget('text')}{nr}"
+                self.d[K_l] = float((1 / float(T)*float(dist_var)) ** 2 * ((float(bp_var) * total_k1_body) + (float(hp_var) * total_k1_head)))
+                B = float(sh_var) / float(self.d[K_l])
+
+                # Thickness calculation
                 if material == "Lead":
-                    if self.var[f"kvp_var {t}"].get() == 120:
-                        a = 2.246
-                        b = 5.73
-                        c = 0.547
+                    if kvp_var == 120:
+                        a, b, c = 2.246, 5.73, 0.547
                     else:
-                        a = 2.009
-                        b = 3.99
-                        c = 0.342
-                    self.thm[f"xbar {e}{o}{nr}"] = float((1 / (a * c)) * math.log((B ** -c + (b / a)) / (1 + (b / a))))
+                        a, b, c = 2.009, 3.99, 0.342
                 elif material == "Concrete":
-                    if self.var[f"kvp_var {t}"].get() == 120:
-                        a = 0.0383
-                        b = 0.0142
-                        c = 0.658
+                    if kvp_var == 120:
+                        a, b, c = 0.0383, 0.0142, 0.658
                     else:
-                        a = 0.0336
-                        b = 0.0122
-                        c = 0.519
-                    self.thm[f"xbar {e}{o}{nr}"] = float((1 / (a * c)) * math.log((B ** -c + (b / a)) / (1 + (b / a))))
+                        a, b, c = 0.0336, 0.0122, 0.519
                 else:
                     self.thm[f"xbar {e}{o}{nr}"] = "Select Material"
+                    self.display_results(e, o, nr, t)
+                    continue  # Skip to the next iteration if material is not selected
 
+                self.thm[f"xbar {e}{o}{nr}"] = float((1 / (a * c)) * math.log((B ** -c + (b / a)) / (1 + (b / a))))
                 self.display_results(e, o, nr, t)
+
             else:
+                # Populate self.need based on missing or zero values
                 self.need = []
-                if self.var[f"dlpb_var {t}"].get() == 0 and self.var[f"dlph_var {t}"].get() == 0:
+                if dlpb_var == 0 and dlph_var == 0:
                     self.need.append("zero entries")
-                if self.var[f"dist_var {e}{nr}"].get() == "":
+                
+                if dist_var == "":
                     self.need.append("Distance")
-                if self.var[f"bp_var {t}"].get() == 0:
+                if bp_var == 0:
                     self.need.append("zero entries")
-                if self.var[f"hp_var {t}"].get() == 0:
+                if hp_var == 0:
                     self.need.append("zero entries")
-                if self.var[f"sh_var {e}{nr}"].get() == 0:
+                if sh_var == 0:
                     self.need.append("zero entries")
                 if material == "Select Material":
                     self.need.append("Select Material")
                 self.need = list(dict.fromkeys(self.need))
                 self.thm[f"xbar {e}{o}{nr}"] = "\n".join(self.need)
                 self.display_results(e, o, nr, t)
-        # If there's no existing title result, create a new title
+
+        # Title result handling
         if self.d.get(title_key) is None:
             self.op = 0
             self.d[title_key] = ttk.Label(self.d[f"resultframe {t}{nr}"], style="AL.TLabel",
@@ -405,7 +430,6 @@ class departprimsec():
             self.d[title_key].grid(row=str(self.ep - self.op), column=0, pady=3, padx=3, sticky="s")
             self.d[f"spot {e}{nr}"] = self.ep
         else:
-            # If it exists, update it
             self.d[title_key].destroy()
             self.d[title_key] = ttk.Label(self.d[f"resultframe {t}{nr}"], style="AL.TLabel",
                                           text=self.barn[f"lab_bar {e}{nr}"].cget("text") + ": ")
@@ -413,8 +437,8 @@ class departprimsec():
 
         # Store the results for further use
         if isinstance(self.thm[f'xbar {e}{o}{nr}'], float):
-            self.rdata = {self.barn[f"lab_bar {e}{nr}"].cget("text"): {
-                self.var[f"vmater {e}{o}{nr}"].get(): str(round(self.thm[f"xbar {e}{o}{nr}"], 3))}}
+            self.rdata = {
+                self.barn[f"lab_bar {e}{nr}"].cget("text"): {material: str(round(self.thm[f"xbar {e}{o}{nr}"], 3))}}
 
         self.ep += 1
 
