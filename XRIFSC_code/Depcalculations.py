@@ -361,27 +361,31 @@ class departprimsec():
             if (dist_var != "" and float(dist_var) != 0 and float(bp_var) != 0 and float(hp_var) != 0 and float(
                 sh_var) != 0 and (float(dlpb_var) != 0 or float(dlph_var) != 0)):
                 # Calculate total contributions for body scans
-                total_k1_body = 0
+                total_scansb = 0
                 k1_body = 1.2 * (3e-4) * float(dlpb_var)
+                print(f'kbody:{k1_body}')
                 for i in range(1, numbodyp + 1):
                     # Fetch the user-defined percentage for phase i
                     per_phase_body = self.var[
                         f"perbodyscans {t}{i - 1}"].get()  # Use i-1 because phases are zero-indexed the code
                     # Body scans contribution for phase i
-                    total_k1_body += (per_phase_body / 100) * k1_body
+                    total_scansb += (per_phase_body / 100) * float(bp_var)
                 # Calculate total contributions for head scans
-                total_k1_head = 0
+                total_scansh = 0
                 k1_head = (9e-5) * float(dlph_var)
+                print(f'khead:{k1_head}')
                 for i in range(1, numheadp + 1):
                     # Fetch the user-defined percentage for phase i
                     per_phase_head = self.var[
                         f"perheadscans {t}{i - 1}"].get()
                     # Head scans contribution for phase i
-                    total_k1_head += (per_phase_head / 100) * k1_head
+                    total_scansh += (per_phase_head / 100) * float(hp_var)
 
                 K_l = f"K {self.barn[f'lab_bar {e}{nr}'].cget('text')}{nr}"
-                self.d[K_l] = float((1 / float(T)*float(dist_var)) ** 2 * ((float(bp_var) * total_k1_body) + (float(hp_var) * total_k1_head)))
+                self.d[K_l] = (1 / (float(dist_var)** 2)) * float(T) *((k1_body* total_scansb) + (k1_head* total_scansh))
+                print(f'Ksec:{self.d[K_l]}')
                 B = float(sh_var) / float(self.d[K_l])
+                print(f'B: {B}')
 
                 # Thickness calculation
                 if material == "Lead":
