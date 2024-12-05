@@ -15,7 +15,7 @@ class droom():
         self.i += 1
         if self.depnote is None:
             self.depnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-            self.depnote.configure(width=980, height=728)
+            self.depnote.configure(width=int(self.screen_width*0.66), height=int(self.screen_height*0.84))
             self.depnote.grid(row=0, sticky="w")
             # Bind the tab change event to sync with results
             self.depnote.bind("<<NotebookTabChanged>>", self.sync_results_tab)

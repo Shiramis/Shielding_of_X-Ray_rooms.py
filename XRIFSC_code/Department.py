@@ -16,7 +16,7 @@ class ddepartment():
         # Initialize the department notebook if it hasn't been initialized
         if self.depnote is None:
             self.depnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-            self.depnote.configure(width=980, height=728)
+            self.depnote.configure(width=int(self.screen_width*0.66), height=int(self.screen_height*0.84))
             self.depnote.grid(row=0, sticky="w")
             # Bind the tab change event to sync with results
             self.depnote.bind("<<NotebookTabChanged>>", self.sync_results_tab)
@@ -99,7 +99,7 @@ class ddepartment():
                 if self.i == 1 or (self.i > 0 and self.resnote is None):
                     self.resnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
                     self.resnote.grid(row=0, column=1, sticky="w")
-                    self.resnote.configure(width=545, height=728)
+                    self.resnote.configure(width=int(self.screen_width*0.33), height=int(self.screen_height*0.84))
                 # Create the room frame inside the notebook
                 self.d[f"newroomf {t}"] = ttk.Frame(self.depnote)
                 self.d[f"newroomf {t}"].pack(fill=BOTH, expand=1)

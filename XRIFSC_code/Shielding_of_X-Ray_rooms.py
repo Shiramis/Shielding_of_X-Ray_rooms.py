@@ -96,6 +96,10 @@ class App(ddepartment, dep_defs, sec_widgets, prim_widgets, occupation_widgets, 
                                  lambda e: self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all")))
         self.main_canvas.create_window((0, 0), window=self.new_main_Frame, anchor="c")
 
+        # Get screen dimensions
+        self.screen_width = self.master.winfo_screenwidth()
+        self.screen_height = self.master.winfo_screenheight()
+
     def setup_buttons(self):
         """Set up the buttons in the main window."""
         self.chooseCal = ttk.Label(master=self.new_main_Frame, text="Design", style="CL.TLabel")

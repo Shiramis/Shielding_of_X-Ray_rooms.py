@@ -35,7 +35,7 @@ class dep_defs():
             # Select Materials label
             self.d[f"matlab {index}{room_number}"] = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
                                     text="Select Materials:")
-            rowm = 1 if self.var[f"vselroom {t}"].get() == "CT Room" else 99
+            rowm = 2 if self.var[f"vselroom {t}"].get() == "CT Room" else 99
 
             self.d[f"matlab {index}{room_number}"].grid(row=rowm, column=0, padx=5, pady=6.5, sticky="w")
 
@@ -92,7 +92,7 @@ class dep_defs():
                     f"unairk {e}{nr}{i}",f"othwork {e}{nr}{i}", f"radworkl {e}{nr}{i}",f"radnumb {e}{nr}{i}",
                     f"worentry {e}{nr}{i}",f"numpapwe {e}{nr}{i}", f"selxroom {e}{nr}{i}", f"Ksec {e}{nr}{i}",
                    f"Kleak {e}{nr}{i}", f"Kscat {e}{nr}{i}", f"entk {e}{nr}{i}", f"lad {e}{nr}{i}",
-                   f"labelk {e}{nr}{i}", f"entryd {e}{nr}{i}"]
+                   f"labelk {e}{nr}{i}", f"entryd {e}{nr}{i}",f"lad_behind {e}{nr}{i}",f"d_beh {e}{nr}{i}"]
         # ===== Workload Distribution =====
         self.d[f'workltit {e}{nr}{i}'] = ttk.Label(master=self.d[barrierf_key], style="BL2.TLabel",
                                                    text=f"Workload Distribution #{i + 1}:")
@@ -116,6 +116,7 @@ class dep_defs():
                                                     variable=self.var[f"setv {e}{nr}{i}"], offvalue=0, onvalue=1,
                                                     command=lambda e=e, nr=nr, i=i: self.update_checkboxes(e, nr, i))
         self.d[f"set {e}{nr}{i}"].grid(row=i * 10 + 2, column=3, padx=5, pady=6.5, sticky="w")
+        # Explain the set calculation
         self.var[f'workdistt {e}{nr}{i}'] = Hovertip(self.d[f"set {e}{nr}{i}"], text="Set this distribution\n"
                                                                                       "fitting parameters (α, β, γ)\n"
                                                                                       "for transmision to calculate\n"
@@ -140,10 +141,18 @@ class dep_defs():
             # ===== Primary Distance ========
             self.d[f'lad {e}{nr}{i}'] = ttk.Label(master=self.d[barrierf_key],
                                                                style="AL.TLabel",
-                                                               text="Primary distance (d\u209A)\nto the Barrier (m):")
+                                                               text="Primary distance (d\u209A)\nfrom source to the\n"
+                                                                    "barrier (m):")
             self.d[f'lad {e}{nr}{i}'].grid(row=i * 10 + 8, column=0, pady=6.5, padx=5, sticky="w")
             self.ent[f"entryd {e}{nr}{i}"] = ttk.Entry(master=self.d[barrierf_key], width=10)
             self.ent[f"entryd {e}{nr}{i}"].grid(row=i * 10 + 8, column=1, pady=6.5, padx=5, sticky="w")
+            # distance from barrier to the design goal
+            self.d[f"lad_behind {e}{nr}{i}"] = ttk.Label(master=self.d[barrierf_key], style="AL.TLabel",
+                                                  text="Distance behind the barrιer\nto the point goal (m):")
+            self.d[f"lad_behind {e}{nr}{i}"].grid(row=i * 10 + 8, column=2, pady=6.5, padx=5, sticky="w")
+            self.ent[f"d_beh {e}{nr}{i}"] = ttk.Entry(master=self.d[barrierf_key], width=10)
+            self.ent[f"d_beh {e}{nr}{i}"].grid(row=i * 10 + 8, column=3, pady=6.5, padx=5, sticky="w")
+            self.distance_behind_sets(e, nr, i)
             # ===== Use Factor =====
             self.d[f"lau {e}{nr}{i}"] = ttk.Label(master=self.d[barrierf_key], style="AL.TLabel", text="Use Factor:")
             self.d[f"lau {e}{nr}{i}"].grid(row=i * 10 + 6, column=0, pady=6.5, padx=5, sticky="w")
@@ -207,8 +216,8 @@ class dep_defs():
                     if self.d[m_key] < 3:
                         self.d[f"matlab {e}{self.d[m_key]}"] = ttk.Label(self.d[f"barrierf {e}{nr}"],
                             text=f"#{self.d[m_key]}:")
-                        self.d[f"matlab {e}{self.d[m_key]}"].grid(row=2, column=-1 + self.d[m_key], sticky="w")
-                        self.d[f"mater {e}{self.d[m_key]}"].grid(row=2, column=-1 + self.d[m_key], pady=6.5, padx=25,
+                        self.d[f"matlab {e}{self.d[m_key]}"].grid(row=3, column=-1 + self.d[m_key], sticky="w")
+                        self.d[f"mater {e}{self.d[m_key]}"].grid(row=3, column=-1 + self.d[m_key], pady=6.5, padx=25,
                             sticky="s")
 
             # Destroy extra widgets if material count exceeds the required number
@@ -260,12 +269,22 @@ class dep_defs():
         label_text = self.barn[f"lab_bar {e}{nr}"].cget("text")
 
         if label_text == "Floor":  # from fig. 4.4 NCRP 147
-            tip_text = 'Figure 4.4 of NCRP 147\n(Floor: adds +1.7 m of what you write)'
+            tip_text = 'Figure 4.4 of NCRP 147\n(Floor: adds +1.3 m)'
         elif label_text == "Ceiling":
-            tip_text = 'Figure 4.4 of NCRP 147\n(Ceiling: adds +0.5 m of what you write)'
+            tip_text = 'Figure 4.4 of NCRP 147\n(Ceiling: adds +0.5 m)'
         else:
-            tip_text = 'Figure 4.4 of NCRP 147\n(Wall: adds +0.3 m of what you write)'
+            tip_text = 'Figure 4.4 of NCRP 147\n(Wall: adds +0.3 m)'
 
         # Assign hover tips
-        self.var[f'dist_ent {e}{nr}{i}'] = Hovertip(self.ent[f"entryd {e}{nr}{i}"], text=tip_text)
-        self.var[f'dist_lad {e}{nr}{i}'] = Hovertip(self.d[f'lad {e}{nr}{i}'], text=tip_text)
+        self.var[f'dist_ent {e}{nr}{i}'] = Hovertip(self.ent[f"d_beh {e}{nr}{i}"], text=tip_text)
+        self.var[f'dist_lad {e}{nr}{i}'] = Hovertip(self.d[f"lad_behind {e}{nr}{i}"], text=tip_text)
+
+    def distance_behind_sets(self,e ,nr, i):
+        d_beh = self.ent[f"d_beh {e}{nr}{i}"]
+        barrier = self.barn[f"lab_bar {e}{nr}"].cget("text")
+        if barrier == "Floor":
+            d_beh.insert(0, str(1.3))
+        elif barrier == "Ceiling":
+            d_beh.insert(0, str(0.5))
+        else:
+            d_beh.insert(0, str(0.3))

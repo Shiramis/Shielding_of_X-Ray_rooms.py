@@ -8,7 +8,8 @@ class sec_widgets():
         self.destroy_widgets([f"leak {e}{nr}{i}", f"side {e}{nr}{i}", f"forw {e}{nr}{i}", f"entk {e}{nr}{i}",
                               f"radside {e}{nr}{i}", f"radforward {e}{nr}{i}", f"radleak {e}{nr}{i}",
                               f"Ksec {e}{nr}{i}", f"Kleak {e}{nr}{i}", f"Kscat {e}{nr}{i}", f"entryd {e}{nr}{i}",
-                              f"entk {e}{nr}{i}",f"lad {e}{nr}{i}",f"labelk {e}{nr}{i}"])
+                              f"entk {e}{nr}{i}",f"lad {e}{nr}{i}",f"labelk {e}{nr}{i}",
+                              f"lad_behind {e}{nr}{i}" ,f"d_beh {e}{nr}{i}"])
 
         unairkerv_key = f"unairkerv {e}{nr}{i}"
 
@@ -47,7 +48,8 @@ class sec_widgets():
         # Destroy any previously created widgets
         self.destroy_widgets(
             [f"radside {e}{nr}{i}", f"radforward {e}{nr}{i}", f"radleak {e}{nr}{i}", f"entryd {e}{nr}{i}",
-             f'lad {e}{nr}{i}', f"entk {e}{nr}{i}",f"lad {e}{nr}{i}",f"labelk {e}{nr}{i}"])
+             f'lad {e}{nr}{i}', f"entk {e}{nr}{i}",f"lad {e}{nr}{i}",f"labelk {e}{nr}{i}", f"lad_behind {e}{nr}{i}"
+             ,f"d_beh {e}{nr}{i}"])
         # Check the current selection and create the corresponding radio buttons
         self.ent[f"entryd {e}{nr}{i}"] = ttk.Entry(master=self.d[f"barrierf {e}{nr}"], width=10)
 
@@ -78,6 +80,7 @@ class sec_widgets():
             self.var[radiob_leak_key].trace_add("write", update_distance_label)
             # Call initially to set the correct label
             update_distance_label()
+
         elif self.var[airkerv_key].get() == 2:
             self.d[f'lad {e}{nr}{i}'] = ttk.Label(master=self.d[f"barrierf {e}{nr}"], style="AL.TLabel",
                                                   text="Scatter distance (dsca)\nto the Barrier (m):")
@@ -89,11 +92,20 @@ class sec_widgets():
                                                   text="Scatter distance (dsca)\nto the Barrier (m):")
             self.d[f'lad {e}{nr}{i}'].grid(row=i * 10 + 8, column=0, pady=6.5, padx=5, sticky="w")
             self.ent[f"entryd {e}{nr}{i}"].grid(row=i * 10 + 8, column=1, pady=6.5, padx=5, sticky="w")
+        # distance from barrier to the design goal
+        self.d[f"lad_behind {e}{nr}{i}"] = ttk.Label(master=self.d[f"barrierf {e}{nr}"], style="AL.TLabel",
+                                                     text="Distance behind the barrιer\nto the point goal (m):")
+        self.d[f"lad_behind {e}{nr}{i}"].grid(row=i * 10 + 8, column=2, pady=6.5, padx=5, sticky="w")
+        self.ent[f"d_beh {e}{nr}{i}"] = ttk.Entry(master=self.d[f"barrierf {e}{nr}"], width=10)
+        self.ent[f"d_beh {e}{nr}{i}"].grid(row=i * 10 + 8, column=3, pady=6.5, padx=5, sticky="w")
+        # sets values for behind
+        self.distance_behind_sets(e, nr, i)
         # === tips ======
-        self.set_distance_tips(e,nr,i)
+        self.set_distance_tips(e, nr, i)
 
     def secondary_air(self, e, nr, i):
-        self.destroy_widgets([f"entk {e}{nr}{i}",f"lad {e}{nr}{i}",f"labelk {e}{nr}{i}", f"entryd {e}{nr}{i}"])
+        self.destroy_widgets([f"entk {e}{nr}{i}",f"lad {e}{nr}{i}",f"labelk {e}{nr}{i}", f"entryd {e}{nr}{i}",
+                              f"lad_behind {e}{nr}{i}" ,f"d_beh {e}{nr}{i}"])
 
         self.ent[f"entk {e}{nr}{i}"] = ttk.Entry(master=self.d[f"barrierf {e}{nr}"], width=10) #air kerma
         self.ent[f"entryd {e}{nr}{i}"] = ttk.Entry(master=self.d[f"barrierf {e}{nr}"], width=10) #distance
@@ -118,5 +130,13 @@ class sec_widgets():
         self.ent[f"entk {e}{nr}{i}"].grid(row=i * 10 + 6, column=1, pady=6.5, padx=5, sticky="w")
         self.d[f'lad {e}{nr}{i}'].grid(row=i * 10 + 8, column=0, pady=6.5, padx=5, sticky="w")
         self.ent[f"entryd {e}{nr}{i}"].grid(row=i * 10 + 8, column=1, pady=6.5, padx=5, sticky="w")
+        # distance from barrier to the design goal
+        self.d[f"lad_behind {e}{nr}{i}"] = ttk.Label(master=self.d[f"barrierf {e}{nr}"], style="AL.TLabel",
+                                                     text="Distance behind the barrιer\nto the point goal (m):")
+        self.d[f"lad_behind {e}{nr}{i}"].grid(row=i * 10 + 8, column=2, pady=6.5, padx=5, sticky="w")
+        self.ent[f"d_beh {e}{nr}{i}"] = ttk.Entry(master=self.d[f"barrierf {e}{nr}"], width=10)
+        self.ent[f"d_beh {e}{nr}{i}"].grid(row=i * 10 + 8, column=3, pady=6.5, padx=5, sticky="w")
+        # sets values for behind
+        self.distance_behind_sets(e, nr, i)
         #=== tips ======
         self.set_distance_tips(e,nr,i)

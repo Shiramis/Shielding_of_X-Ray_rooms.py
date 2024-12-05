@@ -16,7 +16,7 @@ class  CT_Room():
         self.i += 1
         if self.depnote is None:
             self.depnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-            self.depnote.configure(width=980, height=728)
+            self.depnote.configure(width=int(self.screen_width*0.66), height=int(self.screen_height*0.84))
             self.depnote.grid(row=0, sticky="w")
             # Bind the tab change event to sync with results
             self.depnote.bind("<<NotebookTabChanged>>", self.sync_results_tab)
@@ -174,34 +174,46 @@ class  CT_Room():
         """Add CT room specific widgets."""
         # Distance
         dist_label = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
-                               text='Distance from the CT Unit Isocenter (m):')
+                               text='Distance from the CT Unit Isocenter\n'
+                                    'to the barrier(m):')
         dist_label.grid(row=0, column=0, padx=5, pady=6.5, sticky="w")
         self.var[f"dist_var {index}{room_number}"] = StringVar()
         dist_entry = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"],
                                textvariable=self.var[f"dist_var {index}{room_number}"], width=10)
         dist_entry.grid(row=0, column=1, padx=5, pady=6.5, sticky="w")
+        # distance from barrier to the design goal
+        i=1
+        self.d[f"lad_behind {index}{room_number}{i}"] = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
+                                                     text="Distance behind the barrιer\nto the point goal (m):")
+        self.d[f"lad_behind {index}{room_number}{i}"].grid(row=1, column=0, pady=6.5, padx=5, sticky="w")
+        self.ent[f"d_beh {index}{room_number}{i}"] = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"], width=10)
+        self.ent[f"d_beh {index}{room_number}{i}"].grid(row=1, column=1, pady=6.5, padx=5, sticky="w")
+        # sets values for behind
+        self.distance_behind_sets(index, room_number, i)
+        # === tips ======
+        self.set_distance_tips(index, room_number, i)
         # Occupancy Factor T
         Tocclabel = ttk.Label(master=self.d[f"barrierf {index}{room_number}"],
                              text='Occupancy Factor (T):')
-        Tocclabel.grid(row=3, column=0, padx=5, pady=6.5, sticky="w")
+        Tocclabel.grid(row=4, column=0, padx=5, pady=6.5, sticky="w")
         self.var[f"occup {index}{room_number}"] =DoubleVar(value=1)
         T_entry = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"],
                              textvariable=self.var[f"occup {index}{room_number}"], width=10)
-        T_entry.grid(row=3, column=1, padx=5, pady=6.5, sticky="w")
+        T_entry.grid(row=4, column=1, padx=5, pady=6.5, sticky="w")
         # Shielding Design Goal (P)
         sh_label = ttk.Label(master=self.d[f"barrierf {index}{room_number}"],
                              text='Shielding Design Goal(P)\n(mGy∙week\u207B\u00b9):')
-        sh_label.grid(row=4, column=0, padx=5, pady=6.5, sticky="w")
+        sh_label.grid(row=5, column=0, padx=5, pady=6.5, sticky="w")
         self.var[f"sh_var {index}{room_number}"] = DoubleVar()
         sh_entry = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"],
                              textvariable=self.var[f"sh_var {index}{room_number}"], width=10)
-        sh_entry.grid(row=4, column=1, padx=5, pady=6.5, sticky="w")
+        sh_entry.grid(row=5, column=1, padx=5, pady=6.5, sticky="w")
         # Calculation button
         self.d[f"calbutton {index}{room_number}"] = ttk.Button(master=self.d[f"barrierf {index}{room_number}"],
                                                                text="Calculate",
                                                                command=lambda e=index, nr=room_number: self.choosetype(
                                                                    e, nr, t))
-        self.d[f"calbutton {index}{room_number}"].grid(row=5, column=1, pady=6.5, padx=5, sticky="w")
+        self.d[f"calbutton {index}{room_number}"].grid(row=6, column=1, pady=6.5, padx=5, sticky="w")
 
     def validate_spinbox(self, var):
         """Ensure spinbox value stays within range and handle empty values."""

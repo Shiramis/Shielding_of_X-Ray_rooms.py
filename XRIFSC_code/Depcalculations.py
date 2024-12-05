@@ -66,12 +66,10 @@ class departprimsec():
     def calkerma(self, e, nr, i, t):
         if self.ent[f"entryd {e}{nr}{i}"].get() != "":
             D = float(self.ent[f"entryd {e}{nr}{i}"].get()) # Distance (entryd)
-            if self.barn[f"lab_bar {e}{nr}"].cget("text") == "Floor": #from fig. 4.4 NCRP 147
-                D += 1.7
-            elif self.barn[f"lab_bar {e}{nr}"].cget("text") == "Ceiling":
-                D += 0.5
+            if self.ent[f"d_beh {e}{nr}{i}"].get() != "":
+                D += float(self.ent[f"d_beh {e}{nr}{i}"].get())
             else:
-                D += 0.3
+                pass
         else:
             D = None
         # ======== Workload ===========
@@ -334,12 +332,12 @@ class departprimsec():
     def depCTcal(self, e, nr, t):
         title_key = f"titleresul {e}{nr}"
         # Assign variable names for better readability
-        dist_var = self.var[f"dist_var {e}{nr}"].get()
-        bp_var = self.var[f"bp_var {t}"].get()
-        hp_var = self.var[f"hp_var {t}"].get()
-        sh_var = self.var[f"sh_var {e}{nr}"].get()
-        dlpb_var = self.var[f"dlpb_var {t}"].get()
-        dlph_var = self.var[f"dlph_var {t}"].get()
+        dist_var = self.var[f"dist_var {e}{nr}"].get() # Distance
+        bp_var = self.var[f"bp_var {t}"].get() #body procedures
+        hp_var = self.var[f"hp_var {t}"].get() #head procedures
+        sh_var = self.var[f"sh_var {e}{nr}"].get() #design goal
+        dlpb_var = self.var[f"dlpb_var {t}"].get() # DLP body
+        dlph_var = self.var[f"dlph_var {t}"].get() # DLP head
         numbodyp = self.var[f"numbodyscans {t}"].get() # the number of body phases
         numheadp = self.var[f"numheadscans {t}"].get() # the number of head phases
         kvp_var = self.var[f"kvp_var {t}"].get()
@@ -360,6 +358,11 @@ class departprimsec():
             # Calculation condition check
             if (dist_var != "" and float(dist_var) != 0 and float(bp_var) != 0 and float(hp_var) != 0 and float(
                 sh_var) != 0 and (float(dlpb_var) != 0 or float(dlph_var) != 0)):
+                dist_var = float(dist_var)
+                if self.ent[f"d_beh {e}{nr}{1}"].get() != "":
+                    dist_var += float(self.ent[f"d_beh {e}{nr}{1}"].get())
+                else:
+                    pass
                 # Calculate total contributions for body scans
                 total_scansb = 0
                 k1_body = 1.2 * (3e-4) * float(dlpb_var)
@@ -382,10 +385,11 @@ class departprimsec():
                     total_scansh += (per_phase_head / 100) * float(hp_var)
 
                 K_l = f"K {self.barn[f'lab_bar {e}{nr}'].cget('text')}{nr}"
-                self.d[K_l] = (1 / (float(dist_var)** 2)) * float(T) *((k1_body* total_scansb) + (k1_head* total_scansh))
+                self.d[K_l] = (1 / (dist_var** 2)) * float(T) *((k1_body* total_scansb) + (k1_head* total_scansh))
                 print(f'Ksec:{self.d[K_l]}')
                 B = float(sh_var) / float(self.d[K_l])
                 print(f'B: {B}')
+
 
                 # Thickness calculation
                 if material == "Lead":
@@ -404,6 +408,7 @@ class departprimsec():
                     continue  # Skip to the next iteration if material is not selected
 
                 self.thm[f"xbar {e}{o}{nr}"] = float((1 / (a * c)) * math.log((B ** -c + (b / a)) / (1 + (b / a))))
+                print(f'x_thick(mm):{self.thm[f"xbar {e}{o}{nr}"]}')
                 self.display_results(e, o, nr, t)
 
             else:
