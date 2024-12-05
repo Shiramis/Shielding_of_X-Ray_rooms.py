@@ -11,7 +11,6 @@ from Primary import prim_widgets
 from OccupancyFactor import occupation_widgets
 from Room import droom
 from CTroom import CT_Room
-from ttkthemes import ThemedTk
 import json
 
 root = Tk()
