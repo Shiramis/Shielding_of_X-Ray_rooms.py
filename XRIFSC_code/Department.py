@@ -2,135 +2,145 @@ import os
 import tkinter
 from tkinter import *
 from tkinter import ttk
+import theme
 import xlsxwriter
-import platform
+from tooltips import tip
+
+ROOM_TYPES = ["X-Ray room", "CT Room", "Mammography Room"]
 
 class ddepartment():
     # ============creating def for Deparment notebook===================================
     def creatdep(self):
-        # Cleanup previous widgets
-        self.depbutton.destroy()
-        self.roombutton.destroy()
-        self.CTbutton.destroy()
-        #self.quickbutton.destroy()
-        self.chooseCal.destroy()
-        # Initialize the department notebook if it hasn't been initialized
-        if self.depnote is None:
-            self.depnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-            self.depnote.configure(width=980, height=728)
-            self.depnote.grid(row=0, sticky="w")
-            # Bind the tab change event to sync with results
-            self.depnote.bind("<<NotebookTabChanged>>", self.sync_results_tab)
+        # Every call adds a new department tab; departments are independent of each other.
+        # Inside the department tab: its rooms on the left and their results on the right.
+        self.hide_start_buttons()
+        depnote = self.ensure_workspace()
+        self.dep_count += 1
+        dep = self.dep_count
 
-        # Create and configure the department frame and canvas
-        self.depframe = ttk.Frame(self.depnote)
+        # Create and configure the department frame with its rooms and results notebooks
+        self.depframe = ttk.Frame(depnote)
         self.depframe.pack(fill=BOTH, expand=1)
-        self.depnote.add(self.depframe, text="Department")
+        depnote.add(self.depframe)
+        left, right = self.split_pane(self.depframe, 950, 520)
+        rooms_note = ttk.Notebook(left, style="BL.TNotebook", width=theme.px(950))
+        rooms_note.pack(fill=BOTH, expand=1)
+        results_note = ttk.Notebook(right, style="BL.TNotebook", width=theme.px(520))
+        results_note.pack(fill=BOTH, expand=1)
+        setup = ttk.Frame(rooms_note)
+        rooms_note.add(setup, text="Rooms")
 
-        self.depcanv = Canvas(self.depframe)
-        self.depcanv.pack(side=LEFT, fill=BOTH, expand=1)
-        self.scrolldep = ttk.Scrollbar(self.depframe, orient=VERTICAL, command=self.depcanv.yview)
-        self.scrolldep.pack(side=RIGHT, fill=Y)
-        self.depcanv.configure(yscrollcommand=self.scrolldep.set, bg="#f7faf9")
+        depcanv = Canvas(setup)
+        depcanv.pack(side=LEFT, fill=BOTH, expand=1)
+        scrolldep = ttk.Scrollbar(setup, orient=VERTICAL, command=depcanv.yview)
+        scrolldep.pack(side=RIGHT, fill=Y)
+        depcanv.configure(yscrollcommand=scrolldep.set, bg=theme.SURFACE)
 
         # Create and configure the rooms frame inside the department canvas
-        self.roomsframe = ttk.Frame(self.depcanv)
-        self.roomsframe.bind('<Configure>', lambda e: self.depcanv.configure(scrollregion=self.depcanv.bbox("all")))
-        self.depcanv.create_window((0, 0), window=self.roomsframe, anchor="nw")
+        roomsframe = ttk.Frame(depcanv)
+        roomsframe.bind('<Configure>', lambda e, c=depcanv: c.configure(scrollregion=c.bbox("all")))
+        depcanv.create_window((0, 0), window=roomsframe, anchor="nw")
+
+        info = {"frame": self.depframe, "rooms_frame": roomsframe, "rooms": [],
+                "rooms_note": rooms_note, "results_note": results_note,
+                "name": StringVar(value=f"Department {dep}"), "numrooms": IntVar(value=1)}
+        self.departments[dep] = info
+
+        # Department name (shown on the tab, can be changed at any time)
+        name_label = ttk.Label(master=roomsframe, style="BL.TLabel", text="Department Name:")
+        name_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        name_entry = ttk.Entry(master=roomsframe, textvariable=info["name"], width=30)
+        name_entry.grid(row=0, column=1, columnspan=2, padx=10, pady=10, sticky="w")
+        tip(name_label, "department_name")
+        tip(name_entry, "department_name")
+        self.register_tab_name(self.depframe, info["name"], f"Department {dep}", depnote)
+        new_dep = ttk.Button(master=roomsframe, text="New Department", command=self.creatdep)
+        new_dep.grid(row=0, column=4, padx=10, pady=10, sticky="w")
+        tip(new_dep, "new_department")
 
         # Add widgets to the rooms frame
-        self.label_rooms = ttk.Label(master=self.roomsframe, style="BL.TLabel", text="Rooms of Department")
-        self.label_rooms.grid(row=0, column=0, sticky="nswe")
-        self.numrlab = ttk.Label(master=self.roomsframe, style="AL.TLabel", text="Number of Rooms:")
-        self.numrlab.grid(row=1, column=0, pady=10, padx=10, sticky="w")
-        self.numrooms = IntVar(value=1)
-        self.num_rooms = ttk.Spinbox(master=self.roomsframe, from_=0, to=10000, increment=1,
-                                     textvariable=self.numrooms, width=5, command=self.createrooms)
-        self.num_rooms.grid(row=1, column=1, pady=10, padx=20, sticky="e")
+        label_rooms = ttk.Label(master=roomsframe, style="BL.TLabel", text="Rooms of Department")
+        label_rooms.grid(row=1, column=0, sticky="nswe", padx=10)
+        numrlab = ttk.Label(master=roomsframe, style="AL.TLabel", text="Number of Rooms:")
+        numrlab.grid(row=2, column=0, pady=10, padx=10, sticky="w")
+        num_rooms = ttk.Spinbox(master=roomsframe, from_=0, to=10000, increment=1,
+                                textvariable=info["numrooms"], width=5, command=lambda: self.createrooms(dep))
+        num_rooms.grid(row=2, column=1, pady=10, padx=20, sticky="e")
+        tip(numrlab, "num_rooms")
+        tip(num_rooms, "num_rooms")
+        exp_but = ttk.Button(master=roomsframe, text="Export to Excel", command=lambda: self.exp_dep(dep))
+        exp_but.grid(row=2, column=2, pady=10, padx=10, sticky="w")
+        tip(exp_but, "export")
+        plan_but = ttk.Button(master=roomsframe, text="Floor Plan", command=lambda: self.open_plan(("dep", dep)))
+        plan_but.grid(row=2, column=3, pady=10, padx=10, sticky="w")
+        tip(plan_but, "floor_plan")
+        view_but = ttk.Button(master=roomsframe, text="2D / 3D View", command=lambda: self.open_view(("dep", dep)))
+        view_but.grid(row=2, column=4, pady=10, padx=10, sticky="w")
+        tip(view_but, "view_3d")
 
         # Call to create rooms
-        self.createrooms()
-    def createrooms(self):
-        # Add rooms if current index is less than the number of rooms
-        if self.i < self.numrooms.get():
-            while self.i < self.numrooms.get():
-                self.i += 1
-                # Create and place the room description label
-                self.d[f"labelname {self.i}"] = ttk.Label(master=self.roomsframe, style="AL.TLabel",
-                    text=f"Room Description {self.i}:")
-                self.d[f"labelname {self.i}"].grid(row=2 + self.i, column=0, padx=10, pady=10, sticky="w")
-                # Create and place the room name entry field
-                self.d[f"name_room {self.i}"] = ttk.Entry(master=self.roomsframe)
-                self.d[f"name_room {self.i}"].grid(row=2 + self.i, column=1, sticky="w")
-                # Create and place the room selection combobox
-                self.d[f"vselroom {self.i}"] = StringVar()
-                self.d[f"selroom {self.i}"] = ttk.Combobox(master=self.roomsframe,
-                    textvariable=self.d[f"vselroom {self.i}"], values=["X-Ray room", "CT Room"], state="readonly")
-                self.d[f"selroom {self.i}"].grid(row=2 + self.i, column=2, pady=10, padx=20, sticky="w")
-                self.d[f"selroom {self.i}"].set("Shield room")
-                # Selections for more methods
-                """
-                self.method = ("BIR 2012", "NCRP 147")
-                self.d[f"vmethod {self.i}"] = StringVar()
-                self.d[f"method {self.i}"] = ttk.OptionMenu(
-                    self.roomsframe,
-                    self.d[f"vmethod {self.i}"],
-                    "Select Method",
-                    *self.method
-                )
-                self.d[f"method {self.i}"].grid(row=2 + self.i, column=3, padx=10, pady=10, sticky="w")
-                """
-                # Create and place the design button
-                self.d[f"run {self.i}"] = False  # Run every room only once
-                self.d[f"crroomb {self.i}"] = ttk.Button(master=self.roomsframe, text="Design",
-                    command=lambda t=self.i: self.desroom(t))
-                self.d[f"crroomb {self.i}"].grid(row=2 + self.i, column=4, padx=10, pady=10, sticky="w")
-                # Create and place the export button (only once for all rooms)
-                self.exp_but = ttk.Button(master=self.roomsframe, text="Export to Excel",
-                    command=lambda t=self.i: self.exp_dep(t))
-                self.exp_but.grid(row=1, column=2, pady=10, padx=10, sticky="w")
-                # Initialize values for the room result frame
-                self.d[f"resframe {self.i}"] = None
-        # Remove rooms if current index is greater than the number of rooms
-        else:
-            while self.i > self.numrooms.get():
-                # Destroy room components for the current room
-                self.d[f"labelname {self.i}"].destroy()
-                self.d[f"name_room {self.i}"].destroy()
-                self.d[f"selroom {self.i}"].destroy()
-                self.d[f"crroomb {self.i}"].destroy()
-                # Destroy method selection if uncommented
-                # self.d[f"method {self.i}"].destroy()
-                # If room has been run, destroy additional components
-                if self.d[f"run {self.i}"]:
-                    self.d[f"newroomf {self.i}"].destroy()
-                    self.d[f"resframe {self.i}"].destroy()
-                    # If only one room exists, destroy the result note
-                    if self.i == 1:
-                        self.resnote.destroy()
-                # Decrease room index
-                self.i -= 1
+        self.createrooms(dep)
+        depnote.select(self.depframe)
+    def createrooms(self, dep):
+        info = self.departments[dep]
+        rooms, roomsframe = info["rooms"], info["rooms_frame"]
+        # Add rooms while there are fewer than the number of rooms
+        while len(rooms) < info["numrooms"].get():
+            self.room_count += 1
+            t = self.room_count
+            rooms.append(t)
+            row = 2 + len(rooms)
+            self.d[f"dep {t}"] = dep
+            self.d[f"room_default {t}"] = f"Room {len(rooms)}"
+            # Create and place the room description label
+            self.d[f"labelname {t}"] = ttk.Label(master=roomsframe, style="AL.TLabel",
+                text=f"Room Description {len(rooms)}:")
+            self.d[f"labelname {t}"].grid(row=row, column=0, padx=10, pady=10, sticky="w")
+            # Create and place the room name entry field (renames the room tabs at any time)
+            self.d[f"vname_room {t}"] = StringVar()
+            self.d[f"name_room {t}"] = ttk.Entry(master=roomsframe, textvariable=self.d[f"vname_room {t}"])
+            self.d[f"name_room {t}"].grid(row=row, column=1, sticky="w")
+            tip(self.d[f"name_room {t}"], "room_name")
+            # Create and place the room selection combobox
+            self.d[f"vselroom {t}"] = StringVar()
+            self.d[f"selroom {t}"] = ttk.Combobox(master=roomsframe,
+                textvariable=self.d[f"vselroom {t}"], values=ROOM_TYPES, state="readonly")
+            self.d[f"selroom {t}"].grid(row=row, column=2, pady=10, padx=20, sticky="w")
+            self.d[f"selroom {t}"].set("Shield room")
+            tip(self.d[f"selroom {t}"], "room_type")
+            # Create and place the design button
+            self.d[f"run {t}"] = False  # Run every room only once
+            self.d[f"crroomb {t}"] = ttk.Button(master=roomsframe, text="Design", style="Accent.TButton",
+                command=lambda t=t: self.desroom(t))
+            self.d[f"crroomb {t}"].grid(row=row, column=4, padx=10, pady=10, sticky="w")
+            tip(self.d[f"crroomb {t}"], "design_room")
+            # Initialize values for the room result frame
+            self.d[f"resframe {t}"] = None
+        # Remove rooms while there are more than the number of rooms
+        while len(rooms) > info["numrooms"].get():
+            t = rooms.pop()
+            for key in (f"labelname {t}", f"name_room {t}", f"selroom {t}", f"crroomb {t}"):
+                self.d[key].destroy()
+            # If room has been run, destroy its tabs too
+            if self.d[f"run {t}"]:
+                self.d[f"newroomf {t}"].destroy()
+                self.d[f"resframe {t}"].destroy()
+                self.d[f"run {t}"] = False
     def desroom(self, t):
         room_type = self.d[f"vselroom {t}"].get()
+        info = self.departments[self.d[f"dep {t}"]]
+        rooms_note, results_note = info["rooms_note"], info["results_note"]
         if room_type != "Shield room":
             if not self.d[f"run {t}"]:
-                # Initialize the result notebook if needed
-                if self.i == 1 or (self.i > 0 and self.resnote is None):
-                    self.resnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-                    self.resnote.grid(row=0, column=1, sticky="w")
-                    self.resnote.configure(width=545, height=728)
                 # Initialize room-specific values
                 self.d[f"selxroom {t}"] = None
                 self.d[f"numpapwl {t}"] = None
                 self.d[f"numpapwe {t}"] = None
                 self.d[f"sellocation {t}"] = None
-                # Create the room frame inside the notebook
-                self.d[f"newroomf {t}"] = ttk.Frame(self.depnote)
+                # Create the room frame inside the department's rooms notebook
+                self.d[f"newroomf {t}"] = ttk.Frame(rooms_note)
                 self.d[f"newroomf {t}"].pack()
-                self.depnote.add(self.d[f"newroomf {t}"], text=self.d[f"name_room {t}"].get())
-                self.depnote.grid()
-                self.depnote.add(self.d[f"newroomf {t}"], text=self.d[f"name_room {t}"].get())
-                self.depnote.grid()
+                rooms_note.add(self.d[f"newroomf {t}"])
 
                 # Set up scrollbars for the canvas
                 self.roomcanv = Canvas(self.d[f"newroomf {t}"])
@@ -142,48 +152,19 @@ class ddepartment():
                 self.yscrollroom.pack(side=RIGHT, fill=Y)
 
                 self.roomcanv.configure(yscrollcommand=self.yscrollroom.set, xscrollcommand=self.xscrollroom.set,
-                                        bg="#f7faf9")
+                                        bg=theme.SURFACE)
                 self.roomcanv.pack(side=LEFT, fill=BOTH, expand=1)
 
                 # Create frame inside the canvas
                 self.d[f"frame_1 {t}"] = ttk.Frame(self.roomcanv)
                 self.d[f"frame_1 {t}"].bind('<Configure>',
-                                            lambda e: self.roomcanv.configure(scrollregion=self.roomcanv.bbox("all")))
+                                            lambda e, c=self.roomcanv: c.configure(scrollregion=c.bbox("all")))
                 self.roomcanv.create_window((0, 0), window=self.d[f"frame_1 {t}"], anchor="nw")
-
-                # Bind mouse wheel scrolling
-                def on_vertical_scroll(event):
-                    system = platform.system()
-                    if system == "Windows" or system == "Linux":
-                        # For Windows/Linux, use event.delta / 120 and invert the scroll direction
-                        self.roomcanv.yview_scroll(int(-1 * (event.delta / 120)), "units")
-                    elif system == "Darwin":  # macOS
-                        # For macOS, event.delta is in reverse, so just use it directly
-                        self.roomcanv.yview_scroll(int(event.delta), "units")
-
-                def on_horizontal_scroll(event):
-                    system = platform.system()
-                    if system == "Windows" or system == "Linux":
-                        # For Windows/Linux, use event.delta / 120 and invert the scroll direction
-                        self.roomcanv.xview_scroll(int(-1 * (event.delta / 120)), "units")
-                    elif system == "Darwin":  # macOS
-                        # For macOS, event.delta is in reverse, so just use it directly
-                        self.roomcanv.xview_scroll(int(event.delta), "units")
-
-                # Bind mouse scroll for vertical and horizontal scrolling
-                self.roomcanv.bind_all("<MouseWheel>", on_vertical_scroll)  # For vertical scrolling (Windows/Linux)
-                self.roomcanv.bind_all("<Shift-MouseWheel>",
-                                       on_horizontal_scroll)  # Horizontal scrolling with Shift key (Windows/Linux)
-
-                # For macOS, different event binding
-                self.roomcanv.bind_all("<Button-4>",
-                                       lambda event: self.roomcanv.yview_scroll(-1, "units"))  # macOS Scroll up
-                self.roomcanv.bind_all("<Button-5>",
-                                       lambda event: self.roomcanv.yview_scroll(1, "units"))  # macOS Scroll down
+                # Mouse wheel scrolling is handled globally in App.on_mousewheel
                 # Initialize some room values
                 self.d[f"x {t}"] = 0
                 self.d[f"y {t}"] = 0
-                self.d[f"nr {t}"] = self.d[f"labelname {t}"].cget("text")
+                self.d[f"nr {t}"] = f"Room {t}:"  # unique across departments
                 self.ep = 1
                 # Create a notebook with Room variables
                 self.d[f"noteb {t}{self.d[f'nr {t}']}"] = ttk.Notebook(self.d[f"frame_1 {t}"], style="BL.TNotebook")
@@ -195,10 +176,12 @@ class ddepartment():
                                                      textvariable=self.d[f"vnumwall {t}"],
                                                      command=lambda: self.barriers(t))
                 self.d[f"numwall {t}"].grid(row=0, column=1, pady=5, padx=5, sticky="w")
+                tip(self.lanumwall, "num_barriers")
+                tip(self.d[f"numwall {t}"], "num_barriers")
                 # Call the barriers method
                 self.barriers(t)
                 # Add close button for room frame
-                self.closBut = ttk.Button(self.d[f"newroomf {t}"], text="X", width=4,
+                self.closBut = ttk.Button(self.d[f"newroomf {t}"], text="✕", width=3, style="Close.TButton",
                                           command=lambda: self.closedeproom(t))
                 self.closBut.pack()
                 # If not a CT room, add "Combine Barriers" checkbox
@@ -208,21 +191,34 @@ class ddepartment():
                                                            variable=self.d[f"varcompb {t}"], onvalue=1, offvalue=0,
                                                            command=lambda: self.combination(t))
                     self.d[f"compb {t}"].grid(row=10, column=0, pady=5, padx=5, sticky="w")"""
-                # Setup for X-Ray Room type
-                if room_type == "X-Ray room":
+                # Setup for X-Ray and Mammography Room types
+                if room_type in ("X-Ray room", "Mammography Room"):
                     self.setup_xray_room(t)
+                    self.add_view_buttons(t, self.d[f"frame_1 {t}"], row=2, column=0, columnspan=6)
                 # Setup for CT Room type
                 elif room_type == "CT Room":
                     self.setup_ct_room(t)
+                    self.add_view_buttons(t, self.d[f"frame_1 {t}"], row=10, column=0, columnspan=12)
                 # Setup the results tab
-                self.setup_results(t)
-            # Select the current room and results in the notebook
-            self.depnote.select(self.d[f"newroomf {t}"])
-            self.resnote.select(self.d[f"resframe {t}"])
+                self.setup_results(t, results_note)
+                self.link_tabs(self.d[f"newroomf {t}"], self.d[f"resframe {t}"], rooms_note, results_note)
+                self.register_tab_name(self.d[f"newroomf {t}"], self.d[f"vname_room {t}"],
+                                       self.d[f"room_default {t}"], rooms_note)
+                # The room type cannot change once the room is designed
+                self.d[f"selroom {t}"].state(["disabled"])
+            else:
+                # Show the room again if its tabs were closed
+                rooms_note.add(self.d[f"newroomf {t}"])
+                results_note.add(self.d[f"resframe {t}"])
+            # Select the current room and its results inside the department
+            self.depnote.select(info["frame"])
+            rooms_note.select(self.d[f"newroomf {t}"])
+            results_note.select(self.d[f"resframe {t}"])
     def setup_xray_room(self, t):
         # Add workload and X-ray room options
         self.title_workload = ttk.Label(self.d[f"frame_1 {t}"], style="BL.TLabel", text="Workload:")
         self.title_workload.grid(row=1, column=0, pady=5, padx=5, sticky="w")
+        tip(self.title_workload, "workload")
         # Additional workload entry options
         self.d[f"worentry {t}"] = None
         self.d[f"vrawork {t}"] = IntVar(value=0)
@@ -232,6 +228,8 @@ class ddepartment():
         self.ranumb = ttk.Radiobutton(self.d[f"frame_1 {t}"], text="The Number of\nPatients per week:",
                                       variable=self.d[f"vrawork {t}"], value=2, command=lambda: self.workload(t))
         self.ranumb.grid(row=1, column=3, pady=5, padx=5, sticky="w")
+        tip(self.raworkl, "workload_total")
+        tip(self.ranumb, "workload_patients")
     def setup_ct_room(self, t):
         # CT room setup with body/head procedures, kVp, and DLP entries
         self.bp_label = ttk.Label(self.d[f"frame_1 {t}"], text='Body Procedures (weekly):')
@@ -263,17 +261,19 @@ class ddepartment():
         self.d[f"dlph_var {t}"] = IntVar()
         self.dlph_entry = ttk.Entry(self.d[f"frame_1 {t}"], textvariable=self.d[f"dlph_var {t}"], width=10)
         self.dlph_entry.grid(row=8, column=1, padx=10, pady=10, sticky="w")
-    def setup_results(self, t):
-        # Add result frame for each room
-        self.d[f"resframe {t}"] = ttk.Frame(self.resnote)
+        for name in ("bp", "hp", "dlpb", "dlph"):  # kept for highlighting empty entries
+            self.d[f"{name}_entry {t}"] = getattr(self, f"{name}_entry")
+        for widget, key in ((self.bp_label, "ct_body"), (self.bp_entry, "ct_body"),
+                            (self.hp_label, "ct_head"), (self.hp_entry, "ct_head"),
+                            (self.kvp_label, "ct_kvp"), (self.kvp_entry, "ct_kvp"),
+                            (self.dlpb_label, "ct_dlp_body"), (self.dlpb_entry, "ct_dlp_body"),
+                            (self.dlph_label, "ct_dlp_head"), (self.dlph_entry, "ct_dlp_head")):
+            tip(widget, key)
+    def setup_results(self, t, results_note):
+        # Add result frame for each room, in the department's results notebook
+        self.d[f"resframe {t}"] = ttk.Frame(results_note)
         self.d[f"resframe {t}"].pack()
-        self.resnote.add(self.d[f"resframe {t}"], text=f"Results of {self.d[f'name_room {t}'].get()}")
-        # ==========Results==============
-        if self.d[f"resframe {t}"] is None:
-            self.d[f"resframe {t}"] = ttk.Frame(self.resnote)
-            self.d[f"resframe {t}"].pack()
-
-        self.resnote.add(self.d[f"resframe {t}"], text=f"Results of {self.d[f'name_room {t}'].get()}")
+        results_note.add(self.d[f"resframe {t}"])
 
         # ======Results scrollbar=========
         self.rescanv = Canvas(self.d[f"resframe {t}"])
@@ -284,28 +284,19 @@ class ddepartment():
         self.xscrollres = ttk.Scrollbar(self.d[f"resframe {t}"], orient=HORIZONTAL, command=self.rescanv.xview)
         self.xscrollres.pack(side=BOTTOM, fill=X)
 
-        self.rescanv.configure(yscrollcommand=self.scrollres.set, xscrollcommand=self.xscrollres.set, bg="#f7faf9")
+        self.rescanv.configure(yscrollcommand=self.scrollres.set, xscrollcommand=self.xscrollres.set, bg=theme.SURFACE)
         self.rescanv.pack(side=LEFT, fill=BOTH, expand=1)
 
         # =========Results tab===========================
         self.d[f"resultframe {t}{self.d[f'nr {t}']}"] = ttk.Frame(self.rescanv)
-        self.d[f"resultframe {t}{self.d[f'nr {t}']}"].bind('<Configure>', lambda e: self.rescanv.configure(
-            scrollregion=self.rescanv.bbox("all")))
+        self.d[f"resultframe {t}{self.d[f'nr {t}']}"].bind('<Configure>', lambda e, c=self.rescanv: c.configure(
+            scrollregion=c.bbox("all")))
         self.rescanv.create_window((0, 0), window=self.d[f"resultframe {t}{self.d[f'nr {t}']}"], anchor="nw")
 
         self.reshield = ttk.Label(self.d[f"resultframe {t}{self.d[f'nr {t}']}"], style="BL.TLabel",
                                   text="The Shielding of:")
         self.reshield.grid(sticky="w")
         self.d[f"run {t}"] = True
-        self.depnote.select(self.d[f"newroomf {t}"])
-        self.resnote.select(self.d[f"resframe {t}"])
-    def sync_results_tab(self, event):
-        selected_room_tab = self.depnote.index(self.depnote.select())
-        result_frame_key = f"resframe {selected_room_tab}"
-        if result_frame_key in self.d:
-            self.resnote.select(self.d[result_frame_key])
-        else:
-            pass
 
     def occupation(self, t):
         def destroy_widget(widget_key):
@@ -373,12 +364,14 @@ class ddepartment():
             destroy_widget(worentry_key)
             self.d[worentry_key] = ttk.Entry(master=self.d[frame_key], width=10)
             self.d[worentry_key].grid(row=1, column=2, pady=5, padx=5)
+            tip(self.d[worentry_key], "workload_total")
         # Handle workload "Number of Patients"
         elif workload_type == 2:
             destroy_widget(worentry_key)
             destroy_widget(numpapwe_key)
             self.d[numpapwe_key] = ttk.Entry(master=self.d[frame_key], width=10)
             self.d[numpapwe_key].grid(row=1, column=4, pady=5, padx=5, sticky="w")
+            tip(self.d[numpapwe_key], "workload_patients")
     def combination(self, t):
         def destroy_widget(widget_key):
             if self.d.get(widget_key) is not None:
@@ -448,35 +441,13 @@ class ddepartment():
                 if self.d.get(combarr_key):
                     self.d[combarr_key].destroy()
                 self.d[num_com_key] -= 1
-    def exp_dep(self, t):
-        import pandas as pd
-        import os
-        # Prepare data for export
-        for b in range(1, t + 1):
-            room_name = self.d[f"labelname {b}"].cget("text")
-            for a in range(1, self.d[f"vnumwall {b}"].get() + 1):
-                key = f"lab_bar {a} {room_name}"
-                self.wa[self.barn.get(key, '')] = [str(self.xlmat.get(f"thic {a} {i} {room_name}", '')) for i in
-                    range(1, 7)]
-            self.d[f"room_data {b}"] = pd.DataFrame(data=self.wa,
-                index=["Lead (mm)", "Concrete (mm)", "Gypsum Wallboard (mm)", "Steel (mm)", "Plate Glass (mm)",
-                       "Wood (mm)"])
-        user_home = os.path.expanduser('~')  # Get user's home directory
-        excel_file_path = os.path.join(user_home, 'Department.xlsx')
-        # Export data to Excel
-        try:
-            with pd.ExcelWriter(excel_file_path, engine='xlsxwriter',
-                                engine_kwargs={'options': {'strings_to_numbers': True}}) as writer:
-                for b in range(1, t + 1):
-                    sheet_name = self.d[f"name_room {b}"].get()
-                    self.d[f"room_data {b}"].to_excel(writer, sheet_name=sheet_name)
-        except Exception as e:
-            print(f"An error occurred while saving the Excel file: {e}")
-        # Open the file
-        os.system(f'start {excel_file_path}')  # Use 'start' for Windows, adjust for other OS if needed
+    def exp_dep(self, dep):
+        # Full report of every designed room of this department
+        info = self.departments[dep]
+        name = info["name"].get().strip() or f"Department {dep}"
+        self.export_report(name, [t for t in info["rooms"] if self.d[f"run {t}"]])
     def closedeproom(self, t):
-        keys_to_destroy = [f"newroomf {t}", f"labelname {t}", f"name_room {t}", f"selroom {t}", f"crroomb {t}",
-            f"resframe {t}", f"resultframe {t}{self.d.get(f'nr {t}', '')}"]
-        for key in keys_to_destroy:
-            if self.d.get(key):
-                self.d[key].destroy()
+        # Hide the room and its results; the Design button shows them again with all inputs kept
+        info = self.departments[self.d[f"dep {t}"]]
+        info["rooms_note"].hide(self.d[f"newroomf {t}"])
+        info["results_note"].hide(self.d[f"resframe {t}"])

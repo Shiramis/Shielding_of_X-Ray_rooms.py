@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+venv_old_broken/
+.venv/
+
+# Build output (PyInstaller): publish the executable as a release, not in the repository
+build/
+dist/
+*.spec
+*.exe
+
+# IDE settings of each computer
+.idea/
+
+# Temporary crops made while building the user guide
+docs/images/_*.png

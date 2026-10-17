@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from Depcalculations import excel_path
 
 class dqprimsec():
     def primary(self):  # Primary Barrier calculations
@@ -7,7 +8,7 @@ class dqprimsec():
         self.p = float(self.entry1.get())
         self.ksec = float(self.entry4.get())
         from openpyxl import load_workbook  # Opening excel Data
-        wb = load_workbook('Data Shielding.xlsx')
+        wb = load_workbook(excel_path)
         # ========================primary αβγ========================
         ws = wb['prim abc']
         for i in range(3, 38):
@@ -111,7 +112,7 @@ class dqprimsec():
         self.s = float(self.entry2.get())
         self.ksec = float(self.entry4.get())
         from openpyxl import load_workbook  # Opening excel Data
-        wb = load_workbook('Data Shielding.xlsx')
+        wb = load_workbook(excel_path)
         ws = wb['sec abc']
         # ====================secondary αβγ============================
         for i in range(3, 18):

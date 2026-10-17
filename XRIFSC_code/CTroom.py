@@ -1,44 +1,36 @@
 import tkinter
 from tkinter import *
 from tkinter import ttk
+import theme
 import os
 from numpy import log as ln
+from tooltips import tip
 
 
 class  CT_Room():
     # ============creating def for CT notebook===================================
     def creatCTroom(self):
-        self.depbutton.destroy()
-        self.roombutton.destroy()
-        self.CTbutton.destroy()
-        #self.quickbutton.destroy()
-        self.chooseCal.destroy()
-        p = "Design CT room"
-        t = 0
-        if self.depnote is None:
-            self.depnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-            self.depnote.configure(width=955, height=728)
-            self.depnote.grid(row=0, sticky="w")
-        self.roomframe = ttk.Frame(self.depnote)
+        self.hide_start_buttons()
+        t, p, title = self.new_standalone("CT", "Design CT room", "CT Room")  # own key: never shares inputs
+        depnote = self.ensure_workspace()
+        self.roomframe = ttk.Frame(depnote)
         self.roomframe.pack(fill=BOTH, expand=1)
-        self.depnote.add(self.roomframe, text="CT Room")
+        depnote.add(self.roomframe, text=title)
+        room_area, results_area = self.split_pane(self.roomframe, 950, 520)
+        self.standalone[t] = self.roomframe
         #======Room scrollbar=========
-        self.roomcanv= Canvas(self.roomframe)
+        self.roomcanv= Canvas(room_area, width=theme.px(900))
 
-        self.xscrollroom = ttk.Scrollbar(self.roomframe, orient=HORIZONTAL, command=self.roomcanv.xview)
+        self.xscrollroom = ttk.Scrollbar(room_area, orient=HORIZONTAL, command=self.roomcanv.xview)
         self.xscrollroom.pack(side=BOTTOM, fill=X)
         self.roomcanv.pack(side=LEFT, fill=BOTH, expand=1)
-        self.yscrollroom = ttk.Scrollbar (self.roomframe, orient= VERTICAL, command= self.roomcanv.yview)
+        self.yscrollroom = ttk.Scrollbar (room_area, orient= VERTICAL, command= self.roomcanv.yview)
         self.yscrollroom.pack(side =RIGHT, fill=Y)
-        self.roomcanv.configure(yscrollcommand=self.yscrollroom.set, xscrollcommand=self.xscrollroom.set,bg="#f6f8f8")
+        self.roomcanv.configure(yscrollcommand=self.yscrollroom.set, xscrollcommand=self.xscrollroom.set,bg=theme.SURFACE)
         # =========Room tab===========================
         self.d["frame_1 {0}".format(str(t))] = ttk.Frame(self.roomcanv)
-        self.d["frame_1 " + str(t)].bind('<Configure>', lambda e: self.roomcanv.configure(scrollregion=self.roomcanv.bbox("all")))
+        self.d["frame_1 " + str(t)].bind('<Configure>', lambda e, c=self.roomcanv: c.configure(scrollregion=c.bbox("all")))
         self.roomcanv.create_window((0,0), window=self.d["frame_1 " + str(t)], anchor="nw")
-        if self.resnote is None:
-            self.resnote = ttk.Notebook(self.new_main_Frame, style="AL.TNotebook")
-            self.resnote.grid(row=0, column=1, sticky="w")
-            self.resnote.configure(width=562, height=728)
 
         # ==========αρχικοποίηση τιμών =================
         self.d["selxroom {0}".format(str(t))] = None
@@ -51,7 +43,7 @@ class  CT_Room():
                                                             textvariable=self.d["vselroom " + str(t)],
                                                             values=["X-Ray room", "From X-Ray room","CT Room"], state="readonly")
         self.d["selroom {0}".format(str(t))].set("CT Room")
-        self.d["nr {0}".format(str(t))] = "Design CT room"
+        self.d["nr {0}".format(str(t))] = p  # unique name: barrier inputs are keyed by it
         self.d["noteb {0}".format(str(t) + self.d["nr " + str(t)])] = ttk.Notebook(self.d["frame_1 " + str(t)],
                                                                                    style="BL.TNotebook")
         # ==============Number of Barriers in the Room==========
@@ -62,6 +54,8 @@ class  CT_Room():
                                                            textvariable=self.d["vnumwall " + str(t)], from_=7,
                                                            to=50, width=5, command=lambda: self.barriers(t))
         self.d["numwall " + str(t)].grid(row=0, column=1, pady=10, padx=10, sticky="w")
+        tip(self.lanumwall, "num_barriers")
+        tip(self.d["numwall " + str(t)], "num_barriers")
         self.barriers(t)
 
         self.bp_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='Body Procedures (weekly):')
@@ -93,24 +87,41 @@ class  CT_Room():
         self.kvp_dropdown = ttk.Combobox(master=self.d["frame_1 " + str(t)], textvariable=self.d[f"kvp_var "+str(t)], values=[120, 140],
                                          state="readonly", width=7)
         self.kvp_dropdown.grid(row=6, column=1, padx=10, pady=10, sticky="w")
+        for name in ("bp", "hp", "dlpb", "dlph"):  # kept for highlighting empty entries
+            self.d[f"{name}_entry {t}"] = getattr(self, f"{name}_entry")
+        for widget, key in ((self.bp_label, "ct_body"), (self.bp_entry, "ct_body"),
+                            (self.hp_label, "ct_head"), (self.hp_entry, "ct_head"),
+                            (self.dlpb_label, "ct_dlp_body"), (self.dlpb_entry, "ct_dlp_body"),
+                            (self.dlph_label, "ct_dlp_head"), (self.dlph_entry, "ct_dlp_head"),
+                            (self.kvp_label, "ct_kvp"), (self.kvp_dropdown, "ct_kvp")):
+            tip(widget, key)
         # ==========Results==============
-        self.d["resframe {0}".format(str(t))] = ttk.Frame(self.resnote)
-        self.d["resframe " + str(t)].pack()
-        self.resnote.add(self.d["resframe " + str(t)], text="Results of CT Room")
-
+        self.d["resframe {0}".format(str(t))] = results_area
+        ttk.Label(results_area, style="BL.TLabel", text="Results").pack(anchor="w", padx=5, pady=5)
         # ======Results scrollbar=========
-        self.rescanv = Canvas(self.d["resframe " + str(t)])
+        self.rescanv = Canvas(self.d["resframe " + str(t)], width=theme.px(480))
         self.rescanv.pack(side=LEFT, fill=BOTH, expand=1)
         self.scrollres = ttk.Scrollbar(self.d["resframe " + str(t)], orient=VERTICAL, command=self.rescanv.yview)
         self.scrollres.pack(side=RIGHT, fill=Y)
-        self.rescanv.configure(yscrollcommand=self.scrollres.set, bg="#f6f8f8")
+        self.rescanv.configure(yscrollcommand=self.scrollres.set, bg=theme.SURFACE)
         # =========Results tab===========================
         self.d["resultframe {0}".format(str(t)) + p] = ttk.Frame(self.rescanv)
-        self.d["resultframe " + str(t) + p].bind('<Configure>', lambda e: self.rescanv.configure(
-            scrollregion=self.rescanv.bbox("all")))
+        self.d["resultframe " + str(t) + p].bind('<Configure>', lambda e, c=self.rescanv: c.configure(
+            scrollregion=c.bbox("all")))
         self.rescanv.create_window((0, 0), window=self.d["resultframe " + str(t) + p], anchor="nw")
         self.reshield = ttk.Label(self.d["resultframe " + str(t) + p], style="BL.TLabel", text="The Shielding of:")
         self.reshield.grid(sticky="w")
+        self.d[f"room_default {t}"] = title
+        self.d[f"vname_room {t}"] = StringVar(value=title)
+        self.register_tab_name(self.roomframe, self.d[f"vname_room {t}"], title, depnote)
+        # ======Export to excel========
+        self.exp_but = ttk.Button(master=self.d["frame_1 " + str(t)], text="Export to Excel",
+                                  command=lambda: self.exp_room(t))
+        self.exp_but.grid(row=7, column=0, pady=10, padx=10, sticky="w")
+        tip(self.exp_but, "export")
+        self.add_view_buttons(t, self.d["frame_1 " + str(t)], row=10, column=0, columnspan=12)
         # ======Destroy button======
-        self.closBut = ttk.Button(self.roomframe, text="X", width=4, command=lambda: self.closeroom(t))
+        self.closBut = ttk.Button(room_area, text="✕", width=3, style="Close.TButton",
+                                  command=lambda f=self.roomframe, r=self.d["resframe " + str(t)]: self.closeroom(f, r))
         self.closBut.pack()
+        return t
