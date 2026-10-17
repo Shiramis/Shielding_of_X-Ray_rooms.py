@@ -1,0 +1,1331 @@
+{
+ "xray": {
+  "Floor": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 1.0,
+   "K_total": 76.18106995884773,
+   "B": 0.0002625324114088159,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Primary",
+     "distribution": "Rad Room (floor or other barriers)",
+     "k1_source": "Primary (NCRP 147)",
+     "preshielding": "Bucky",
+     "N": 120.0,
+     "U": 0.89,
+     "T": 1.0,
+     "K1": 5.2,
+     "d": 2.7,
+     "K": 76.18106995884773,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Administrative or clerical offices",
+   "thickness": [
+    [
+     "Concrete",
+     50.020375280895024
+    ],
+    [
+     "Lead",
+     0.7403766166874551
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.03994,
+     0.1448,
+     0.42310000000000003
+    ],
+    "Lead": [
+     2.651,
+     16.56,
+     0.4585
+    ]
+   },
+   "preshielding": {
+    "Lead": 0.85,
+    "Concrete": 72.0,
+    "Steel": 7.0
+   },
+   "check": {
+    "K": 76.18106995884773,
+    "P": 0.02,
+    "dose": 0.0023509214268869886,
+    "ok": true,
+    "basis": "planned Concrete 100 mm",
+    "transmission": 3.085965356166477e-05
+   }
+  },
+  "Ceiling": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 0.2,
+   "K_total": 0.18816000000000002,
+   "B": 0.10629251700680271,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Rad Room (all barriers)",
+     "k1_source": "Leakage + forward/backscatter (NCRP 147)",
+     "preshielding": "",
+     "N": 120.0,
+     "U": 1,
+     "T": 0.2,
+     "K1": 0.049,
+     "d": 2.5,
+     "K": 0.18816000000000002,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Patient rooms",
+   "thickness": [
+    [
+     "Concrete",
+     20.215876894631027
+    ],
+    [
+     "Lead",
+     0.2115135626421399
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.0361,
+     0.1433,
+     0.56
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.18816000000000002,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.10629251700680271
+   }
+  },
+  "Door": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 0.13,
+   "K_total": 0.03731821092106467,
+   "B": 0.5359313725490196,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Rad Room (all barriers)",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 120.0,
+     "U": 1,
+     "T": 0.13,
+     "K1": 0.034,
+     "d": 3.77,
+     "K": 0.03731821092106467,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Corridor doors",
+   "thickness": [
+    [
+     "Lead",
+     0.03766310004494893
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.03731821092106467,
+    "P": 0.02,
+    "dose": 0.020000000000000004,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.5359313725490196
+   }
+  },
+  "Barrier 1": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 0.03,
+   "K_total": 0.23051020408163267,
+   "B": 0.08676405489154493,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Primary",
+     "distribution": "Rad Room (floor or other barriers)",
+     "k1_source": "Primary (NCRP 147)",
+     "preshielding": "Cross-table",
+     "N": 120.0,
+     "U": 0.09,
+     "T": 0.03,
+     "K1": 5.2,
+     "d": 2.8,
+     "K": 0.2148979591836735,
+     "set": true
+    },
+    {
+     "no": 2,
+     "radiation": "Secondary",
+     "distribution": "Rad Room (all barriers)",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 120.0,
+     "U": 1,
+     "T": 0.03,
+     "K1": 0.034,
+     "d": 2.8,
+     "K": 0.015612244897959185,
+     "set": false
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Outdoor areas with only transient pedestrian or vehicular traffic",
+   "thickness": [
+    [
+     "Lead",
+     0.0
+    ],
+    [
+     "Concrete",
+     0.0
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.03994,
+     0.1448,
+     0.42310000000000003
+    ],
+    "Lead": [
+     2.651,
+     16.56,
+     0.4585
+    ]
+   },
+   "preshielding": {
+    "Lead": 0.3,
+    "Concrete": 30.0,
+    "Steel": 2.0
+   },
+   "check": {
+    "K": 0.23051020408163267,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.08676405489154493
+   }
+  },
+  "Barrier 2": {
+   "kind": "xray",
+   "P": 0.1,
+   "T": 1.0,
+   "K_total": 0.22065981611681992,
+   "B": 0.4531862745098039,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Rad Room (all barriers)",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 120.0,
+     "U": 1,
+     "T": 1.0,
+     "K1": 0.034,
+     "d": 4.3,
+     "K": 0.22065981611681992,
+     "set": true
+    }
+   ],
+   "area": "Controlled Area",
+   "location": "X-ray control rooms",
+   "thickness": [
+    [
+     "Lead",
+     0.05007817465094018
+    ],
+    [
+     "Gypsum Wallboard",
+     14.364864448375386
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Gypsum Wallboard": [
+     0.0138,
+     0.057,
+     0.7937
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.22065981611681992,
+    "P": 0.1,
+    "dose": 0.005461941162214547,
+    "ok": true,
+    "basis": "planned Lead 0.5 mm",
+    "transmission": 0.02475276766895759
+   }
+  },
+  "Barrier 3": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 0.2,
+   "K_total": 0.10408163265306125,
+   "B": 0.192156862745098,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Rad Room (all barriers)",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 120.0,
+     "U": 1,
+     "T": 0.2,
+     "K1": 0.034,
+     "d": 2.8,
+     "K": 0.10408163265306125,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Corridors",
+   "thickness": [
+    [
+     "Lead",
+     0.13252416045057483
+    ],
+    [
+     "Gypsum Wallboard",
+     38.639433749154286
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Gypsum Wallboard": [
+     0.0138,
+     0.057,
+     0.7937
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.10408163265306125,
+    "P": 0.02,
+    "dose": 0.04412696163562304,
+    "ok": false,
+    "basis": "planned Gypsum Wallboard 15.9 mm",
+    "transmission": 0.42396492551873105
+   }
+  },
+  "Barrier 4": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 1.0,
+   "K_total": 52.94517958412099,
+   "B": 0.0003777492145101399,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Primary",
+     "distribution": "Rad Room (chest bucky)",
+     "k1_source": "Primary (NCRP 147)",
+     "preshielding": "Bucky",
+     "N": 120.0,
+     "U": 1.0,
+     "T": 1.0,
+     "K1": 2.3,
+     "d": 2.3,
+     "K": 52.17391304347827,
+     "set": true
+    },
+    {
+     "no": 2,
+     "radiation": "Secondary",
+     "distribution": "Rad Room (all barriers)",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 120.0,
+     "U": 1,
+     "T": 1.0,
+     "K1": 0.034,
+     "d": 2.3,
+     "K": 0.7712665406427223,
+     "set": false
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Administrative or clerical offices",
+   "thickness": [
+    [
+     "Concrete",
+     39.47105018351249
+    ],
+    [
+     "Lead",
+     0.6261587232939474
+    ]
+   ],
+   "missing": [],
+   "layers": [
+    [
+     "Concrete",
+     50.0
+    ],
+    [
+     "Lead",
+     50.0
+    ]
+   ],
+   "params": {
+    "Concrete": [
+     0.03552,
+     0.1177,
+     0.6007
+    ],
+    "Lead": [
+     2.264,
+     13.08,
+     0.56
+    ]
+   },
+   "preshielding": {
+    "Lead": 0.85,
+    "Concrete": 72.0,
+    "Steel": 7.0
+   },
+   "check": {
+    "K": 52.94517958412099,
+    "P": 0.02,
+    "dose": 0.0010085261632522978,
+    "ok": true,
+    "basis": "planned Concrete 100 mm + Lead 1 mm",
+    "transmission": 1.904849829907403e-05
+   }
+  }
+ },
+ "xray_report": {
+  "header": [
+   "Room",
+   "Room type",
+   "Barrier",
+   "Area",
+   "Location / T source",
+   "T",
+   "P (mGy/week)",
+   "\u03a3K (mGy/week)",
+   "B",
+   "Lead (mm)",
+   "Concrete (mm)",
+   "Gypsum Wallboard (mm)",
+   "Steel (mm)",
+   "Plate Glass (mm)",
+   "Wood (mm)",
+   "Dose beyond (mGy/week)",
+   "Goal P",
+   "Materials",
+   "Status"
+  ],
+  "rows": [
+   [
+    "Example Rad Room",
+    "X-Ray room",
+    "Floor",
+    "Uncontrolled Area",
+    "Administrative or clerical offices",
+    1,
+    0.02,
+    76.18106995884773,
+    0.0002625324114088159,
+    0.7403766166874551,
+    50.02037528089502,
+    null,
+    null,
+    null,
+    null,
+    0.002350921426886989,
+    "met (planned Concrete 100 mm)",
+    "Each material alone",
+    "OK"
+   ],
+   [
+    "Example Rad Room",
+    "X-Ray room",
+    "Ceiling",
+    "Uncontrolled Area",
+    "Patient rooms",
+    0.2,
+    0.02,
+    0.18816,
+    0.1062925170068027,
+    0.2115135626421399,
+    20.21587689463103,
+    null,
+    null,
+    null,
+    null,
+    0.02,
+    "met (required thickness)",
+    "Each material alone",
+    "OK"
+   ],
+   [
+    "Example Rad Room",
+    "X-Ray room",
+    "Door",
+    "Uncontrolled Area",
+    "Corridor doors",
+    0.13,
+    0.02,
+    0.03731821092106467,
+    0.5359313725490196,
+    0.03766310004494893,
+    null,
+    null,
+    null,
+    null,
+    null,
+    0.02,
+    "met (required thickness)",
+    "Each material alone",
+    "OK"
+   ],
+   [
+    "Example Rad Room",
+    "X-Ray room",
+    "Barrier 1",
+    "Uncontrolled Area",
+    "Outdoor areas with only transient pedestrian or vehicular traffic",
+    0.03,
+    0.02,
+    0.2305102040816327,
+    0.08676405489154493,
+    0,
+    0,
+    null,
+    null,
+    null,
+    null,
+    0.02,
+    "met (required thickness)",
+    "Each material alone",
+    "OK"
+   ],
+   [
+    "Example Rad Room",
+    "X-Ray room",
+    "Barrier 2",
+    "Controlled Area",
+    "X-ray control rooms",
+    1,
+    0.1,
+    0.2206598161168199,
+    0.4531862745098039,
+    0.05007817465094018,
+    null,
+    14.36486444837539,
+    null,
+    null,
+    null,
+    0.005461941162214547,
+    "met (planned Lead 0.5 mm)",
+    "Each material alone",
+    "OK"
+   ],
+   [
+    "Example Rad Room",
+    "X-Ray room",
+    "Barrier 3",
+    "Uncontrolled Area",
+    "Corridors",
+    0.2,
+    0.02,
+    0.1040816326530613,
+    0.192156862745098,
+    0.1325241604505748,
+    null,
+    38.63943374915429,
+    null,
+    null,
+    null,
+    0.04412696163562304,
+    "EXCEEDED (planned Gypsum Wallboard 15.9 mm)",
+    "Each material alone",
+    "OK"
+   ],
+   [
+    "Example Rad Room",
+    "X-Ray room",
+    "Barrier 4",
+    "Uncontrolled Area",
+    "Administrative or clerical offices",
+    1,
+    0.02,
+    52.94517958412099,
+    0.0003777492145101399,
+    0.6261587232939474,
+    39.47105018351249,
+    null,
+    null,
+    null,
+    null,
+    0.001008526163252298,
+    "met (planned Concrete 100 mm + Lead 1 mm)",
+    "Layers, inside \u2192 outside: Concrete 50 %, Lead 50 %",
+    "OK"
+   ]
+  ]
+ },
+ "ct": {
+  "Floor": {
+   "kind": "ct",
+   "P": 0.02,
+   "T": 1.0,
+   "K_total": 4.839506172839505,
+   "B": 0.004132653061224492,
+   "d": 2.7,
+   "kvp": 120,
+   "area": "Uncontrolled Area",
+   "location": "Administrative or clerical offices",
+   "thickness": [
+    [
+     "Lead",
+     1.5094164818295612
+    ],
+    [
+     "Concrete",
+     131.19326324626311
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 4.839506172839505,
+    "P": 0.02,
+    "dose": 0.020000000000000004,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.004132653061224492
+   }
+  },
+  "Ceiling": {
+   "kind": "ct",
+   "P": 0.02,
+   "T": 0.2,
+   "K_total": 1.12896,
+   "B": 0.017715419501133787,
+   "d": 2.5,
+   "kvp": 120,
+   "area": "Uncontrolled Area",
+   "location": "Patient rooms",
+   "thickness": [
+    [
+     "Lead",
+     0.9657824622455101
+    ],
+    [
+     "Concrete",
+     93.81694892676212
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 1.12896,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.017715419501133787
+   }
+  },
+  "Door": {
+   "kind": "ct",
+   "P": 0.02,
+   "T": 0.13,
+   "K_total": 0.49955886677776684,
+   "B": 0.04003532182103611,
+   "d": 3.03,
+   "kvp": 120,
+   "area": "Uncontrolled Area",
+   "location": "Corridor doors",
+   "thickness": [
+    [
+     "Lead",
+     0.6973810662629357
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.49955886677776684,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.04003532182103611
+   }
+  },
+  "Barrier 1": {
+   "kind": "ct",
+   "P": 0.02,
+   "T": 0.03,
+   "K_total": 0.13499999999999998,
+   "B": 0.14814814814814817,
+   "d": 2.8,
+   "kvp": 120,
+   "area": "Uncontrolled Area",
+   "location": "Unattended parking lots",
+   "thickness": [
+    [
+     "Lead",
+     0.34012064262526237
+    ],
+    [
+     "Concrete",
+     41.3249871639076
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.13499999999999998,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.14814814814814817
+   }
+  },
+  "Barrier 2": {
+   "kind": "ct",
+   "P": 0.02,
+   "T": 1.0,
+   "K_total": 2.4432132963988917,
+   "B": 0.008185941043083901,
+   "d": 3.8,
+   "kvp": 120,
+   "area": "Uncontrolled Area",
+   "location": "Adjacent x-ray rooms",
+   "thickness": [
+    [
+     "Lead",
+     1.2455750700909773
+    ],
+    [
+     "Concrete",
+     113.57012631050894
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 2.4432132963988917,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.008185941043083901
+   }
+  },
+  "Barrier 3": {
+   "kind": "ct",
+   "P": 0.02,
+   "T": 0.2,
+   "K_total": 0.9,
+   "B": 0.022222222222222223,
+   "d": 2.8,
+   "kvp": 120,
+   "area": "Uncontrolled Area",
+   "location": "Corridors",
+   "thickness": [
+    [
+     "Lead",
+     0.8880947626714899
+    ],
+    [
+     "Concrete",
+     88.0609556444775
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.9,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.022222222222222223
+   }
+  },
+  "Barrier 4": {
+   "kind": "ct",
+   "P": 0.1,
+   "T": 1.0,
+   "K_total": 2.4432132963988917,
+   "B": 0.040929705215419505,
+   "d": 3.8,
+   "kvp": 120,
+   "area": "Controlled Area",
+   "location": "X-ray control rooms",
+   "thickness": [
+    [
+     "Lead",
+     0.6905567856516206
+    ],
+    [
+     "Concrete",
+     72.68698039552628
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 2.4432132963988917,
+    "P": 0.1,
+    "dose": 0.1,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.040929705215419505
+   }
+  }
+ },
+ "mammography": {
+  "Floor": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 1.0,
+   "K_total": 0.5377229080932784,
+   "B": 0.03719387755102042,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Mammography Room",
+     "k1_source": "Leakage + forward/backscatter (NCRP 147)",
+     "preshielding": "",
+     "N": 80.0,
+     "U": 1,
+     "T": 1.0,
+     "K1": 0.049,
+     "d": 2.7,
+     "K": 0.5377229080932784,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Administrative or clerical offices",
+   "thickness": [
+    [
+     "Concrete",
+     2.7850480144610055
+    ],
+    [
+     "Lead",
+     0.0253911479172833
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.2539,
+     1.8411,
+     0.3924
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.5377229080932784,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.03719387755102042
+   }
+  },
+  "Ceiling": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 0.2,
+   "K_total": 0.12544,
+   "B": 0.15943877551020408,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Mammography Room",
+     "k1_source": "Leakage + forward/backscatter (NCRP 147)",
+     "preshielding": "",
+     "N": 80.0,
+     "U": 1,
+     "T": 0.2,
+     "K1": 0.049,
+     "d": 2.5,
+     "K": 0.12544,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Patient rooms",
+   "thickness": [
+    [
+     "Concrete",
+     1.2081359719886196
+    ],
+    [
+     "Lead",
+     0.011365405738679701
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Concrete": [
+     0.2539,
+     1.8411,
+     0.3924
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.12544,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.15943877551020408
+   }
+  },
+  "Door": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 0.13,
+   "K_total": 0.007839697376716647,
+   "B": 2.551118881118881,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Mammography Room",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 80.0,
+     "U": 1,
+     "T": 0.13,
+     "K1": 0.011,
+     "d": 3.82,
+     "K": 0.007839697376716647,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Corridor doors",
+   "thickness": [
+    [
+     "Lead",
+     0.0
+    ],
+    [
+     "Wood",
+     0.0
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Wood": [
+     0.01888,
+     0.04172,
+     0.2903
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.007839697376716647,
+    "P": 0.02,
+    "dose": 0.007839697376716647,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 1.0
+   }
+  },
+  "Barrier 1": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 0.05,
+   "K_total": 0.013580246913580245,
+   "B": 1.4727272727272729,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Mammography Room",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 80.0,
+     "U": 1,
+     "T": 0.05,
+     "K1": 0.011,
+     "d": 1.8,
+     "K": 0.013580246913580245,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Outdoor areas with seating",
+   "thickness": [
+    [
+     "Gypsum Wallboard",
+     0.0
+    ],
+    [
+     "Lead",
+     0.0
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Gypsum Wallboard": [
+     0.0883,
+     0.7526,
+     0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.013580246913580245,
+    "P": 0.02,
+    "dose": 0.013580246913580245,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 1.0
+   }
+  },
+  "Barrier 2": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 1.0,
+   "K_total": 0.166351606805293,
+   "B": 0.12022727272727272,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Mammography Room",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 80.0,
+     "U": 1,
+     "T": 1.0,
+     "K1": 0.011,
+     "d": 2.3,
+     "K": 0.166351606805293,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Administrative or clerical offices",
+   "thickness": [
+    [
+     "Gypsum Wallboard",
+     3.633674773363495
+    ],
+    [
+     "Lead",
+     0.013692774570692465
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Gypsum Wallboard": [
+     0.0883,
+     0.7526,
+     0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.166351606805293,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.12022727272727272
+   }
+  },
+  "Barrier 3": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 0.2,
+   "K_total": 0.01218836565096953,
+   "B": 1.6409090909090909,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Mammography Room",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 80.0,
+     "U": 1,
+     "T": 0.2,
+     "K1": 0.011,
+     "d": 3.8,
+     "K": 0.01218836565096953,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Corridors",
+   "thickness": [
+    [
+     "Gypsum Wallboard",
+     0.0
+    ],
+    [
+     "Lead",
+     0.0
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Gypsum Wallboard": [
+     0.0883,
+     0.7526,
+     0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.01218836565096953,
+    "P": 0.02,
+    "dose": 0.01218836565096953,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 1.0
+   }
+  },
+  "Barrier 4": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 1.0,
+   "K_total": 0.166351606805293,
+   "B": 0.12022727272727272,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Mammography Room",
+     "k1_source": "Leakage + side-scatter (NCRP 147)",
+     "preshielding": "",
+     "N": 80.0,
+     "U": 1,
+     "T": 1.0,
+     "K1": 0.011,
+     "d": 2.3,
+     "K": 0.166351606805293,
+     "set": true
+    }
+   ],
+   "area": "Uncontrolled Area",
+   "location": "Adjacent x-ray rooms",
+   "thickness": [
+    [
+     "Gypsum Wallboard",
+     3.633674773363495
+    ],
+    [
+     "Lead",
+     0.013692774570692465
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Gypsum Wallboard": [
+     0.0883,
+     0.7526,
+     0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 0.166351606805293,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.12022727272727272
+   }
+  }
+ }
+}
