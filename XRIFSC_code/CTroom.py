@@ -7,7 +7,8 @@ from numpy import log as ln
 from tooltips import tip
 
 
-MAX_PHASES = 4             # scans per procedure that can be given
+MAX_PHASES = 20            # scans per procedure that can be given (e.g. multiphase or perfusion protocols)
+PHASES_PER_ROW = 5
 NCRP_PHASES = ("100", "40")  # NCRP 147: every procedure scanned once, 40 % again with contrast = 1.4 scans
 
 
@@ -186,9 +187,10 @@ class  CT_Room():
             if var is None:
                 previous = self.entry_number(f"phase_{kind} {t}#{k - 1}") or 0
                 var = self.phase_var(t, kind, k, f"{previous / 2:g}")
+            place, column = divmod(k - 1, PHASES_PER_ROW)
             entry = ttk.Entry(row, textvariable=var, width=5)
-            entry.grid(row=0, column=2 * k, padx=(0 if k == 1 else 8, 0))
-            ttk.Label(row, text="%").grid(row=0, column=2 * k + 1, padx=(2, 0))
+            entry.grid(row=place, column=2 * column, padx=(0 if column == 0 else 8, 0), pady=1)
+            ttk.Label(row, text="%").grid(row=place, column=2 * column + 1, padx=(2, 0), pady=1)
             self.d[f"phase_{kind}_entry {t}#{k}"] = entry
             tip(entry, "ct_phases")
         self.update_scans_note(t)

@@ -87,7 +87,11 @@ MISSING_HELP = {
                       "chest bucky wall 1).",
     "Unshielded Air Kerma": "primary: type K in 'Primary Unshielded Air Kerma'. Secondary: choose 'Select "
                             "Unshielded Secondary Air Kerma (NCRP 147)' and the type of scatter (needs an X-ray "
-                            "room, not a kVp), or choose 'Write' and type the value.",
+                            "room, not a kVp), or choose 'Write' and type the value. Digital Breast "
+                            "Tomosynthesis has no NCRP 147 value: write it.",
+    "Patients per week (DBT)": "NCRP 147 gives no workload per patient (Wnorm) for Digital Breast Tomosynthesis: "
+                               "at the top of the room choose 'The Number of Patients per week' (or tick "
+                               "'Different Workload' on this radiation type).",
     "Occupancy Factor (T)": "under 'Shielding Area' choose 'Write occupancy factor (T)' and type it, "
                             "or 'select Location' and pick what is beyond the barrier.",
     "Distance from the Source to the Barrier (m)": "type the distance from the X-ray source to the barrier "
@@ -331,6 +335,10 @@ class departprimsec():
 
     def transmission_params(self, sheet, distribution):
         # (alpha, beta, gamma) per material for a workload distribution or kVp, or None if it is not in the table
+        if distribution == "Digital Breast Tomosynthesis":  # one set of data, sheet 'DBT abc'
+            names = {"Gypsum": "Gypsum Wallboard", "Glass": "Plate Glass"}
+            return {names.get(row[0], row[0]): tuple(float(v) for v in row[1:4])
+                    for row in wb["DBT abc"].iter_rows(min_row=2, values_only=True) if row[0]}
         for row in wb[sheet].iter_rows(min_row=3, values_only=True):
             if row[0] is not None and row[0] == distribution:
                 return {material: tuple(float(row[col + k] or 0) for k in range(3))
@@ -388,6 +396,8 @@ class departprimsec():
             if total is None:
                 need.append("Workload")
                 fields.append(f"worentry {suffix}")
+            elif w_norm is None and distribution == "Digital Breast Tomosynthesis":
+                need.append("Patients per week (DBT)")
             elif w_norm is None:
                 need.append("Workload Distribution (X-ray room or kVp)")
             else:

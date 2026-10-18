@@ -11,6 +11,7 @@ from tooltips import tip
 STANDALONE_ROOMS = {
     "X-Ray room": ("X", "Design x-ray room", "X-Ray Room"),
     "Mammography Room": ("M", "Design mammography room", "Mammography Room"),
+    "Fluoroscopy Room": ("F", "Design fluoroscopy room", "Fluoroscopy Room"),
 }
 
 class droom():

@@ -93,6 +93,8 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room,Repo
         self.newoptions.add_command(label="Design Department", command=self.creatdep)
         self.newoptions.add_command(label="Design X-Ray Room", command=self.creatroom)
         self.newoptions.add_command(label="Design CT Room", command=self.creatCTroom)
+        self.newoptions.add_command(label="Design Fluoroscopy Room",
+                                    command=lambda: self.creatroom("Fluoroscopy Room"))
         self.newoptions.add_command(label="Design Mammography Room",
                                     command=lambda: self.creatroom("Mammography Room"))
         #self.newoptions.add_command(label="Design Barrier", command=self.quickcal)
@@ -202,14 +204,16 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room,Repo
               font=(theme.SEMIBOLD, 10)).pack(anchor="w", padx=8)
         cards = Frame(content, background=theme.NAVY)
         cards.pack(pady=(8, 28))
-        for column, (title, text, command) in enumerate((
-                ("Department", "Several rooms on one floor plan, each with its own results.", self.creatdep),
-                ("X-Ray Room", "Radiography, R&F, chest and angiography: primary and secondary barriers.",
-                 self.creatroom),
-                ("CT Room", "Secondary radiation from the DLP of body and head procedures.", self.creatCTroom),
-                ("Mammography Room", "Secondary radiation only: the image receptor stops the primary beam.",
-                 lambda: self.creatroom("Mammography Room")))):
-            self.start_card(cards, title, text, command).grid(row=0, column=column, padx=8)
+        choices = (("Department", "Several rooms on one floor plan, each with its own results.", self.creatdep),
+                   ("X-Ray Room", "Radiography and chest rooms: primary and secondary barriers.", self.creatroom),
+                   ("Fluoroscopy Room", "R&F and angiography (cardiac, peripheral).",
+                    lambda: self.creatroom("Fluoroscopy Room")),
+                   ("CT Room", "Secondary radiation from the DLP of body and head scans.", self.creatCTroom),
+                   ("Mammography Room", "Secondary radiation only, also tomosynthesis (DBT).",
+                    lambda: self.creatroom("Mammography Room")))
+        per_row = len(choices) if self.master.winfo_screenwidth() >= theme.px(272) * len(choices) else 3
+        for k, (title, text, command) in enumerate(choices):
+            self.start_card(cards, title, text, command).grid(row=k // per_row, column=k % per_row, padx=8, pady=6)
         actions = Frame(content, background=theme.NAVY)
         actions.pack()
         ttk.Button(actions, text="Open project…", style="Ghost.TButton", command=self.open_project).pack(

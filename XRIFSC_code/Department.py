@@ -6,7 +6,7 @@ import theme
 import xlsxwriter
 from tooltips import tip
 
-ROOM_TYPES = ["X-Ray room", "CT Room", "Mammography Room"]
+ROOM_TYPES = ["X-Ray room", "Fluoroscopy Room", "CT Room", "Mammography Room"]
 
 class ddepartment():
     # ============creating def for Deparment notebook===================================
@@ -192,7 +192,7 @@ class ddepartment():
                                                            command=lambda: self.combination(t))
                     self.d[f"compb {t}"].grid(row=10, column=0, pady=5, padx=5, sticky="w")"""
                 # Setup for X-Ray and Mammography Room types
-                if room_type in ("X-Ray room", "Mammography Room"):
+                if room_type in ("X-Ray room", "Fluoroscopy Room", "Mammography Room"):
                     self.setup_xray_room(t)
                     self.add_view_buttons(t, self.d[f"frame_1 {t}"], row=2, column=0, columnspan=6)
                 # Setup for CT Room type

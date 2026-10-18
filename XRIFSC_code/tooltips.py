@@ -8,10 +8,11 @@ TIPS = {
     # ===== Department =====
     "num_rooms": "Number of rooms in the department.\n"
                  "For each room: write a description, choose the room type and press Design.",
-    "room_type": "X-Ray room: radiography, R&F, chest, angiography.\n"
+    "room_type": "X-Ray room: radiography and chest rooms.\n"
+                 "Fluoroscopy Room: R&F (fluoroscopy and radiographic tube), cardiac and peripheral angiography.\n"
                  "CT Room: secondary radiation from DLP (NCRP 147 CT method).\n"
-                 "Mammography Room: secondary radiation only. NCRP 147 assumes the image receptor "
-                 "stops the primary beam.",
+                 "Mammography Room: secondary radiation only (NCRP 147 assumes the image receptor stops the "
+                 "primary beam); also digital breast tomosynthesis (DBT).",
     "design_room": "Opens the room's barriers on the left and its results tab on the right.\n"
                    "If you closed the room with X, this shows it again with all inputs kept.",
     "department_name": "Name of the department, shown on its tab and in the exported report.\n"
@@ -64,7 +65,10 @@ TIPS = {
               "  Floor: the person below is 1.7 m above the lower floor, i.e. floor-to-floor height − 1.7 m below "
               "this floor: 1.3 m for 3 m, 2.6 m for 4.3 m.\n"
               "The floor plan fills it in from the floor-to-floor height.",
-    "workload_distribution": "Choose the NCRP 147 workload distribution (room type), or give the kVp.\n"
+    "workload_distribution": "Choose the NCRP 147 workload distribution (room type), or give the kVp. The list "
+                             "shows those of this kind of room.\n"
+                             "Digital Breast Tomosynthesis: DBT transmission data (not NCRP 147); write its "
+                             "unshielded air kerma and give the patients per week.\n"
                              "It sets Wnorm, the unshielded air kerma and the transmission parameters "
                              "(α, β, γ) used for the thickness.",
     "kvp": "Tube voltage (kVp) for a single-kVp transmission curve.\n"

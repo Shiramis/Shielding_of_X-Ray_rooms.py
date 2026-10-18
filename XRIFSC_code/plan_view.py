@@ -334,7 +334,7 @@ class PlanEditor(Toplevel):
         self.floor_primary.set(room["floor"].get("primary", True))
         self.ceiling_location.set(room["ceiling"]["location"])
         self.ceiling_area.set(room["ceiling"]["area"])
-        xray = self.room_type() == "X-Ray room"
+        xray = self.room_type() in ("X-Ray room", "Fluoroscopy Room")
         for widget in (self.primary_check, self.floor_primary_check):
             widget.state(["!disabled"] if xray else ["disabled"])
         self.points = []
@@ -453,7 +453,7 @@ class PlanEditor(Toplevel):
             lines.append(f"{area} → P = {DESIGN_GOALS[area]} mGy/week")
         elif location:
             lines.append(f"Suggested area: {suggested_area(location)}")
-        if self.room_type() == "X-Ray room":
+        if self.room_type() in ("X-Ray room", "Fluoroscopy Room"):
             lines.append("Radiation: Primary" if self.primary_var.get()
                          else "Radiation: Secondary (tick 'Primary beam' for e.g. the chest bucky wall)")
         elif self.room_type() == "Mammography Room":
@@ -1616,7 +1616,7 @@ class PlanViews:
             if distance is not None:
                 self.d[f"dist_var {e}{nr}"].set(f"{distance:.2f}")
         else:
-            if room_type == "X-Ray room" and self.d[f"radiob_w {e}{nr}0"].get() == 0:
+            if room_type in ("X-Ray room", "Fluoroscopy Room") and self.d[f"radiob_w {e}{nr}0"].get() == 0:
                 self.d[f"radiob_w {e}{nr}0"].set(1 if primary else 2)
                 self.barrier_sel(e, nr, t, 0)
             if distance is not None:

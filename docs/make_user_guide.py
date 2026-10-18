@@ -305,10 +305,12 @@ def introduction():
                 "thickness you plan to install, show the rooms in 2D and 3D with the radiation around them, and "
                 "write a complete report in Excel."),
               P("You can design:")]
-    story += [bullets(["<b>X-Ray rooms</b>: radiography, R&amp;F, chest rooms and angiography, with primary and "
-                       "secondary barriers.",
-                       "<b>CT rooms</b>: secondary radiation from the DLP of the body and head procedures.",
-                       "<b>Mammography rooms</b>: secondary radiation only.",
+    story += [bullets(["<b>X-Ray rooms</b>: radiography and chest rooms, with primary and secondary barriers.",
+                       "<b>Fluoroscopy rooms</b>: R&amp;F rooms (fluoroscopy and radiographic tube), cardiac and "
+                       "peripheral angiography.",
+                       "<b>CT rooms</b>: secondary radiation from the DLP of the body and head scans.",
+                       "<b>Mammography rooms</b>: secondary radiation only, also digital breast tomosynthesis "
+                       "(DBT).",
                        "<b>Departments</b>: several rooms of any type on one floor plan, each with its own results, "
                        "in one report."])]
     story += H2("Files the program uses")
@@ -450,7 +452,8 @@ def getting_started():
     story += figure("start.png", "The start screen.", crop=(300, 200, 1640, 800))
     story += H2("Menus")
     story += table([["Menu", "Command", "What it does"],
-                    ["File", "New... › Design Department / X-Ray Room / CT Room / Mammography Room",
+                    ["File", "New... › Design Department / X-Ray Room / CT Room / Fluoroscopy Room / "
+                             "Mammography Room",
                      "Adds a department or a room to the current project, each in its own tab."],
                     ["", "New project", "Closes everything and starts again (it asks to save first)."],
                     ["", "Open project... (Ctrl+O)", "Opens a project file (.shield)."],
@@ -562,6 +565,20 @@ def xray_room():
                 "that barrier until it is calculated." % BAD)]
     story += figure("missing_dialog.png", "The Missing data window, here for a barrier without distance.",
                     width=125 * mm)
+    story += H2("Fluoroscopy rooms")
+    story += [P("A <b>Fluoroscopy Room</b> (start screen or <b>File › New... › Design Fluoroscopy Room</b>) is "
+                "designed exactly like an X-ray room; only its workload distributions differ. Each kind of room "
+                "offers its own:")]
+    story += table([["Room", "Workload distributions (NCRP 147 Table 4.3)"],
+                    ["X-Ray room", "Rad Room (chest bucky), Rad Room (floor or other barriers), Rad Room (all "
+                                   "barriers), Chest Room"],
+                    ["Fluoroscopy Room", "Fluoroscopy Tube (R&amp;F room), Rad Tube (R&amp;F room), Cardiac "
+                                         "Angiography, Peripheral Angiography"],
+                    ["Mammography Room", "Mammography Room, Digital Breast Tomosynthesis"]], [38, 132])
+    story += [P("In an R&amp;F room the fluoroscopy tube gives secondary radiation only (the image receptor stops its "
+                "beam), while the radiographic tube can aim at the floor or a wall: choose <b>Rad Tube (R&amp;F "
+                "room)</b> as a primary radiation type there (NCRP 147: 5.9 mGy per patient at 1 m). A barrier "
+                "reached by both tubes gets two radiation types.")]
     return story
 
 
@@ -574,8 +591,9 @@ def ct_and_mammography():
     story += table([["Input", "Meaning", "NCRP 147 typical"],
                     ["Body / Head Procedures (weekly)", "Number of body and head CT procedures per week.", "–"],
                     ["Scans (phases) per procedure", "How many scans a procedure can have and, for scan 1, 2, ..., "
-                                                     "the % of the procedures that have it (section 2.6). The line "
-                                                     "below shows the mean number of scans per procedure.",
+                                                     "the % of the procedures that have it, up to 20 scans "
+                                                     "(section 2.6). The line below shows the mean number of "
+                                                     "scans per procedure.",
                      "100 % + 40 % = 1.4"],
                     ["DLP per body / head scan (mGy·cm)", "Dose-length product of one scan (phase).",
                      "550 / 1200 mGy·cm"],
@@ -596,6 +614,14 @@ def ct_and_mammography():
                                       "patients.", crop=(0, 0, 1175, 760))
     story += [P("If a material has no NCRP 147 transmission data for the chosen distribution, the result says "
                 "<i>No NCRP 147 data for</i> that material.")]
+    story += H2("Digital breast tomosynthesis")
+    story += [P("Choose the workload distribution <b>Digital Breast Tomosynthesis</b> for a DBT unit. The program "
+                "uses DBT transmission data (α, β, γ for lead, concrete, steel, gypsum wallboard, plate glass and "
+                "wood, sheet <i>DBT abc</i> of Data Shielding.xlsx); NCRP 147 has no DBT values. So:")]
+    story += [bullets(["<b>Write Unshielded Secondary Air Kerma</b> is selected for you: type K<super>1</super>"
+                       "<sub>sec</sub> of the DBT unit (mGy per patient at 1 m).",
+                       "Give the workload as <b>The Number of Patients per week</b>: there is no workload per "
+                       "patient (W<sub>norm</sub>) for DBT."])]
     return story
 
 
@@ -606,7 +632,7 @@ def department():
     story += figure("department_rooms.png", "The Rooms tab of the example department.", crop=(0, 0, 1210, 470))
     story += [steps(["Type the <b>Department Name</b>. <b>New Department</b> adds another department in its own tab.",
                      "Set the <b>Number of Rooms</b>. For each room type a <b>Room Description</b> (its name) and "
-                     "choose its type: <i>X-Ray room</i>, <i>CT Room</i> or <i>Mammography Room</i>.",
+                     "choose its type: <i>X-Ray room</i>, <i>Fluoroscopy Room</i>, <i>CT Room</i> or <i>Mammography Room</i>.",
                      "Press <b>Design</b>: the room opens as a tab inside the department, and its results as a tab "
                      "on the right. The two tabs stay together: choosing one shows the other.",
                      "Design each room as in sections 4 to 6.",
@@ -964,7 +990,10 @@ def reference():
                     ["CT scans per procedure", "1.4: every procedure once, 40 % again with contrast"],
                     ["CT typical DLP per scan", "Body 550 mGy·cm; head 1200 mGy·cm"],
                     ["Materials", "Lead, concrete (2.35 g/cm³), gypsum wallboard, steel, plate glass, wood; CT: "
-                                  "lead and concrete"]], [70, 100])
+                                  "lead and concrete"],
+                    ["Digital breast tomosynthesis", "Transmission α, β, γ from the sheet 'DBT abc' (not NCRP 147); "
+                                                     "K<super>1</super><sub>sec</sub> written by the user"]],
+                   [70, 100])
     return story
 
 

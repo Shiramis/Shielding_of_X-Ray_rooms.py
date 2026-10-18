@@ -12,6 +12,15 @@ DESIGN_GOALS = {"Controlled Area": "0.1", "Uncontrolled Area": "0.02", "Supervis
 # and not more than 1.7 m above the floor below, i.e. (floor-to-floor height - 1.7 m) below this floor: 1.3 m for
 # 3 m. Barrier 1 is the floor and barrier 2 the ceiling; walls and door take 0.3 m.
 BEYOND_DEFAULT = {1: "1.3", 2: "0.5"}
+# The workload distributions of each kind of room (NCRP 147 Table 4.3; DBT: transmission only, not NCRP 147)
+DBT = "Digital Breast Tomosynthesis"
+DISTRIBUTIONS = {
+    "X-Ray room": ("Rad Room (chest bucky)", "Rad Room (floor or other barriers)", "Rad Room (all barriers)",
+                   "Chest Room"),
+    "Fluoroscopy Room": ("Fluoroscopy Tube (R&F room)", "Rad Tube (R&F room)", "Cardiac Angiography",
+                         "Peripheral Angiography"),
+    "Mammography Room": ("Mammography Room", DBT),
+}
 # NCRP 147 Table 4.1 locations, exactly as in the occupancy sheet the calculation reads
 OCCUPANCY_LOCATIONS = [row[0] for row in wb['Occupancy Factor ( T )'].iter_rows(min_row=2, values_only=True) if row[0]]
 
@@ -346,6 +355,22 @@ class dep_defs():
             self.d[f"unairkerv {e}{nr}{i}"].set(1)
             self.unairk(e, nr, i)
 
+    def room_type_of(self, nr):
+        """The kind of room ('X-Ray room', 'CT Room', ...) whose barriers are keyed by nr."""
+        for key, value in self.d.items():
+            if key.startswith("nr ") and value == nr:
+                return self.d[f"vselroom {key[3:]}"].get()
+        return None
+
+    def on_distribution(self, e, nr, i):
+        """A workload distribution was chosen: NCRP 147 values for it. DBT has no NCRP 147 unshielded air kerma,
+        so it must be written."""
+        self.uns(e, nr, i)
+        if (self.d[f"vsexroom {e}{nr}{i}"].get() == DBT and self.d[f"radiob_w {e}{nr}{i}"].get() == 2
+                and f"unairkerv {e}{nr}{i}" in self.d and self.d[f"unairkerv {e}{nr}{i}"].get() != 2):
+            self.d[f"unairkerv {e}{nr}{i}"].set(2)
+            self.unairk(e, nr, i)
+
     def update_checkboxes(self, e, nr, i):
         # Loop through all the checkboxes with the same 'e' and 'nr' but different 'i'
         for index in range(0, self.d[f"num_barriers_var {e}{nr}"].get()):  # Adjust 'some_max_value' to the range of 'i' you need
@@ -366,13 +391,11 @@ class dep_defs():
             # Destroy existing widget if it exists
             if self.d.get(selxroom_key):
                 self.d[selxroom_key].destroy()
-            # Define options for X-ray room
-            self.xrooms = ("Rad Room (chest bucky)", "Rad Room (floor or other barriers)", "Rad Room (all barriers)",
-                           "Fluoroscopy Tube (R&F room)", "Rad Tube (R&F room)", "Chest Room", "Mammography Room",
-                           "Cardiac Angiography", "Peripheral Angiography")
+            # The workload distributions of this kind of room
+            self.xrooms = DISTRIBUTIONS.get(self.room_type_of(nr), DISTRIBUTIONS["X-Ray room"])
             self.d[vsexroom_key] = StringVar()
             self.d[selxroom_key] = ttk.OptionMenu(self.d[barrierf_key], self.d[vsexroom_key], "Select X-ray room",
-                                                  *self.xrooms, command=lambda value: self.uns(e, nr, i))
+                                                  *self.xrooms, command=lambda value: self.on_distribution(e, nr, i))
             self.d[selxroom_key].grid(row=i * 10 + 5, column=1, columnspan=2, pady=6.5, padx=5, sticky="w")
             tip(self.d[selxroom_key], "workload_distribution")
 

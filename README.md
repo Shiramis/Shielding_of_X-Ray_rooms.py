@@ -10,8 +10,9 @@ the thickness you plan to install.
 
 ## What it does
 
-- **Room types**: X-ray rooms (radiography, R&F, chest, angiography), CT rooms (from the DLP, with the
-  scans or phases per procedure) and mammography rooms.
+- **Room types**: X-ray rooms (radiography, chest), fluoroscopy rooms (R&F, cardiac and peripheral
+  angiography), CT rooms (from the DLP, with the scans or phases per procedure) and mammography rooms (also
+  digital breast tomosynthesis).
   You can also design **departments**, with several rooms on one floor plan.
 - **Required thickness** of lead, concrete, gypsum wallboard, steel, plate glass or wood for every barrier. The program
   uses the NCRP 147 workloads, unshielded air kerma, use and occupancy factors, preshielding and Archer transmission
