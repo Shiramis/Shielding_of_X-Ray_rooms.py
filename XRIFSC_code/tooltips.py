@@ -8,8 +8,9 @@ TIPS = {
     # ===== Department =====
     "num_rooms": "Number of rooms in the department.\n"
                  "For each room: write a description, choose the room type and press Design.",
-    "room_type": "X-Ray room: radiography and chest rooms.\n"
-                 "Fluoroscopy Room: R&F (fluoroscopy and radiographic tube), cardiac and peripheral angiography.\n"
+    "room_type": "X-Ray room: radiography and chest rooms; also modern digital radiography (Kirby et al. 2023).\n"
+                 "Fluoroscopy Room: R&F (fluoroscopy and radiographic tube), cardiac and peripheral angiography; "
+                 "also five interventional rooms (Biondi et al. 2024).\n"
                  "CT Room: secondary radiation from DLP (NCRP 147 CT method).\n"
                  "Mammography Room: secondary radiation only (NCRP 147 assumes the image receptor stops the "
                  "primary beam); also digital breast tomosynthesis (DBT).",
@@ -38,6 +39,8 @@ TIPS = {
                       "  Rad Room (all barriers) 2.5 · Chest Room 0.22\n"
                       "  Fluoroscopy Tube (R&F) 13 · Rad Tube (R&F) 1.5\n"
                       "  Mammography 6.7 · Cardiac Angio 160 · Peripheral Angio 64\n"
+                      "The distributions of the literature have their own Wnorm (User Guide, 'Workload "
+                      "distributions of the literature').\n"
                       "With 'Give kVp' the program uses Wnorm = 2.5.",
     "workload_patients": "Number of patients per week N (40-h week).\n"
                          "NCRP 147 typical values (average / busy):\n"
@@ -65,10 +68,15 @@ TIPS = {
               "  Floor: the person below is 1.7 m above the lower floor, i.e. floor-to-floor height − 1.7 m below "
               "this floor: 1.3 m for 3 m, 2.6 m for 4.3 m.\n"
               "The floor plan fills it in from the floor-to-floor height.",
-    "workload_distribution": "Choose the NCRP 147 workload distribution (room type), or give the kVp. The list "
-                             "shows those of this kind of room.\n"
-                             "Digital Breast Tomosynthesis: data of Yang et al., J. Radiol. Prot. 37 (2017) 230 "
-                             "(not NCRP 147); give the workload as patients per week.\n"
+    "workload_distribution": "X-Ray Room: choose the workload distribution in the list (those of this kind of "
+                             "room). Give kVp: a single tube voltage.\n"
+                             "The first group is NCRP 147. The others are from the literature and end with their "
+                             "source:\n"
+                             "  Kirby 2023: modern digital radiography, general and pediatric (J. Appl. Clin. Med. "
+                             "Phys. 24 (2023) e13962), made into NCRP 147 data with the NCRP 147 method\n"
+                             "  Biondi 2024: interventional rooms, secondary only (Phys. Med. 125 (2024) 104509)\n"
+                             "  Yang 2017: digital breast tomosynthesis (J. Radiol. Prot. 37 (2017) 230); give the "
+                             "workload as patients per week\n"
                              "It sets Wnorm, the unshielded air kerma and the transmission parameters "
                              "(α, β, γ) used for the thickness.",
     "kvp_data": "Transmission data for this kVp:\n"
@@ -90,19 +98,22 @@ TIPS = {
     "use_factor": "Use factor U: fraction of the primary beam aimed at this barrier.\n"
                   "NCRP 147 (Rad Room): Floor 0.89 · Cross-table wall 0.09 · Wall No. 3 0.02\n"
                   "Chest image receptor (chest bucky distribution) 1.\n"
+                  "Kirby 2023: 1 on its own barrier (the workload of each barrier already includes how often the "
+                  "beam points at it).\n"
                   "Filled in when you pick the room: walls get 0.09; change it to 0.02 for wall No. 3.\n"
                   "The ceiling is normally not a primary barrier. For secondary barriers U = 1.",
     "primary_kerma": "K¹P: unshielded primary air kerma per patient at 1 m (mGy/patient).\n"
                      "NCRP 147: Rad Room (chest bucky) 2.3 · Rad Room (floor/other) 5.2\n"
                      "Rad Tube (R&F) 5.9 · Chest Room 1.2\n"
+                     "Kirby 2023 (NCRP 147 method): DR Room chest bucky 3.05 · floor 1.22 · cross-table 0.461\n"
                      "Filled in automatically when you pick one of these rooms.",
     "preshielding": "Preshielding: attenuation by the image receptor before the barrier (NCRP 147). "
                     "It is subtracted from the calculated thickness.\n"
                     "  Bucky (table or wall bucky): 0.85 mm lead / 72 mm concrete / 7 mm steel\n"
                     "  Cross-table (grid and cassette only): 0.3 mm lead / 30 mm concrete / 2 mm steel\n"
                     "Use only for primary barriers behind the image receptor.",
-    "secondary_kerma_ncrp": "Use the NCRP 147 unshielded secondary air kerma per patient at 1 m (K¹sec) "
-                            "for the selected workload distribution.\n"
+    "secondary_kerma_ncrp": "Use the suggested unshielded secondary air kerma per patient at 1 m (K¹sec) "
+                            "of the selected workload distribution: NCRP 147, or the source named in the list.\n"
                             "Example, Mammography Room: side-scatter 0.011, leakage + forward/backscatter "
                             "0.049 mGy/patient.",
     "secondary_kerma_write": "Write your own unshielded secondary air kerma K¹sec "

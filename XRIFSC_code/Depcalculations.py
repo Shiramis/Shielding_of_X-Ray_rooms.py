@@ -74,10 +74,54 @@ WORKLOAD_NORM = {row[0]: row[1] for row in wb['Workload'].iter_rows(max_col=2, v
 # NCRP 147 unshielded secondary air kerma per patient at 1 m: the whole row of each workload distribution
 UNSHIELDED_SECONDARY = {row[0]: row for row in wb['Uns Air Kerma'].iter_rows(min_row=2, values_only=True) if row[0]}
 
+# ===================== workload distributions from the literature (not NCRP 147) =====================
+# Their names end with the source; SOURCES gives it in full for the labels and the report
+SOURCES = {}
+# Sheets with the (alpha, beta, gamma) of a distribution that is not in 'prim abc' / 'sec abc': (primary, secondary)
+TRANSMISSION_SHEETS = {}
+
+
+def literature_rows(sheet):
+    """Rows of a literature sheet: a name, then numbers (title and header rows above them)."""
+    return [row for row in wb[sheet].iter_rows(min_row=3, values_only=True)
+            if isinstance(row[0], str) and isinstance(row[1], (int, float))]
+
+
+# Digital radiography (Kirby KM, Schueler BA, Littrell LA, Long Z, J. Appl. Clin. Med. Phys. 24 (2023) e13962,
+# table 3): the workload spectrum of each barrier of a general and a pediatric DR room, turned into air kerma and
+# transmission with the NCRP 147 method (Appendices B and C) by tools/literature_data.py. The workload of a barrier
+# already includes how often the beam points at it (U = 1 with all the patients of the room).
+KIRBY = []
+for _row in literature_rows("Kirby 2023 kerma"):
+    KIRBY.append(_row[0])
+    WORKLOAD_NORM[_row[0]] = _row[1]
+    UNSHIELDED_SECONDARY[_row[0]] = _row[:9]  # the columns of 'Uns Air Kerma'
+    if _row[9] is not None:
+        PRIMARY_KERMA[_row[0]] = f"{_row[9]:g}"
+    SOURCES[_row[0]] = "Kirby et al. 2023"
+    TRANSMISSION_SHEETS[_row[0]] = ("Kirby 2023 prim abc", "Kirby 2023 sec abc")
+
+# Interventional rooms (Biondi M et al., Phys. Med. 125 (2024) 104509): workload per patient (table 2) and secondary
+# transmission (table 3; lead, concrete and gypsum wallboard). Secondary only: the image receptor stops the primary
+# beam. Unshielded secondary air kerma: that of NCRP 147 for cardiac or peripheral angiography x Wsite / Wnorm
+# (their Eq. 4, NCRP 147 4.1.4).
+BIONDI = []
+for _row in literature_rows("Biondi 2024"):
+    _name, _w_site, _base = _row[0], _row[6] / 60, UNSHIELDED_SECONDARY[_row[8]]  # mAs -> mA min per patient
+    BIONDI.append(_name)
+    WORKLOAD_NORM[_name] = _w_site
+    UNSHIELDED_SECONDARY[_name] = (_name, _w_site, _base[2], _base[3]) + tuple(v * _w_site / _base[1]
+                                                                                for v in _base[4:9])
+    SOURCES[_name] = "Biondi et al. 2024"
+    TRANSMISSION_SHEETS[_name] = (None, "Biondi 2024 sec abc")
+
 # Digital breast tomosynthesis: Yang K, Schultz TJ, Li X, Liu B, J. Radiol. Prot. 37 (2017) 230, table 9.
 # Unshielded scatter air kerma per view at 1 m (mGy/view): CC views, oblique views with the beam toward (T) or
 # away (A) from the barrier, in 2D and 3D mode
-DBT = "Digital Breast Tomosynthesis"
+DBT = "Digital Breast Tomosynthesis – Yang 2017"
+SOURCES[DBT] = "Yang et al. 2017"
+# Names of earlier versions, for opening their projects
+LEGACY_DISTRIBUTIONS = {"Digital Breast Tomosynthesis": DBT}
 DBT_VIEW_KERMA = {"2D": {"CC": 6.07e-3, "T": 4.83e-2, "A": 6.49e-3},
                   "3D": {"CC": 7.85e-3, "T": 1.43e-2, "A": 7.89e-3}}
 DBT_MODES = {1: ("2D",), 2: ("3D",), 3: ("2D", "3D")}  # the choice 2D, 3D, 2D + 3D
@@ -101,14 +145,17 @@ MISSING_HELP = {
     "Radiation type (Primary / Secondary)": "at 'Select Radiation Type' choose Primary or Secondary.",
     "Workload": "at the top of the room choose 'Write total Workload' or 'The Number of Patients per week' "
                 "and type the value (or tick 'Different Workload' on this radiation type).",
-    "Workload Distribution (X-ray room or kVp)": "at 'Workload Distribution' choose 'X-Ray Room (Suggested "
-                                                 "NCRP 147)' and select the room, or 'Give kVp'.",
+    "Workload Distribution (X-ray room or kVp)": "at 'Workload Distribution' choose 'X-Ray Room' and select the "
+                                                 "room in the list, or 'Give kVp'.",
+    "Secondary radiation only": "this workload distribution (Biondi et al. 2024) has data for secondary radiation "
+                                "only: in fluoroscopy and angiography the image receptor stops the primary beam. "
+                                "Choose 'Secondary', or another workload distribution.",
     "Use Factor (U)": "type U in the 'Use Factor' box (NCRP 147: floor 0.89, cross-table wall 0.09, "
-                      "chest bucky wall 1).",
+                      "chest bucky wall 1; Kirby et al. 2023: 1).",
     "Unshielded Air Kerma": "primary: type K in 'Primary Unshielded Air Kerma'. Secondary: choose 'Select "
-                            "Unshielded Secondary Air Kerma (NCRP 147)' and the type of scatter (needs an X-ray "
-                            "room, not a kVp), or choose 'Write' and type the value. Digital Breast "
-                            "Tomosynthesis: choose 2D, 3D or 2D + 3D.",
+                            "Unshielded Secondary Air Kerma' (the value suggested for the workload distribution) "
+                            "and the type of scatter (needs an X-ray room, not a kVp), or choose 'Write' and type "
+                            "the value. Digital Breast Tomosynthesis: choose 2D, 3D or 2D + 3D.",
     "kVp for the DR 600 data (60-120 kV, every 10 kV)": "the DR 600 transmission data (Li et al. 2024) exist for "
                                                         "60, 70, ... 120 kV: choose one of these, or the NCRP 147 "
                                                         "data.",
@@ -329,21 +376,22 @@ class departprimsec():
             data = self.kvp_data(e, nr, i)
             distribution = f"{distribution} kVp" + (f" ({data})" if data != "NCRP 147" else "")
         source = ""
+        origin = SOURCES.get(distribution, "NCRP 147")  # where the suggested values come from
         if radiation == "Primary":
-            ncrp = PRIMARY_KERMA.get(distribution) == value(f"entk {e}{nr}{i}")
-            source = "Primary (NCRP 147)" if ncrp else "Primary (entered)"
+            suggested = PRIMARY_KERMA.get(distribution) == value(f"entk {e}{nr}{i}")
+            source = f"Primary ({origin})" if suggested else "Primary (entered)"
         elif value(f"unairkerv {e}{nr}{i}") == 2:
             source = "Secondary (entered)"
         elif value(f"unairkerv {e}{nr}{i}") == 1 and distribution == DBT:
             mode = {1: "2D", 2: "3D", 3: "2D + 3D"}.get(value(f"dbtmode {e}{nr}{i}"), "")
-            source = f"DBT {mode} (Yang et al. 2017)" if mode else ""
+            source = f"DBT {mode} ({origin})" if mode else ""
         elif value(f"unairkerv {e}{nr}{i}") == 1:
             if value(f"airkerv {e}{nr}{i}") == 1:
                 source = {1: "Leakage + side-scatter", 2: "Leakage + forward/backscatter",
                           0: "Leakage only"}.get(value(f"radiob_leak {e}{nr}{i}"), "")
             else:
                 source = {2: "Side-scatter", 3: "Forward/backscatter"}.get(value(f"airkerv {e}{nr}{i}"), "")
-            source = f"{source} (NCRP 147)" if source else ""
+            source = f"{source} ({origin})" if source else ""
         preshielding = ""
         if radiation == "Primary" and value(f"preshvar {e}{nr}{i}") == 1:
             preshielding = {1: "Bucky", 2: "Cross-table"}.get(value(f"radiob_pre {e}{nr}{i}"), "")
@@ -366,6 +414,10 @@ class departprimsec():
             names = {"Gypsum": "Gypsum Wallboard", "Glass": "Plate Glass"}
             return {names.get(row[0], row[0]): tuple(float(v) for v in row[1:4])
                     for row in wb["DBT abc"].iter_rows(min_row=2, values_only=True) if row[0]}
+        if distribution in TRANSMISSION_SHEETS:  # Kirby 2023, Biondi 2024: their own sheets, laid out as 'prim abc'
+            sheet = TRANSMISSION_SHEETS[distribution][0 if sheet == "prim abc" else 1]
+            if sheet is None:  # Biondi 2024: no primary
+                return None
         if data in KVP_DATA[1:]:  # Li et al. 2024 (sheet 'prim abc DR 600'): one block of rows per filtration
             blocks = []
             for row in wb["prim abc DR 600"].iter_rows(values_only=True):
@@ -435,7 +487,7 @@ class departprimsec():
             if total is None:
                 need.append("Workload")
                 fields.append(f"worentry {suffix}")
-            elif w_norm is None and distribution == "Digital Breast Tomosynthesis":
+            elif w_norm is None and distribution == DBT:
                 need.append("Patients per week (DBT)")
             elif w_norm is None:
                 need.append("Workload Distribution (X-ray room or kVp)")
@@ -451,6 +503,8 @@ class departprimsec():
         # ======== Use factor U and K1 "air kerma" ===========
         Us = K1 = None
         if radiation == 1:  # primary
+            if distribution in BIONDI:
+                need.append("Secondary radiation only")
             Us = self.entry_number(f"use_ent {e}{nr}{i}")
             if Us is None:
                 need.append("Use Factor (U)")
@@ -537,6 +591,8 @@ class departprimsec():
                                               distribution.get() if distribution is not None else None, data)
             if params is None and data != "NCRP 147":
                 self.need.append("kVp for the DR 600 data (60-120 kV, every 10 kV)")
+            elif params is None and primary and distribution is not None and distribution.get() in BIONDI:
+                self.need.append("Secondary radiation only")
             elif params is None:
                 self.need.append("Workload Distribution (X-ray room or kVp)")
             elif primary:

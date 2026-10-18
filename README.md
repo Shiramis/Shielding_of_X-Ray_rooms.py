@@ -10,9 +10,9 @@ the thickness you plan to install.
 
 ## What it does
 
-- **Room types**: X-ray rooms (radiography, chest), fluoroscopy rooms (R&F, cardiac and peripheral
-  angiography), CT rooms (from the DLP, with the scans or phases per procedure) and mammography rooms, including
-  digital breast tomosynthesis (Yang et al., J. Radiol. Prot. 2017).
+- **Room types**: X-ray rooms (radiography, chest, modern digital radiography), fluoroscopy rooms (R&F, cardiac and
+  peripheral angiography, interventional rooms), CT rooms (from the DLP, with the scans or phases per procedure) and
+  mammography rooms, including digital breast tomosynthesis.
   You can also design **departments**, with several rooms on one floor plan.
 - **Required thickness** of lead, concrete, gypsum wallboard, steel, plate glass or wood for every barrier. The program
   uses the NCRP 147 workloads, unshielded air kerma, use and occupancy factors, preshielding and Archer transmission
@@ -42,8 +42,16 @@ from the Archer equation *x* = (1/αγ)·ln[(*B*^−γ + β/α) / (1 + β/α)].
 - CT rooms use the NCRP 147 DLP method, with the scans (phases) per procedure. The NCRP default of 1.4 means 40 % of
   the procedures are scanned again with contrast.
 
-- For primary beams given by their kVp, you can also use the transmission data of modern digital radiography
-  (Li et al., Med. Phys. 2024).
+- Besides the NCRP 147 data, the program offers newer published data, always named with their source. In the list
+  of workload distributions they follow those of NCRP 147, and their names end with the source:
+  - **Kirby et al. 2023**: workloads of modern digital radiography rooms, general and pediatric. The article gives
+    only the workload spectra; `tools/literature_data.py` turns them into air kerma and transmission with the method
+    of NCRP 147 (Appendices B and C). The same code reproduces the NCRP 147 tables from the NCRP 147 spectra
+    (`python tools/literature_data.py --check`).
+  - **Biondi et al. 2024**: workloads and secondary transmission of five interventional rooms.
+  - **Yang et al. 2017**: digital breast tomosynthesis.
+  - **Li et al. 2024**: for primary beams given by their kVp, the transmission data of modern digital radiography.
+- The NCRP 147 values in `Data Shielding.xlsx` were checked one by one against the report (User Guide, section 12).
 
 The [User Guide](User%20Guide.pdf) explains every step and works through the examples by hand.
 
@@ -93,7 +101,8 @@ The full manual is in **Help › User Guide** (F1), the file [`User Guide.pdf`](
 | `XRIFSC_code/plan_view.py` | Floor plan editor and 2D / 3D view |
 | `XRIFSC_code/report.py`, `project.py`, `examples.py` | Excel report, project files, built-in examples |
 | `XRIFSC_code/theme.py`, `tooltips.py` | Look of the program and the guidance notes |
-| `Data Shielding.xlsx` | NCRP 147 data read by the program |
+| `Data Shielding.xlsx` | NCRP 147 data read by the program, and the data of the literature (sheets named after the source) |
+| `tools/literature_data.py` | Writes the literature sheets; `--check` compares its NCRP 147 method with the NCRP 147 tables |
 | `Examples/` | The examples as project files (`.shield`) |
 | `User Guide.pdf`, `docs/` | User guide, its pictures and the scripts that build it |
 | `installer/` | The Windows installer: Inno Setup script and build script |
@@ -132,6 +141,10 @@ The guide recalculates every worked example by hand and stops if a result differ
   an updated workload survey, *J. Radiol. Prot.* 37:230–246, 2017.
 - Li X., Marschall T.A., Yang K., Liu B., Radiation shielding transmission data for modern digital radiography,
   *Med. Phys.*, 2024, doi:10.1002/mp.17449.
+- Kirby K.M., Schueler B.A., Littrell L.A., Long Z., Workload and use factor data for a modern digital radiography
+  system, *J. Appl. Clin. Med. Phys.* 24:e13962, 2023, doi:10.1002/acm2.13962.
+- Biondi M., Bortoli E., Avitabile R., et al., Radiation shielding calculation for interventional radiology: an updated
+  workload survey using a dose monitoring software, *Physica Medica* 125:104509, 2024, doi:10.1016/j.ejmp.2024.104509.
 
 The program supports a qualified expert. The final shielding design and its verification remain the responsibility of
 the radiation protection expert or medical physicist.

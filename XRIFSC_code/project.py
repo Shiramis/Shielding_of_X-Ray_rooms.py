@@ -8,6 +8,7 @@ from tkinter import ttk
 
 from PIL import Image
 
+from Depcalculations import LEGACY_DISTRIBUTIONS
 
 FORMAT = "xray-shielding-project"
 VERSION = 2  # 2: distance beyond each barrier, CT distance to the barrier, CT scans per procedure
@@ -198,7 +199,8 @@ class ProjectFile:
             if saved.get("vselxray") in ("1", "2"):
                 self.write_input(key("vselxray"), saved["vselxray"])
                 self.XrRoom(e, nr, i)
-                self.write_input(key("vsexroom"), saved.get("vsexroom"))
+                distribution = saved.get("vsexroom")  # renamed since: the name of this version
+                self.write_input(key("vsexroom"), LEGACY_DISTRIBUTIONS.get(distribution, distribution))
                 self.write_input(key("kvpdata"), saved.get("kvpdata"))
             if radiation == "1":
                 self.write_input(key("use_ent"), saved.get("use_ent"))

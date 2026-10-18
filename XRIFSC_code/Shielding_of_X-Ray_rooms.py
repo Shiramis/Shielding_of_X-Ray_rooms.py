@@ -206,7 +206,7 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room,Repo
         cards.pack(pady=(8, 28))
         choices = (("Department", "Several rooms on one floor plan, each with its own results.", self.creatdep),
                    ("X-Ray Room", "Radiography and chest rooms: primary and secondary barriers.", self.creatroom),
-                   ("Fluoroscopy Room", "R&F and angiography (cardiac, peripheral).",
+                   ("Fluoroscopy Room", "R&F, angiography and interventional rooms.",
                     lambda: self.creatroom("Fluoroscopy Room")),
                    ("CT Room", "Secondary radiation from the DLP of body and head scans.", self.creatCTroom),
                    ("Mammography Room", "Secondary radiation only, also tomosynthesis (DBT).",

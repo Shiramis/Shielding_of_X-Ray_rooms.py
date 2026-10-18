@@ -29,6 +29,7 @@ app, root = namespace["app"], namespace["root"]
 
 from PIL import Image  # noqa: E402
 from matplotlib.backend_bases import MouseEvent  # noqa: E402
+from Depcalculations import DBT  # noqa: E402
 import examples  # noqa: E402
 import plan_view  # noqa: E402
 import project  # noqa: E402
@@ -208,7 +209,7 @@ fill(f"numpapwe {t}", "100")
 e = 4
 d[f"radiob_w {e}{nr}0"].set(2)
 app.barrier_sel(e, nr, t, 0)
-d[f"vsexroom {e}{nr}0"].set("Digital Breast Tomosynthesis")
+d[f"vsexroom {e}{nr}0"].set(DBT)
 app.on_distribution(e, nr, 0)
 fill(f"entryd {e}{nr}0", "1.7")
 beyond_office(t, e, nr)
@@ -251,6 +252,74 @@ inputs, results = room_parts(t)
 app.depnote.select(app.standalone[t])  # the room's own tab
 select_barrier(t, e)
 shot("kvp_data.png", root, widget=inputs, height=520)
+
+
+def radiation(t, nr, e, kind, distribution, distance):
+    d[f"radiob_w {e}{nr}0"].set(kind)
+    app.barrier_sel(e, nr, t, 0)
+    d[f"vselxray {e}{nr}0"].set(1)
+    app.XrRoom(e, nr, 0)
+    d[f"vsexroom {e}{nr}0"].set(distribution)
+    app.on_distribution(e, nr, 0)
+    fill(f"entryd {e}{nr}0", distance)
+
+
+def lead_and_concrete(t, e, nr):
+    d[f"vnumbmat {e}{nr}"].set(2)
+    app.numbmater(e, nr, t)
+    d[f"vmater {e}1{nr}"].set("Lead")
+    d[f"vmater {e}2{nr}"].set("Concrete")
+
+
+# modern digital radiography (Kirby et al. 2023): floor and chest bucky wall, NCRP 147 and Kirby, 120 patients/week
+t = app.creatroom("X-Ray room")
+nr = d[f"nr {t}"]
+d[f"vname_room {t}"].set("DR room")
+d[f"vrawork {t}"].set(2)
+app.workload(t)
+fill(f"numpapwe {t}", "120")
+values["kirby"] = {}
+for source, floor, chest in (("NCRP 147", "Rad Room (floor or other barriers)", "Rad Room (chest bucky)"),
+                             ("Kirby 2023", "DR Room (floor) – Kirby 2023", "DR Room (chest bucky) – Kirby 2023")):
+    radiation(t, nr, 1, 1, floor, "1")  # floor: an office below, 1 m + 1.3 m
+    radiation(t, nr, 4, 1, chest, "1.8")  # chest bucky wall: an office, 1.8 m + 0.3 m
+    for e in (1, 4):
+        beyond_office(t, e, nr)
+        lead_and_concrete(t, e, nr)
+        app.choosetype(e, nr, t, notify=False)
+        rec = app.calc[(nr, e)]
+        values["kirby"].setdefault(source, {})[app.barn[f"lab_bar {e}{nr}"].cget("text")] = {
+            "distribution": rec["distributions"][0]["distribution"], "U": rec["distributions"][0]["U"],
+            "K1": rec["distributions"][0]["K1"], "d": rec["distributions"][0]["d"], "K_total": rec["K_total"],
+            "B": rec["B"], "thickness": rec["thickness"], "params": rec["shield"]["params"]}
+inputs, results = room_parts(t)
+app.depnote.select(app.standalone[t])  # the room's own tab
+select_barrier(t, 1)
+shot("kirby_floor.png", root, widget=inputs, height=520)
+
+# interventional rooms (Biondi et al. 2024): their example, angiography, 779 procedures a year, 1 mSv a year at 2 m
+t = app.creatroom("Fluoroscopy Room")
+nr = d[f"nr {t}"]
+d[f"vname_room {t}"].set("Angiography room")
+d[f"vrawork {t}"].set(2)
+app.workload(t)
+fill(f"numpapwe {t}", "14.98")  # 779 / 52
+e = 4
+radiation(t, nr, e, 2, "Angiography – Biondi 2024", "1.7")  # + 0.3 m beyond the wall: 2 m
+d[f"unairkerv {e}{nr}0"].set(1)
+app.unairk(e, nr, 0)
+d[f"airkerv {e}{nr}0"].set(1)
+app.leakage(e, nr, 0)
+d[f"radiob_leak {e}{nr}0"].set(2)  # leakage + forward/backscatter, as their Eq. 4
+beyond_office(t, e, nr)
+fill(f"dikeent {e}{nr}", "0.01923")  # 1 mSv a year
+lead_and_concrete(t, e, nr)
+app.choosetype(e, nr, t, notify=False)
+record("biondi", t, [e])
+inputs, results = room_parts(t)
+app.depnote.select(app.standalone[t])
+select_barrier(t, e)
+shot("biondi_barrier.png", root, widget=inputs, height=640)
 
 # ---------- department ----------
 app.open_example("department")

@@ -305,18 +305,25 @@ def introduction():
                 "thickness you plan to install, show the rooms in 2D and 3D with the radiation around them, and "
                 "write a complete report in Excel."),
               P("You can design:")]
-    story += [bullets(["<b>X-Ray rooms</b>: radiography and chest rooms, with primary and secondary barriers.",
+    story += [bullets(["<b>X-Ray rooms</b>: radiography and chest rooms, with primary and secondary barriers; also "
+                       "modern digital radiography (DR) rooms, general and pediatric.",
                        "<b>Fluoroscopy rooms</b>: R&amp;F rooms (fluoroscopy and radiographic tube), cardiac and "
-                       "peripheral angiography.",
+                       "peripheral angiography, and five kinds of interventional room.",
                        "<b>CT rooms</b>: secondary radiation from the DLP of the body and head scans.",
                        "<b>Mammography rooms</b>: secondary radiation only, also digital breast tomosynthesis "
                        "(DBT).",
                        "<b>Departments</b>: several rooms of any type on one floor plan, each with its own results, "
                        "in one report."])]
-    story += [P("The method and the data are those of NCRP Report No. 147. Two newer published data sets are added "
-                "where NCRP 147 has none or older ones, and are always named as such: digital breast tomosynthesis "
-                "(Yang et al. 2017, section 6.1) and the transmission of modern digital radiography beams (Li et al. "
-                "2024, section 4.9).")]
+    story += [P("The method and the data are those of NCRP Report No. 147. Newer published data are added where "
+                "NCRP 147 has none or older ones, and are always named with their source:")]
+    story += table([["Data of the literature", "What they add", "Section"],
+                    ["Li et al. 2024", "Transmission of modern digital radiography beams at a given kVp", "4.9"],
+                    ["Kirby et al. 2023", "Workload distributions of modern digital radiography rooms, general and "
+                                          "pediatric", "4.10"],
+                    ["Biondi et al. 2024", "Workload distributions of interventional rooms", "4.11"],
+                    ["Yang et al. 2017", "Digital breast tomosynthesis", "6.1"]], [38, 112, 20])
+    story += [P("In the list of workload distributions those of NCRP 147 come first; the others follow below a line "
+                "and their names end with the source, e.g. <i>DR Room (floor) – Kirby 2023</i>.")]
     story += H2("Files the program uses")
     story += [P("The setup (section 3.1) puts these files in the program's folder:")]
     story += table([["File", "What it is"],
@@ -324,7 +331,8 @@ def introduction():
                      "Shielding_of_X-Ray_rooms.py</font> in the folder <font name='Mono'>XRIFSC_code</font>, run "
                      "with Python.)"],
                     ["Data Shielding.xlsx", "The NCRP 147 data: workloads, unshielded air kerma, transmission "
-                                            "parameters, occupancy and use factors. <b>Required</b>: keep it next to "
+                                            "parameters, occupancy and use factors; and the data of the literature, "
+                                            "each in sheets named after its source. <b>Required</b>: keep it next to "
                                             "the program."],
                     ["Examples\\*.shield", "The built-in examples as project files."],
                     ["User Guide.pdf, 5_NCRP_147_2004.pdf", "This guide and NCRP Report No. 147, opened from the Help "
@@ -369,8 +377,8 @@ def method():
     story += [P("A barrier with several workload distributions takes α, β, γ from the one ticked <b>Set for the "
                 "calculation</b>. Tick the distribution that gives the most air kerma, or the most penetrating one "
                 "for a conservative result. A primary beam given by its kVp can use, instead of the NCRP 147 data, "
-                "those of modern digital radiography (section 4.9); digital breast tomosynthesis has its own "
-                "(section 6.1).")]
+                "those of modern digital radiography (section 4.9); the workload distributions of the literature "
+                "have their own (sections 4.10, 4.11 and 6.1).")]
     story += H2("Design goal P")
     story += table([["Area beyond the barrier", "P (air kerma)", "Annual"],
                     ["Controlled: occupied only by radiation workers", "0.1 mGy/week", "5 mSv/year"],
@@ -510,21 +518,24 @@ def xray_room():
                      "chest bucky wall, cross-table wall), otherwise <b>Secondary</b> (leakage and scatter only).",
                      "<b>Distance from the Source to the Barrier</b> (m), to the barrier itself. The distance "
                      "beyond it to the person is set under Shielding Area (section 2.4).",
-                     "<b>Workload Distribution</b>: <b>X-Ray Room (Suggested NCRP 147)</b> and the room in the list "
-                     "(e.g. <i>Rad Room (floor or other barriers)</i>), or <b>Give kVp</b> for a single-kVp "
-                     "transmission curve. With kVp you must write the unshielded air kerma yourself; for a primary "
-                     "beam you also choose the transmission data, NCRP 147 or modern digital radiography "
-                     "(section 4.9).",
+                     "<b>Workload Distribution</b>: <b>X-Ray Room</b> and the room in the list (e.g. <i>Rad Room "
+                     "(floor or other barriers)</i>), or <b>Give kVp</b> for a single-kVp transmission curve. The "
+                     "list shows the NCRP 147 distributions first and, below a line, those of the literature, whose "
+                     "names end with their source (table in section 4.8). With kVp you must write the unshielded air "
+                     "kerma yourself; for a primary beam you also choose the transmission data, NCRP 147 or modern "
+                     "digital radiography (section 4.9).",
                      "<b>Set for the calculation</b>: tick it on the distribution whose transmission data (α, β, γ) "
                      "are used. Only one per barrier.",
-                     "Primary radiation: <b>Use Factor</b> <i>U</i> (floor 0.89, cross-table wall 0.09, wall No. 3 "
-                     "0.02, chest bucky 1), the <b>Primary Unshielded Air Kerma</b> "
-                     "<i>K</i><super>1</super><sub>P</sub> (filled in for the NCRP 147 rooms) and, behind an image "
-                     "receptor, <b>Preshielding</b>: <b>Bucky</b> or <b>Cross-table</b>."])]
+                     "Primary radiation: <b>Use Factor</b> <i>U</i> (NCRP 147: floor 0.89, cross-table wall 0.09, "
+                     "wall No. 3 0.02, chest bucky 1; Kirby et al. 2023: 1, section 4.10), the <b>Primary Unshielded "
+                     "Air Kerma</b> <i>K</i><super>1</super><sub>P</sub> (filled in when the distribution has one) "
+                     "and, behind an image receptor, <b>Preshielding</b>: <b>Bucky</b> or <b>Cross-table</b>."])]
     story += [P(f"For secondary radiation ({fig('xray_secondary.png')}) choose where the unshielded air kerma comes from:")]
     story += figure("xray_secondary.png", "A secondary barrier: the unshielded secondary air kerma suggested by NCRP "
                                           "147.", crop=(0, 0, 1175, 700))
-    story += [bullets(["<b>Select Unshielded Secondary Air Kerma — Suggested (NCRP 147)</b>, then <b>Leakage "
+    story += [bullets(["<b>Select Unshielded Secondary Air Kerma — Suggested</b>: the value of the workload "
+                       "distribution; the label names its source (NCRP 147, or the article of a distribution of the "
+                       "literature). Then <b>Leakage "
                        "Radiation</b> with <b>Leakage and Side-Scatter</b> (walls and doors beside the patient), "
                        "<b>Leakage and Forward/Backscatter</b> (floor and ceiling, in line with the beam) or <b>Only "
                        "Leakage</b>; or <b>Side-Scatter</b> or <b>Forward/Backscatter</b> alone.",
@@ -541,7 +552,7 @@ def xray_room():
                 "</b> swaps inside and outside.")]
     story += figure("xray_layers.png", "Barrier 4 of the example: concrete on the room side and lead outside, half "
                                        "of the shielding each, with the planned thicknesses.",
-                    crop=(0, 380, 1175, 895))
+                    width=150 * mm, crop=(0, 345, 1175, 688))
     story += H2("Checking a planned thickness")
     story += [P("Tick <b>Check the dose beyond the barrier with a planned thickness</b> and type the thickness of "
                 "each material you intend to install (mm). With layers the planned thicknesses go in the "
@@ -549,7 +560,7 @@ def xray_room():
                 "meets <i>P</i>. Untick it to see only the required thickness; the values you typed are kept.")]
     story += H2("Area, occupancy and design goal")
     story += figure("xray_area.png", "The end of a barrier tab: area, occupancy factor, design goal and Calculate.",
-                    crop=(0, 0, 1175, 420))
+                    crop=(0, 0, 1175, 440))
     story += [bullets(["<b>Shielding Area</b>: Controlled, Uncontrolled or Supervised. It fills in the design goal "
                        "<i>P</i>.",
                        "<b>Write occupancy factor (T)</b>, <b>or select Location (Suggested NCRP 147)</b>: the "
@@ -573,16 +584,21 @@ def xray_room():
                 "that barrier until it is calculated." % BAD)]
     story += figure("missing_dialog.png", "The Missing data window, here for a barrier without distance.",
                     width=125 * mm)
-    story += H2("Fluoroscopy rooms")
+    story += H2("Fluoroscopy rooms and the workload distributions of each room")
     story += [P("A <b>Fluoroscopy Room</b> (start screen or <b>File › New... › Design Fluoroscopy Room</b>) is "
                 "designed exactly like an X-ray room; only its workload distributions differ. Each kind of room "
-                "offers its own:")]
-    story += table([["Room", "Workload distributions (NCRP 147 Table 4.3)"],
+                "offers its own, NCRP 147 first and then, below a line in the list, those of the literature:")]
+    story += table([["Room", "NCRP 147 (Table 4.3)", "Literature"],
                     ["X-Ray room", "Rad Room (chest bucky), Rad Room (floor or other barriers), Rad Room (all "
-                                   "barriers), Chest Room"],
+                                   "barriers), Chest Room",
+                     "DR Room (chest bucky / floor / cross-table wall / all barriers) – Kirby 2023; Pediatric DR "
+                     "(the same four) – Kirby 2023 (section 4.10)"],
                     ["Fluoroscopy Room", "Fluoroscopy Tube (R&amp;F room), Rad Tube (R&amp;F room), Cardiac "
-                                         "Angiography, Peripheral Angiography"],
-                    ["Mammography Room", "Mammography Room, Digital Breast Tomosynthesis"]], [38, 132])
+                                         "Angiography, Peripheral Angiography",
+                     "Angiography, Electrophysiology, Haemodynamics, Neuroangiography, Vascular Surgery – Biondi "
+                     "2024 (section 4.11)"],
+                    ["Mammography Room", "Mammography Room", "Digital Breast Tomosynthesis – Yang 2017 (section 6.1)"]],
+                   [32, 64, 74])
     story += [P("In an R&amp;F room the fluoroscopy tube gives secondary radiation only (the image receptor stops its "
                 "beam), while the radiographic tube can aim at the floor or a wall: choose <b>Rad Tube (R&amp;F "
                 "room)</b> as a primary radiation type there (NCRP 147: 5.9 mGy per patient at 1 m). A barrier "
@@ -614,6 +630,113 @@ def xray_room():
                 f"<i>P</i> = 0.02 mGy/week, no preshielding) needs:")]
     story += table(rows, [80, 35, 35])
     story += [P("The harder modern beams need noticeably more shielding than the NCRP 147 data suggest.")]
+    story += kirby_section()
+    story += biondi_section()
+    return story
+
+
+def literature_rows(workbook, sheet):
+    return [r for r in workbook[sheet].iter_rows(min_row=3, values_only=True)
+            if isinstance(r[0], str) and isinstance(r[1], (int, float))]
+
+
+def kirby_section():
+    workbook = load_workbook(EXCEL, data_only=True)
+    story = H2("Modern digital radiography: workloads of Kirby et al. 2023")
+    story += [P("NCRP 147 took its workloads from a survey of film-screen rooms in the 1990s. Kirby et al. (2023) "
+                "surveyed modern digital radiography (DR) from the DICOM header of every exposure: 203 294 exposures "
+                "of four DR units of a general hospital (open 24 hours, 7 days a week; 2019 and 2021) and 25 415 of "
+                "two units of a pediatric practice. For each barrier, the floor, the cross-table wall and the wall "
+                "with the chest bucky, they give the workload in mA·min per patient in 5 kVp bins. Their mean "
+                "workload, 1.36 mA·min per patient, is 44 % below that of NCRP 147 (2.45); the pediatric one is "
+                "0.29. They counted on average 230 patients per week per room in the hospital and 57 in the "
+                "pediatric practice."),
+              P("The list of an X-ray room offers the three barriers and their sum, <i>all barriers</i>, for the "
+                "general (<i>DR Room</i>) and the pediatric practice (<i>Pediatric DR</i>). Use them as the NCRP 147 "
+                "ones: <i>chest bucky</i>, <i>floor</i> and <i>cross-table wall</i> for the primary beam on that "
+                "barrier, <i>all barriers</i> for secondary radiation.")]
+    story += figure("kirby_floor.png", "The floor of a DR room with the workload distribution of Kirby et al. 2023: "
+                                       "the use factor and the primary air kerma are filled in.")
+    story += [H3("From the spectrum to air kerma and transmission"),
+              P("The article gives only the workload spectra. The program turns them into air kerma and "
+                "transmission the way NCRP 147 made its own data from the spectra of its survey (Appendices B and "
+                "C). This was computed once, by <font name='Mono'>tools/literature_data.py</font> of the source code, "
+                "and stored in the sheets <i>Kirby 2023 kerma</i>, <i>Kirby 2023 prim abc</i> and <i>Kirby 2023 sec "
+                "abc</i> of Data Shielding.xlsx:")]
+    story += [bullets(["<b>Primary air kerma</b> per patient at 1 m: <i>K</i><super>1</super><sub>P</sub> = Σ "
+                       "<i>K</i><super>1</super><sub>W</sub>(kVp) <i>W</i>(kVp), with the output of a tungsten-anode, "
+                       "aluminium-filtered tube of NCRP 147 Fig. B.1: <i>K</i><super>1</super><sub>W</sub> = 1.222 − "
+                       "5.664×10<super>−2</super> kVp + 1.227×10<super>−3</super> kVp<super>2</super> − "
+                       "3.136×10<super>−6</super> kVp<super>3</super> mGy per mA·min.",
+                       "<b>Scatter</b>: <i>K</i><super>1</super><sub>W</sub> <i>W</i> <i>a</i><sub>1</sub>(θ, kVp) × "
+                       "10<super>−6</super> <i>F</i> / <i>d</i><sub>F</sub><super>2</super>, with the scatter fraction "
+                       "of Fig. C.1, <i>a</i><sub>1</sub> = 1.6×10<super>−2</super> (kVp − 125) + 8.43 − 0.111 θ + "
+                       "9.83×10<super>−4</super> θ<super>2</super> − 1.74×10<super>−6</super> θ<super>3</super>, at "
+                       "90° (side-scatter) and 135° (forward/backscatter), and the fields of NCRP 147 Table 4.7: "
+                       "1535 cm² at 1.83 m for the chest bucky, 1000 cm² at 1 m otherwise.",
+                       "<b>Leakage</b>: 0.876 mGy/h at 1 m at 150 kVp and 3.3 mA through a 2.32 mm lead housing, "
+                       "varying as kVp² (Equations C.6 to C.9).",
+                       "<b>Transmission</b>: the transmission of each kVp (Table A.1) weighted by the air kerma of "
+                       "that kVp and fitted to the Archer equation; for secondary radiation with 90° scatter and "
+                       "leakage, as Table C.1. The kVp of a bin is its highest value, as in the article."])]
+    story += [P("Applied to the NCRP 147 spectra (Table 4.2), the same calculation gives back NCRP 147: the primary "
+                "air kerma within 4 % (Table 4.5), the secondary air kerma within 6 % (Table 4.7 has two significant "
+                "digits), and the thickness for a transmission from 0.1 to 10<super>−5</super> within 1 % for lead, "
+                "concrete and plate glass, 3 % for wood, 5 % for steel and 5.5 % for gypsum wallboard, the gypsum "
+                "coming out thicker, on the safe side, at strong attenuation (Tables B.1 and C.1). <font "
+                "name='Mono'>python tools/literature_data.py --check</font> prints the comparison.")]
+    rows = [["Workload distribution", "W<sub>norm</sub> (mA·min/patient)", "K<super>1</super><sub>P</sub>",
+             "K<super>1</super><sub>sec</sub> leakage + side-scatter",
+             "K<super>1</super><sub>sec</sub> leakage + forward/back"]]
+    for r in literature_rows(workbook, "Kirby 2023 kerma"):
+        rows.append([r[0], f"{r[1]:.3g}", f"{r[9]:g}" if r[9] is not None else "–", fmt(r[6]), fmt(r[8])])
+    story += table(rows, [62, 26, 18, 32, 32])
+    story += [P("Air kerma in mGy per patient at 1 m.", "small"), Spacer(1, 4),
+              H3("Use factor"),
+              P("The workload of each barrier already includes how often the beam points at it (the workloads of "
+                "the three barriers add up to the mean workload per patient), so <i>U</i> = 1 with all the patients "
+                "of the room; the program fills it in. The use factors that Kirby et al. list separately (2021: "
+                "floor 0.55, cross-table wall 0.03, chest bucky wall 0.42) must not be applied again."),
+              P("Compared with NCRP 147, the floor needs less shielding (<i>K</i><super>1</super><sub>P</sub> 1.22 "
+                "against 5.2 mGy per patient, with <i>U</i> = 1 against 0.89) but the chest bucky wall more (3.05 "
+                "against 2.3): without dedicated chest rooms, the DR rooms take the chest images at 120 kVp. "
+                "Section 11.7 works an example. For a pediatric room in a general hospital, which may later image "
+                "adults, the general data are the safe choice (Kirby et al.).")]
+    return story
+
+
+def biondi_section():
+    workbook = load_workbook(EXCEL, data_only=True)
+    ncrp = {r[0]: r for r in workbook["Uns Air Kerma"].iter_rows(min_row=2, values_only=True) if r[0]}
+    transmission = {r[0]: r for r in literature_rows(workbook, "Biondi 2024 sec abc")}
+    story = H2("Interventional rooms: workloads of Biondi et al. 2024")
+    story += [P("NCRP 147 has two workload distributions for angiography, cardiac and peripheral (the latter also for "
+                "neuroangiography). Biondi et al. (2024) recorded with a dose monitoring system (DoseWatch) all "
+                "214 697 exposures of the 3066 procedures of 2023 on a GE Innova IGS 540 and two Philips Azurion "
+                "7M20, and give for five interventional rooms the workload per patient and the secondary "
+                "transmission. A <b>Fluoroscopy Room</b> offers them:")]
+    story += [bullets(["<b>Transmission</b>: their table 3, for lead, concrete and gypsum wallboard. Steel, plate "
+                       "glass and wood have no data; the result says <i>No transmission data</i>.",
+                       "<b>Unshielded secondary air kerma</b> per patient at 1 m: as their Equation 4 and NCRP 147 "
+                       "(4.1.4), the NCRP 147 value of cardiac angiography (haemodynamics, electrophysiology) or of "
+                       "peripheral angiography (angiography, neuroangiography, vascular surgery) times "
+                       "<i>W</i><sub>site</sub> / <i>W</i><sub>norm</sub>. Every choice of the suggested air kerma "
+                       "(leakage, side-scatter, forward/backscatter and their sums) is scaled so.",
+                       "<b>Secondary radiation only</b>: in fluoroscopy the image receptor stops the primary beam "
+                       "(NCRP 147). With <b>Primary</b> the program asks for <i>Secondary radiation only</i>."])]
+    rows = [["Workload distribution", "W<sub>norm</sub> (mA·min/patient)", "NCRP 147 scaled",
+             "K<super>1</super><sub>sec</sub> leakage + side / + forward", "Lead α, β, γ"]]
+    for r in literature_rows(workbook, "Biondi 2024"):
+        w, base = r[6] / 60, ncrp[r[8]]
+        rows.append([r[0], f"{w:.3g}", f"{r[8]} ({base[1]:g})", f"{fmt(base[6] * w / base[1])} / "
+                                                                f"{fmt(base[8] * w / base[1])}",
+                     ", ".join(f"{v:g}" for v in transmission[r[0]][1:4])])
+    story += table(rows, [47, 28, 36, 33, 26])
+    story += figure("biondi_barrier.png", "A wall of an angiography room with the data of Biondi et al. 2024: the "
+                                          "suggested air kerma names its source.", crop=(0, 0, 1154, 640))
+    story += [P("Their workloads per patient are much higher than those of NCRP 147 for peripheral work (angiography "
+                "119 and vascular surgery 168 mA·min, against 64) and much lower for cardiac work (haemodynamics 21, "
+                "against 160). Section 11.8 reproduces the example of the article.")]
     return story
 
 
@@ -650,7 +773,8 @@ def ct_and_mammography():
     story += [P("If the chosen data have no transmission values for a material, the result says <i>No "
                 "transmission data for</i> that material.")]
     story += H2("Digital breast tomosynthesis")
-    story += [P("For a DBT unit choose the workload distribution <b>Digital Breast Tomosynthesis</b>. NCRP 147 "
+    story += [P("For a DBT unit choose the workload distribution <b>Digital Breast Tomosynthesis – Yang 2017</b>. "
+                "NCRP 147 "
                 "has no DBT data; the program uses those of Yang et al. (2017), from a survey of 310 421 "
                 "acquisitions on eight Hologic Selenia Dimensions rooms:")]
     story += [bullets(["<b>Transmission</b>: their table 8, scatter from a typical Hologic DBT room, for lead, "
@@ -1003,6 +1127,66 @@ def worked_examples():
     story += [P(f"With their gypsum data ({params_text(gyp)}): <b>{x_gyp:.1f} mm gypsum wallboard</b>, as the article "
                 f"finds (\"a minimum of 23 mm gypsum is needed\").")]
 
+    # ---------- modern digital radiography (Kirby et al. 2023) ----------
+    kirby = VALUES["kirby"]
+    story += H2("Digital radiography: NCRP 147 and Kirby et al. 2023")
+    story += [P("A DR room with 120 patients per week (the NCRP 147 average). The floor: the source 1 m above it and "
+                "an office below (<i>T</i> = 1, <i>P</i> = 0.02 mGy/week), <i>d</i> = 1 + 1.3 = 2.3 m. The chest "
+                "bucky wall (Barrier 1): 1.8 m from the source, an office beyond, <i>d</i> = 1.8 + 0.3 = 2.1 m. No "
+                "preshielding. Each barrier is calculated with the NCRP 147 distribution and with that of Kirby et "
+                "al.:")]
+    rows = [["Barrier", "Workload distribution", "U", "K<super>1</super><sub>P</sub>", "K (mGy/week)", "Lead (mm)",
+             "Concrete (mm)"]]
+    for source in ("NCRP 147", "Kirby 2023"):
+        for barrier, rec in kirby[source].items():
+            K = 120 * rec["U"] * 1 * rec["K1"] / rec["d"] ** 2
+            close(K, rec["K_total"])
+            thick = dict(rec["thickness"])
+            for material in ("Lead", "Concrete"):
+                close(archer_thickness(rec["params"][material], 0.02 / K), thick[material])
+            rows.append([barrier, rec["distribution"], f"{rec['U']:g}", f"{rec['K1']:g}", fmt(K),
+                         f"{thick['Lead']:.2f}", f"{thick['Concrete']:.0f}"])
+    story += table(rows, [20, 58, 10, 14, 22, 20, 26])
+    floor = kirby["Kirby 2023"]["Floor"]
+    lead_of = lambda source, barrier: dict(kirby[source][barrier]["thickness"])["Lead"]
+    assert 0.6 < lead_of("Kirby 2023", "Floor") / lead_of("NCRP 147", "Floor") < 0.75  # "about a third less"
+    assert lead_of("Kirby 2023", "Barrier 1") > lead_of("NCRP 147", "Barrier 1")  # "but more"
+    K = 120 * floor["K1"] / floor["d"] ** 2
+    story += formula(f"Floor, Kirby: <i>K</i> = 120 × 1 × 1 × {floor['K1']:g} / {floor['d']:.1f}<super>2</super> = "
+                     f"<b>{fmt(K)}</b> mGy/week, <i>B</i> = 0.02 / {fmt(K)} = <b>{fmt(0.02 / K)}</b>")
+    story += [P(f"and with the lead transmission of the floor spectrum ({params_text(floor['params']['Lead'])}): "
+                f"<b>{dict(floor['thickness'])['Lead']:.2f} mm lead</b>. The modern DR workload needs about a third "
+                f"less lead under the table, but more behind the chest bucky.")]
+
+    # ---------- interventional room (Biondi et al. 2024) ----------
+    bio = VALUES["biondi"]["Barrier 1"]
+    dist = bio["distributions"][0]
+    k1 = 7155.262 / 60 / 64 * 0.95
+    close(k1, dist["K1"])
+    K = dist["N"] * dist["K1"] / dist["d"] ** 2
+    close(K, bio["K_total"])
+    B = bio["P"] / K
+    lead = bio["params"]["Lead"]
+    x_lead = archer_thickness(lead, B)
+    close(x_lead, dict(bio["thickness"])["Lead"])
+    peripheral = next(r for r in load_workbook(EXCEL, data_only=True)["sec abc"].iter_rows(min_row=3, values_only=True)
+                      if r[0] == "Peripheral Angiography")[1:4]
+    story += H2("Interventional room (the example of Biondi et al. 2024)")
+    story += [P(f"Biondi et al. work out an angiography room with 779 procedures a year and an uncontrolled area "
+                f"(1 mSv a year, <i>T</i> = 1) 2 m from the patient, with their Equation 4: 345 mGy a year without "
+                f"shielding and 1.5 mm of lead (their table 4). In the program: <b>{dist['N']:g}</b> patients per week "
+                f"(779 / 52), <b>Angiography – Biondi 2024</b>, <b>Leakage and Forward/Backscatter</b>, distance "
+                f"{dist['d'] - bio['beyond']:g} m + {bio['beyond']:g} m, and <i>P</i> = 1/52 = {bio['P']:g} "
+                f"mGy/week.")]
+    story += formula(f"<i>K</i><super>1</super><sub>sec</sub> = (7155 mAs / 60) / 64 × 0.95 = {dist['K1']:.3f} "
+                     f"mGy/patient<br/><i>K</i> = {dist['N']:g} × {dist['K1']:.3f} / {dist['d']:g}<super>2</super> = "
+                     f"<b>{K:.2f}</b> mGy/week ({K * 52:.0f} mGy a year), <i>B</i> = {bio['P']:g} / {K:.2f} = "
+                     f"<b>{fmt(B)}</b>")
+    story += [P(f"With their lead data ({params_text(lead)}): <b>{x_lead:.2f} mm lead</b>, as the article; or "
+                f"{dict(bio['thickness'])['Concrete']:.0f} mm concrete. The NCRP 147 transmission of peripheral "
+                f"angiography would give {archer_thickness(peripheral, B):.2f} mm of lead for the same "
+                f"<i>B</i>: their transmission data are more penetrating.")]
+
     story += H2("A whole department")
     story += [P("The example department puts the three rooms on one floor plan, with a control room between the "
                 "X-ray and CT rooms and a corridor below. Its 2D / 3D view shows every barrier, and the radiation "
@@ -1015,7 +1199,18 @@ def worked_examples():
 def reference():
     story = H1("NCRP 147 data used by the program")
     story += [P("The program reads these values from <b>Data Shielding.xlsx</b>; they are the NCRP Report No. 147 "
-                "values (the report itself is in the Help menu).")]
+                "values (the report itself is in the Help menu). The data of the literature are in the same file, "
+                "in sheets named after their source (sections 4.9 to 4.11 and 6.1).")]
+    story += note("The file was checked value by value against NCRP 147 (Tables 4.1, 4.3, 4.5, 4.7, A.1, B.1, C.1 "
+                  "and Figures A.2, A.3). This edition corrects transcription errors of earlier versions: the "
+                  "occupancy factors 1/8 (corridor doors) and 1/40 (outdoors, stairways, attics, ...), which were "
+                  "rounded to 0.13 and 0.03; the concrete α of secondary radiation at 70 kVp (0.0509, was 0.059) and "
+                  "the lead β of primary radiation at 75 kVp (22.69, was 26.69), used with <b>Give kVp</b>; the "
+                  "forward/backscatter alone of the mammography room (0.049 mGy, was 0.042); plate glass at 25 to "
+                  "35 kVp, written as formulas that stopped the calculation of a primary beam at these kVp; and some "
+                  "values that change no result of a usual design (steel at 25 and 125 kVp, gypsum at 35 kVp, wood "
+                  "at 125 to 150 kVp, lead and wood of the primary mammography beam). Results of these cases differ "
+                  "slightly from those of earlier versions.", "Note")
     workbook = load_workbook(EXCEL, data_only=True)
 
     story += H2("Occupancy factors T (Table 4.1)")
@@ -1068,7 +1263,13 @@ def reference():
                     ["Digital breast tomosynthesis (not NCRP 147)", "Yang et al. 2017: transmission table 8 (sheet "
                                                                     "'DBT abc'), scatter air kerma per view table 9"],
                     ["Transmission of modern DR (not NCRP 147)", "Li et al. 2024, tables 1 and 2 (sheet 'prim abc DR "
-                                                                 "600'): 60–120 kV, two filtrations"]],
+                                                                 "600'): 60–120 kV, two filtrations"],
+                    ["Workloads of modern DR (not NCRP 147)", "Kirby et al. 2023, table 3 (sheet 'Kirby 2023'); air "
+                                                              "kerma and transmission made with the NCRP 147 method "
+                                                              "(sheets 'Kirby 2023 kerma', 'Kirby 2023 prim abc', "
+                                                              "'Kirby 2023 sec abc'), section 4.10"],
+                    ["Interventional rooms (not NCRP 147)", "Biondi et al. 2024, tables 2 and 3 (sheets 'Biondi 2024', "
+                                                            "'Biondi 2024 sec abc'), section 4.11"]],
                    [70, 100])
     return story
 
@@ -1086,6 +1287,11 @@ def troubleshooting():
                     [f"<font color='{BAD}'>Missing: kVp for the DR 600 data</font>", "The DR 600 data exist only "
                                                                                     "for 60, 70, ... 120 kV.",
                      "Choose one of these kVp, or the NCRP 147 data."],
+                    [f"<font color='{BAD}'>Missing: Secondary radiation only</font>", "A workload distribution of "
+                                                                                     "Biondi et al. 2024 was chosen "
+                                                                                     "for primary radiation; it has "
+                                                                                     "secondary data only.",
+                     "Choose Secondary, or another workload distribution."],
                     [f"<font color='{BAD}'>Missing: Select Material</font>", "A material list was left empty.",
                      "Choose the material under Select Materials."],
                     [f"Total: 90 % <font color='{BAD}'>(must be 100 %)</font>", "The shares of the layers do not add "
@@ -1110,7 +1316,13 @@ def troubleshooting():
                        "Archer B.R., Thornby J.I., Bushong S.C. Diagnostic X-ray shielding design based on an "
                        "empirical model of photon attenuation. <i>Health Physics</i> 44:507–517, 1983.",
                        "Yang K., Schultz T.J., Li X., Liu B. Radiation shielding calculation for digital breast tomosynthesis rooms with an updated workload survey. <i>J. Radiol. Prot.</i> 37:230–246, 2017.",
-                       "Li X., Marschall T.A., Yang K., Liu B. Radiation shielding transmission data for modern digital radiography. <i>Med. Phys.</i>, 2024, doi:10.1002/mp.17449."])]
+                       "Li X., Marschall T.A., Yang K., Liu B. Radiation shielding transmission data for modern digital radiography. <i>Med. Phys.</i>, 2024, doi:10.1002/mp.17449.",
+                       "Kirby K.M., Schueler B.A., Littrell L.A., Long Z. Workload and use factor data for a modern "
+                       "digital radiography system. <i>J. Appl. Clin. Med. Phys.</i> 24:e13962, 2023, "
+                       "doi:10.1002/acm2.13962.",
+                       "Biondi M., Bortoli E., Avitabile R., et al. Radiation shielding calculation for "
+                       "interventional radiology: an updated workload survey using a dose monitoring software. "
+                       "<i>Physica Medica</i> 125:104509, 2024, doi:10.1016/j.ejmp.2024.104509."])]
     return story
 
 

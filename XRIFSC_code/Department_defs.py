@@ -4,7 +4,7 @@ from tkinter import *
 from tkinter import ttk
 import theme
 from tooltips import tip
-from Depcalculations import wb, PRIMARY_KERMA, KVP_DATA
+from Depcalculations import wb, PRIMARY_KERMA, KVP_DATA, DBT, SOURCES, KIRBY, BIONDI
 
 # NCRP 147 shielding design goals P (mGy/week). Supervised areas are treated as uncontrolled.
 DESIGN_GOALS = {"Controlled Area": "0.1", "Uncontrolled Area": "0.02", "Supervised Area": "0.02"}
@@ -12,14 +12,16 @@ DESIGN_GOALS = {"Controlled Area": "0.1", "Uncontrolled Area": "0.02", "Supervis
 # and not more than 1.7 m above the floor below, i.e. (floor-to-floor height - 1.7 m) below this floor: 1.3 m for
 # 3 m. Barrier 1 is the floor and barrier 2 the ceiling; walls and door take 0.3 m.
 BEYOND_DEFAULT = {1: "1.3", 2: "0.5"}
-# The workload distributions of each kind of room (NCRP 147 Table 4.3; DBT: transmission only, not NCRP 147)
-DBT = "Digital Breast Tomosynthesis"
+# The workload distributions of each kind of room, in groups split by a line in the list: NCRP 147 (Table 4.3),
+# then those of the literature, whose names end with their source
 DISTRIBUTIONS = {
-    "X-Ray room": ("Rad Room (chest bucky)", "Rad Room (floor or other barriers)", "Rad Room (all barriers)",
-                   "Chest Room"),
-    "Fluoroscopy Room": ("Fluoroscopy Tube (R&F room)", "Rad Tube (R&F room)", "Cardiac Angiography",
-                         "Peripheral Angiography"),
-    "Mammography Room": ("Mammography Room", DBT),
+    "X-Ray room": (("Rad Room (chest bucky)", "Rad Room (floor or other barriers)", "Rad Room (all barriers)",
+                    "Chest Room"),
+                   tuple(name for name in KIRBY if name.startswith("DR Room")),
+                   tuple(name for name in KIRBY if not name.startswith("DR Room"))),
+    "Fluoroscopy Room": (("Fluoroscopy Tube (R&F room)", "Rad Tube (R&F room)", "Cardiac Angiography",
+                          "Peripheral Angiography"), tuple(BIONDI)),
+    "Mammography Room": (("Mammography Room",), (DBT,)),
 }
 # NCRP 147 Table 4.1 locations, exactly as in the occupancy sheet the calculation reads
 OCCUPANCY_LOCATIONS = [row[0] for row in wb['Occupancy Factor ( T )'].iter_rows(min_row=2, values_only=True) if row[0]]
@@ -278,7 +280,7 @@ class dep_defs():
 
         # Radio buttons for room or kVp selection
         self.create_radio_button(key=f"selxray1 {e}{nr}{i}", master=self.d[barrierf_key],
-                                 text="X-Ray Room\n(Suggested NCRP 147)", variable=self.d[f"vselxray {e}{nr}{i}"],
+                                 text="X-Ray Room", variable=self.d[f"vselxray {e}{nr}{i}"],
                                  value=1, row=i * 10 + 4, column=1, command=lambda: self.XrRoom(e, nr, i),
                                  tip_key="workload_distribution")
 
@@ -373,10 +375,11 @@ class dep_defs():
             self.update_kerma_label(e, nr, i)
 
     def update_kerma_label(self, e, nr, i):
-        """The suggested secondary air kerma comes from NCRP 147, or for DBT from Yang et al. 2017."""
+        """The suggested secondary air kerma comes from NCRP 147, or from the source of a distribution of the
+        literature (Yang et al. 2017, Kirby et al. 2023, Biondi et al. 2024)."""
         button, distribution = self.d.get(f"airkncrp {e}{nr}{i}"), self.d.get(f"vsexroom {e}{nr}{i}")
         if button is not None:
-            source = "Yang et al. 2017" if distribution is not None and distribution.get() == DBT else "NCRP 147"
+            source = SOURCES.get(distribution.get() if distribution is not None else None, "NCRP 147")
             button.configure(text="Select Unshielded Secondary\nAir Kerma (mGy∙patient⁻¹)\n"
                                   f"Suggested ({source})")
 
@@ -403,11 +406,17 @@ class dep_defs():
             if self.d.get(f"kvpbox {e}{nr}{i}") is not None:  # the data choice of 'Give kVp'
                 self.d[f"kvpbox {e}{nr}{i}"].destroy()
                 self.d[f"kvpbox {e}{nr}{i}"] = None
-            # The workload distributions of this kind of room
-            self.xrooms = DISTRIBUTIONS.get(self.room_type_of(nr), DISTRIBUTIONS["X-Ray room"])
+            # The workload distributions of this kind of room, a line between NCRP 147 and each source of the literature
+            groups = DISTRIBUTIONS.get(self.room_type_of(nr), DISTRIBUTIONS["X-Ray room"])
+            self.xrooms = [name for group in groups for name in group]
             self.d[vsexroom_key] = StringVar()
             self.d[selxroom_key] = ttk.OptionMenu(self.d[barrierf_key], self.d[vsexroom_key], "Select X-ray room",
                                                   *self.xrooms, command=lambda value: self.on_distribution(e, nr, i))
+            menu, index = self.d[selxroom_key].nametowidget(self.d[selxroom_key]["menu"]), len(self.xrooms)
+            for group in reversed(groups[1:]):
+                index -= len(group)
+                if group and index:
+                    menu.insert_separator(index)
             self.d[selxroom_key].grid(row=i * 10 + 5, column=1, columnspan=2, pady=6.5, padx=5, sticky="w")
             tip(self.d[selxroom_key], "workload_distribution")
 
@@ -462,13 +471,18 @@ class dep_defs():
             return
         room = self.d[f"vsexroom {e}{nr}{i}"].get()
         barrier = self.barn[f"lab_bar {e}{nr}"].cget("text")
-        # NCRP 147 unshielded primary air kerma per patient at 1 m (mGy/patient)
+        # Unshielded primary air kerma per patient at 1 m (mGy/patient): NCRP 147, or Kirby et al. 2023
         kerma = PRIMARY_KERMA.get(room, "")
         # NCRP 147 primary use factors
         if room in ("Rad Room (chest bucky)", "Chest Room"):
             use = "1"  # chest image receptor
         elif room == "Rad Room (floor or other barriers)":
             use = {"Floor": "0.89", "Ceiling": ""}.get(barrier, "0.09")  # walls: cross-table 0.09 (wall No. 3: 0.02)
+        elif room in KIRBY:  # the workload of each barrier already includes how often the beam points at it
+            if "(all barriers)" in room or barrier == "Ceiling":
+                use = ""
+            else:
+                use = "1" if ("(floor)" in room) == (barrier == "Floor") else ""
         elif barrier == "Floor":
             use = "1"
         else:

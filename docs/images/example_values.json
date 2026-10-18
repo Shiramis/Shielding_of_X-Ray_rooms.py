@@ -46,7 +46,7 @@
     "Concrete": [
      0.03994,
      0.1448,
-     0.42310000000000003
+     0.4231
     ]
    },
    "preshielding": {
@@ -57,10 +57,10 @@
    "check": {
     "K": 104.98298676748584,
     "P": 0.02,
-    "dose": 0.00323973860151345,
+    "dose": 0.0032397386015134465,
     "ok": true,
     "basis": "planned Concrete 100 mm",
-    "transmission": 3.085965356166477e-05
+    "transmission": 3.085965356166474e-05
    }
   },
   "Ceiling": {
@@ -125,9 +125,9 @@
   "Door": {
    "kind": "xray",
    "P": 0.02,
-   "T": 0.13,
-   "K_total": 0.03731821092106467,
-   "B": 0.5359313725490196,
+   "T": 0.125,
+   "K_total": 0.03588289511640833,
+   "B": 0.5573686274509804,
    "distributions": [
     {
      "no": 1,
@@ -137,10 +137,10 @@
      "preshielding": "",
      "N": 120.0,
      "U": 1,
-     "T": 0.13,
+     "T": 0.125,
      "K1": 0.034,
      "d": 3.77,
-     "K": 0.03731821092106467,
+     "K": 0.03588289511640833,
      "set": true
     }
    ],
@@ -150,7 +150,7 @@
    "thickness": [
     [
      "Lead",
-     0.03766310004494893
+     0.0349113733121264
     ]
    ],
    "missing": [],
@@ -164,20 +164,20 @@
    },
    "preshielding": {},
    "check": {
-    "K": 0.03731821092106467,
+    "K": 0.03588289511640833,
     "P": 0.02,
-    "dose": 0.020000000000000004,
+    "dose": 0.019999999999999997,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.5359313725490196
+    "transmission": 0.5573686274509804
    }
   },
   "Barrier 1": {
    "kind": "xray",
    "P": 0.02,
-   "T": 0.03,
-   "K_total": 0.23051020408163267,
-   "B": 0.08676405489154493,
+   "T": 0.025,
+   "K_total": 0.19209183673469388,
+   "B": 0.10411686586985391,
    "distributions": [
     {
      "no": 1,
@@ -187,10 +187,10 @@
      "preshielding": "Cross-table",
      "N": 120.0,
      "U": 0.09,
-     "T": 0.03,
+     "T": 0.025,
      "K1": 5.2,
      "d": 2.8,
-     "K": 0.2148979591836735,
+     "K": 0.17908163265306123,
      "set": true
     },
     {
@@ -201,10 +201,10 @@
      "preshielding": "",
      "N": 120.0,
      "U": 1,
-     "T": 0.03,
+     "T": 0.025,
      "K1": 0.034,
      "d": 2.8,
-     "K": 0.015612244897959185,
+     "K": 0.013010204081632656,
      "set": false
     }
    ],
@@ -232,7 +232,7 @@
     "Concrete": [
      0.03994,
      0.1448,
-     0.42310000000000003
+     0.4231
     ]
    },
    "preshielding": {
@@ -241,12 +241,12 @@
     "Steel": 2.0
    },
    "check": {
-    "K": 0.23051020408163267,
+    "K": 0.19209183673469388,
     "P": 0.02,
     "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.08676405489154493
+    "transmission": 0.10411686586985391
    }
   },
   "Barrier 2": {
@@ -287,15 +287,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Gypsum Wallboard": [
-     0.0138,
-     0.057,
-     0.7937
-    ],
     "Lead": [
      2.298,
      17.38,
      0.6193
+    ],
+    "Gypsum Wallboard": [
+     0.0138,
+     0.057,
+     0.7937
     ]
    },
    "preshielding": {},
@@ -346,15 +346,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Gypsum Wallboard": [
-     0.0138,
-     0.057,
-     0.7937
-    ],
     "Lead": [
      2.298,
      17.38,
      0.6193
+    ],
+    "Gypsum Wallboard": [
+     0.0138,
+     0.057,
+     0.7937
     ]
    },
    "preshielding": {},
@@ -493,7 +493,7 @@
     null,
     null,
     null,
-    0.00323973860151345,
+    0.003239738601513447,
     "met (planned Concrete 100 mm)",
     "Each material alone",
     "OK"
@@ -525,11 +525,11 @@
     "Door",
     "Uncontrolled Area",
     "Corridor doors",
-    0.13,
+    0.125,
     0.02,
-    0.03731821092106467,
-    0.5359313725490196,
-    0.03766310004494893,
+    0.03588289511640833,
+    0.5573686274509804,
+    0.0349113733121264,
     null,
     null,
     null,
@@ -546,10 +546,10 @@
     "Barrier 1",
     "Uncontrolled Area",
     "Outdoor areas with only transient pedestrian or vehicular traffic",
-    0.03,
+    0.025,
     0.02,
-    0.2305102040816327,
-    0.08676405489154493,
+    0.1920918367346939,
+    0.1041168658698539,
     0,
     0,
     null,
@@ -728,9 +728,9 @@
   "Door": {
    "kind": "ct",
    "P": 0.02,
-   "T": 0.13,
-   "K_total": 0.49955886677776695,
-   "B": 0.0400353218210361,
+   "T": 0.125,
+   "K_total": 0.48034506420939127,
+   "B": 0.04163673469387755,
    "d": 3.03,
    "kvp": 120,
    "beyond": 0.3,
@@ -743,7 +743,7 @@
    "thickness": [
     [
      "Lead",
-     0.6973810662629357
+     0.6852841767302174
     ]
    ],
    "missing": [],
@@ -757,20 +757,20 @@
    },
    "preshielding": {},
    "check": {
-    "K": 0.49955886677776695,
+    "K": 0.48034506420939127,
     "P": 0.02,
     "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.0400353218210361
+    "transmission": 0.04163673469387755
    }
   },
   "Barrier 1": {
    "kind": "ct",
    "P": 0.02,
-   "T": 0.03,
-   "K_total": 0.135,
-   "B": 0.14814814814814814,
+   "T": 0.025,
+   "K_total": 0.11250000000000003,
+   "B": 0.17777777777777773,
    "d": 2.8,
    "kvp": 120,
    "beyond": 0.3,
@@ -783,11 +783,11 @@
    "thickness": [
     [
      "Lead",
-     0.34012064262526237
+     0.2983542771204442
     ],
     [
      "Concrete",
-     41.32498716390761
+     37.044538470103085
     ]
    ],
    "missing": [],
@@ -806,12 +806,12 @@
    },
    "preshielding": {},
    "check": {
-    "K": 0.135,
+    "K": 0.11250000000000003,
     "P": 0.02,
     "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.14814814814814814
+    "transmission": 0.17777777777777773
    }
   },
   "Barrier 2": {
@@ -1084,9 +1084,9 @@
   "Door": {
    "kind": "xray",
    "P": 0.02,
-   "T": 0.13,
-   "K_total": 0.007839697376716647,
-   "B": 2.551118881118881,
+   "T": 0.125,
+   "K_total": 0.007538170554535237,
+   "B": 2.6531636363636366,
    "distributions": [
     {
      "no": 1,
@@ -1096,10 +1096,10 @@
      "preshielding": "",
      "N": 80.0,
      "U": 1,
-     "T": 0.13,
+     "T": 0.125,
      "K1": 0.011,
      "d": 3.82,
-     "K": 0.007839697376716647,
+     "K": 0.007538170554535237,
      "set": true
     }
    ],
@@ -1132,9 +1132,9 @@
    },
    "preshielding": {},
    "check": {
-    "K": 0.007839697376716647,
+    "K": 0.007538170554535237,
     "P": 0.02,
-    "dose": 0.007839697376716647,
+    "dose": 0.007538170554535237,
     "ok": true,
     "basis": "required thickness",
     "transmission": 1.0
@@ -1178,15 +1178,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Gypsum Wallboard": [
-     0.0883,
-     0.7526,
-     0.3786
-    ],
     "Lead": [
      29.91,
      184.4,
      0.355
+    ],
+    "Gypsum Wallboard": [
+     0.0883,
+     0.7526,
+     0.3786
     ]
    },
    "preshielding": {},
@@ -1237,15 +1237,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Gypsum Wallboard": [
-     0.0883,
-     0.7526,
-     0.3786
-    ],
     "Lead": [
      29.91,
      184.4,
      0.355
+    ],
+    "Gypsum Wallboard": [
+     0.0883,
+     0.7526,
+     0.3786
     ]
    },
    "preshielding": {},
@@ -1296,15 +1296,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Gypsum Wallboard": [
-     0.0883,
-     0.7526,
-     0.3786
-    ],
     "Lead": [
      29.91,
      184.4,
      0.355
+    ],
+    "Gypsum Wallboard": [
+     0.0883,
+     0.7526,
+     0.3786
     ]
    },
    "preshielding": {},
@@ -1355,15 +1355,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Gypsum Wallboard": [
-     0.0883,
-     0.7526,
-     0.3786
-    ],
     "Lead": [
      29.91,
      184.4,
      0.355
+    ],
+    "Gypsum Wallboard": [
+     0.0883,
+     0.7526,
+     0.3786
     ]
    },
    "preshielding": {},
@@ -1388,7 +1388,7 @@
     {
      "no": 1,
      "radiation": "Secondary",
-     "distribution": "Digital Breast Tomosynthesis",
+     "distribution": "Digital Breast Tomosynthesis \u2013 Yang 2017",
      "k1_source": "DBT 2D + 3D (Yang et al. 2017)",
      "preshielding": "",
      "N": 100.0,
@@ -1507,6 +1507,193 @@
     ]
    },
    "d": 2.3
+  }
+ },
+ "kirby": {
+  "NCRP 147": {
+   "Floor": {
+    "distribution": "Rad Room (floor or other barriers)",
+    "U": 0.89,
+    "K1": 5.2,
+    "d": 2.3,
+    "K_total": 104.98298676748584,
+    "B": 0.00019050705848458656,
+    "thickness": [
+     [
+      "Lead",
+      1.6971912911474036
+     ],
+     [
+      "Concrete",
+      129.29618591136796
+     ]
+    ],
+    "params": {
+     "Lead": [
+      2.651,
+      16.56,
+      0.4585
+     ],
+     "Concrete": [
+      0.03994,
+      0.1448,
+      0.4231
+     ]
+    }
+   },
+   "Barrier 1": {
+    "distribution": "Rad Room (chest bucky)",
+    "U": 1.0,
+    "K1": 2.3,
+    "d": 2.1,
+    "K_total": 62.58503401360544,
+    "B": 0.0003195652173913044,
+    "thickness": [
+     [
+      "Lead",
+      2.094404346478163
+     ],
+     [
+      "Concrete",
+      159.3009314433474
+     ]
+    ],
+    "params": {
+     "Lead": [
+      2.264,
+      13.08,
+      0.56
+     ],
+     "Concrete": [
+      0.03552,
+      0.1177,
+      0.6007
+     ]
+    }
+   }
+  },
+  "Kirby 2023": {
+   "Floor": {
+    "distribution": "DR Room (floor) \u2013 Kirby 2023",
+    "U": 1.0,
+    "K1": 1.22,
+    "d": 2.3,
+    "K_total": 27.674858223062387,
+    "B": 0.0007226775956284152,
+    "thickness": [
+     [
+      "Lead",
+      1.1528583815233389
+     ],
+     [
+      "Concrete",
+      93.29679830563488
+     ]
+    ],
+    "params": {
+     "Lead": [
+      2.493,
+      19.42,
+      0.4305
+     ],
+     "Concrete": [
+      0.03866,
+      0.1659,
+      0.4011
+     ]
+    }
+   },
+   "Barrier 1": {
+    "distribution": "DR Room (chest bucky) \u2013 Kirby 2023",
+    "U": 1.0,
+    "K1": 3.05,
+    "d": 2.1,
+    "K_total": 82.99319727891157,
+    "B": 0.00024098360655737706,
+    "thickness": [
+     [
+      "Lead",
+      2.257472043204412
+     ],
+     [
+      "Concrete",
+      168.9861085644427
+     ]
+    ],
+    "params": {
+     "Lead": [
+      2.274,
+      11.8,
+      0.5545
+     ],
+     "Concrete": [
+      0.0357,
+      0.1057,
+      0.5896
+     ]
+    }
+   }
+  }
+ },
+ "biondi": {
+  "Barrier 1": {
+   "kind": "xray",
+   "P": 0.01923,
+   "T": 1.0,
+   "K_total": 6.629331609505208,
+   "B": 0.002900744921618918,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Angiography \u2013 Biondi 2024",
+     "k1_source": "Leakage + forward/backscatter (Biondi et al. 2024)",
+     "preshielding": "",
+     "N": 14.98,
+     "U": 1,
+     "T": 1.0,
+     "K1": 1.770182005208333,
+     "d": 2.0,
+     "K": 6.629331609505208,
+     "set": true
+    }
+   ],
+   "beyond": 0.3,
+   "area": "Uncontrolled Area",
+   "location": "Administrative or clerical offices",
+   "thickness": [
+    [
+     "Lead",
+     1.4974584306417307
+    ],
+    [
+     "Concrete",
+     101.57352547847665
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Lead": [
+     2.503,
+     14.618,
+     0.904
+    ],
+    "Concrete": [
+     0.038,
+     0.087,
+     0.558
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 6.629331609505208,
+    "P": 0.01923,
+    "dose": 0.01923,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.002900744921618918
+   }
   }
  }
 }
