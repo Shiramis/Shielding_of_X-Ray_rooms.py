@@ -313,6 +313,10 @@ def introduction():
                        "(DBT).",
                        "<b>Departments</b>: several rooms of any type on one floor plan, each with its own results, "
                        "in one report."])]
+    story += [P("The method and the data are those of NCRP Report No. 147. Two newer published data sets are added "
+                "where NCRP 147 has none or older ones, and are always named as such: digital breast tomosynthesis "
+                "(Yang et al. 2017, section 6.1) and the transmission of modern digital radiography beams (Li et al. "
+                "2024, section 4.9).")]
     story += H2("Files the program uses")
     story += [P("The setup (section 3.1) puts these files in the program's folder:")]
     story += table([["File", "What it is"],
@@ -364,7 +368,9 @@ def method():
     story += formula("<i>x</i> = (1 / αγ) · ln[ (<i>B</i><super>−γ</super> + β/α) / (1 + β/α) ]")
     story += [P("A barrier with several workload distributions takes α, β, γ from the one ticked <b>Set for the "
                 "calculation</b>. Tick the distribution that gives the most air kerma, or the most penetrating one "
-                "for a conservative result.")]
+                "for a conservative result. A primary beam given by its kVp can use, instead of the NCRP 147 data, "
+                "those of modern digital radiography (section 4.9); digital breast tomosynthesis has its own "
+                "(section 6.1).")]
     story += H2("Design goal P")
     story += table([["Area beyond the barrier", "P (air kerma)", "Annual"],
                     ["Controlled: occupied only by radiation workers", "0.1 mGy/week", "5 mSv/year"],
@@ -506,7 +512,9 @@ def xray_room():
                      "beyond it to the person is set under Shielding Area (section 2.4).",
                      "<b>Workload Distribution</b>: <b>X-Ray Room (Suggested NCRP 147)</b> and the room in the list "
                      "(e.g. <i>Rad Room (floor or other barriers)</i>), or <b>Give kVp</b> for a single-kVp "
-                     "transmission curve. With kVp you must write the unshielded air kerma yourself.",
+                     "transmission curve. With kVp you must write the unshielded air kerma yourself; for a primary "
+                     "beam you also choose the transmission data, NCRP 147 or modern digital radiography "
+                     "(section 4.9).",
                      "<b>Set for the calculation</b>: tick it on the distribution whose transmission data (α, β, γ) "
                      "are used. Only one per barrier.",
                      "Primary radiation: <b>Use Factor</b> <i>U</i> (floor 0.89, cross-table wall 0.09, wall No. 3 "
@@ -579,6 +587,33 @@ def xray_room():
                 "beam), while the radiographic tube can aim at the floor or a wall: choose <b>Rad Tube (R&amp;F "
                 "room)</b> as a primary radiation type there (NCRP 147: 5.9 mGy per patient at 1 m). A barrier "
                 "reached by both tubes gets two radiation types.")]
+    story += H2("Transmission data for a kVp: modern digital radiography")
+    story += [P("The NCRP 147 transmission data of radiographic beams come from systems installed before 2000. "
+                "Modern digital radiography (DR) units have more beam filtration, so their beams are harder. For a "
+                "<b>primary</b> radiation type given by its kVp (<b>Give kVp</b>), the list next to the kVp chooses "
+                "the transmission data:")]
+    story += figure("kvp_data.png", "A primary beam at 80 kVp with the DR 600 data and the added copper filtration.")
+    story += table([["Transmission data", "Source", "kVp", "Materials"],
+                    ["NCRP 147", "NCRP Report No. 147 (Archer et al.)", "25–150 kVp", "all six"],
+                    ["DR 600, default filtration (Li 2024)", "Li et al., Med. Phys. 2024, table 1",
+                     "60–120 kV, every 10 kV", "lead, concrete, gypsum wallboard, steel"],
+                    ["DR 600, +1 mm Al +0.1 mm Cu (Li 2024)", "Li et al., Med. Phys. 2024, table 2",
+                     "60–120 kV, every 10 kV", "lead, concrete, gypsum wallboard, steel"]], [52, 50, 30, 38])
+    story += [P("The DR data were calculated by Monte Carlo for broad beams matching the measured half-value layers "
+                "of an Agfa DR 600 (a GE Revolution XR/d had similar values), with its default filtration or with "
+                "1 mm Al + 0.1 mm Cu added. A kVp between the tabulated ones, or plate glass and wood, have no DR "
+                "data: the program says so.")]
+    kvp = VALUES["kvp_data"]
+    rows = [["Transmission data", "Lead (mm)", "Concrete (mm)"]]
+    for data, rec in kvp.items():
+        thick = dict(rec["thickness"])
+        rows.append([data, f"{thick['Lead']:.2f}", f"{thick['Concrete']:.0f}"])
+    rec = next(iter(kvp.values()))
+    story += [P(f"For example, the floor under a table at 80 kVp (120 patients/week, <i>U</i> = 0.89, "
+                f"<i>K</i><super>1</super> = 5.2 mGy/patient, <i>d</i> = {rec['d']:.1f} m, an office below, "
+                f"<i>P</i> = 0.02 mGy/week, no preshielding) needs:")]
+    story += table(rows, [80, 35, 35])
+    story += [P("The harder modern beams need noticeably more shielding than the NCRP 147 data suggest.")]
     return story
 
 
@@ -612,16 +647,33 @@ def ct_and_mammography():
                 "workload is 80 patients per week (<i>W</i><sub>norm</sub> = 6.7 mA·min per patient).")]
     story += figure("mammo_room.png", "The example mammography room: total workload 536 mA·min/week, i.e. 80 "
                                       "patients.", crop=(0, 0, 1175, 760))
-    story += [P("If a material has no NCRP 147 transmission data for the chosen distribution, the result says "
-                "<i>No NCRP 147 data for</i> that material.")]
+    story += [P("If the chosen data have no transmission values for a material, the result says <i>No "
+                "transmission data for</i> that material.")]
     story += H2("Digital breast tomosynthesis")
-    story += [P("Choose the workload distribution <b>Digital Breast Tomosynthesis</b> for a DBT unit. The program "
-                "uses DBT transmission data (α, β, γ for lead, concrete, steel, gypsum wallboard, plate glass and "
-                "wood, sheet <i>DBT abc</i> of Data Shielding.xlsx); NCRP 147 has no DBT values. So:")]
-    story += [bullets(["<b>Write Unshielded Secondary Air Kerma</b> is selected for you: type K<super>1</super>"
-                       "<sub>sec</sub> of the DBT unit (mGy per patient at 1 m).",
-                       "Give the workload as <b>The Number of Patients per week</b>: there is no workload per "
+    story += [P("For a DBT unit choose the workload distribution <b>Digital Breast Tomosynthesis</b>. NCRP 147 "
+                "has no DBT data; the program uses those of Yang et al. (2017), from a survey of 310 421 "
+                "acquisitions on eight Hologic Selenia Dimensions rooms:")]
+    story += [bullets(["<b>Transmission</b>: their table 8, scatter from a typical Hologic DBT room, for lead, "
+                       "concrete, steel, gypsum wallboard, plate glass and wood. These beams are more penetrating "
+                       "than the NCRP 147 mammography data.",
+                       "<b>Unshielded scatter air kerma</b>: with <b>Select Unshielded Secondary Air Kerma — "
+                       "Suggested (Yang et al. 2017)</b>, choose the examination: <b>2D</b>, <b>3D "
+                       "(tomosynthesis)</b> or <b>2D + 3D</b>. Or choose <b>Write</b> and type your own value.",
+                       "<b>Workload</b>: give <b>The Number of Patients per week</b>; there is no workload per "
                        "patient (W<sub>norm</sub>) for DBT."])]
+    story += figure("dbt_barrier.png", "A DBT barrier: the suggested scatter air kerma of a 2D + 3D examination.",
+                    crop=(0, 0, 1154, 720))
+    story += [P("Their table 9 gives the air kerma per view at 1 m. An examination has both breasts, each with a CC "
+                "and an oblique (MLO) view; for a wall, one oblique view has the beam toward it (T) and one away "
+                "(A), as in their example:")]
+    story += table([["mGy per view at 1 m", "CC", "Oblique toward (T)", "Oblique away (A)", "Per patient (2 CC + T + A)"],
+                    ["2D", "6.07 × 10<super>−3</super>", "4.83 × 10<super>−2</super>", "6.49 × 10<super>−3</super>",
+                     "0.0669"],
+                    ["3D", "7.85 × 10<super>−3</super>", "1.43 × 10<super>−2</super>", "7.89 × 10<super>−3</super>",
+                     "0.0379"],
+                    ["2D + 3D", "", "", "", "0.1048"]], [34, 30, 34, 34, 38])
+    story += [P("The oblique view toward the barrier dominates: the scatter of Hologic DBT units peaks about 25° "
+                "from the beam. Section 11 reproduces the example of the article.", "small"), Spacer(1, 6)]
     return story
 
 
@@ -929,6 +981,28 @@ def worked_examples():
     story += [P(f"Mammography transmission data: <b>{archer_thickness(gyp, B):.2f} mm gypsum wallboard</b> or "
                 f"<b>{archer_thickness(lead, B):.3f} mm lead</b>. One standard gypsum board is more than enough.")]
 
+    # ---------- DBT (Yang et al. 2017) ----------
+    dbt = VALUES["dbt"]["Barrier 1"]
+    dist = dbt["distributions"][0]
+    views = 200 * (6.07e-3 + 7.85e-3) + 100 * (4.83e-2 + 1.43e-2 + 6.49e-3 + 7.89e-3)
+    K = views / dist["d"] ** 2
+    close(K, dbt["K_total"])
+    B = dbt["P"] / K
+    gyp = dbt["params"]["Gypsum Wallboard"]
+    x_gyp = archer_thickness(gyp, B)
+    close(x_gyp, dict(dbt["thickness"])["Gypsum Wallboard"])
+    story += H2("Digital breast tomosynthesis (the example of Yang et al. 2017)")
+    story += [P(f"A DBT room with 100 patients per week, all 2D + 3D screening of both breasts: 200 CC views and 100 "
+                f"oblique views toward and 100 away from the wall, in each mode. Beyond the wall is an office "
+                f"(<i>T</i> = 1, <i>P</i> = 0.02 mGy/week) {dist['d']:g} m from the gantry ({dist['d'] - dbt['beyond']:g} "
+                f"m to the wall, plus {dbt['beyond']:g} m). In the program: 100 patients/week, <b>2D + 3D</b>.")]
+    story += formula(f"<i>K</i> = [200 × (6.07 + 7.85) × 10<super>−3</super> + 100 × (4.83 × 10<super>−2</super> + "
+                     f"1.43 × 10<super>−2</super> + 6.49 × 10<super>−3</super> + 7.89 × 10<super>−3</super>)] / "
+                     f"{dist['d']:g}<super>2</super> = <b>{K:.2f}</b> mGy/week<br/><i>B</i> = 0.02 / {K:.2f} = "
+                     f"<b>{fmt(B)}</b>")
+    story += [P(f"With their gypsum data ({params_text(gyp)}): <b>{x_gyp:.1f} mm gypsum wallboard</b>, as the article "
+                f"finds (\"a minimum of 23 mm gypsum is needed\").")]
+
     story += H2("A whole department")
     story += [P("The example department puts the three rooms on one floor plan, with a control room between the "
                 "X-ray and CT rooms and a corridor below. Its 2D / 3D view shows every barrier, and the radiation "
@@ -991,8 +1065,10 @@ def reference():
                     ["CT typical DLP per scan", "Body 550 mGy·cm; head 1200 mGy·cm"],
                     ["Materials", "Lead, concrete (2.35 g/cm³), gypsum wallboard, steel, plate glass, wood; CT: "
                                   "lead and concrete"],
-                    ["Digital breast tomosynthesis", "Transmission α, β, γ from the sheet 'DBT abc' (not NCRP 147); "
-                                                     "K<super>1</super><sub>sec</sub> written by the user"]],
+                    ["Digital breast tomosynthesis (not NCRP 147)", "Yang et al. 2017: transmission table 8 (sheet "
+                                                                    "'DBT abc'), scatter air kerma per view table 9"],
+                    ["Transmission of modern DR (not NCRP 147)", "Li et al. 2024, tables 1 and 2 (sheet 'prim abc DR "
+                                                                 "600'): 60–120 kV, two filtrations"]],
                    [70, 100])
     return story
 
@@ -1004,8 +1080,12 @@ def troubleshooting():
                      "Nothing; the barrier needs no extra shielding."],
                     [f"<font color='{BAD}'>Missing: ...</font>", "An input of the barrier is empty.",
                      "Press Calculate: the Missing data window says what to fill in, and the fields turn red."],
-                    ["No NCRP 147 data for ...", "NCRP 147 has no transmission data of that material for the "
-                                                 "workload distribution.", "Choose another material."],
+                    ["No transmission data for ...", "The chosen data have no transmission values for that "
+                                                     "material (e.g. plate glass or wood with the DR 600 data).",
+                     "Choose another material, or other data."],
+                    [f"<font color='{BAD}'>Missing: kVp for the DR 600 data</font>", "The DR 600 data exist only "
+                                                                                    "for 60, 70, ... 120 kV.",
+                     "Choose one of these kVp, or the NCRP 147 data."],
                     [f"<font color='{BAD}'>Missing: Select Material</font>", "A material list was left empty.",
                      "Choose the material under Select Materials."],
                     [f"Total: 90 % <font color='{BAD}'>(must be 100 %)</font>", "The shares of the layers do not add "
@@ -1028,7 +1108,9 @@ def troubleshooting():
                        "Sutton D.G., Martin C.J., Williams J.R., Peet D.J. <i>Radiation Shielding for Diagnostic "
                        "Radiology</i>, 2nd edition. British Institute of Radiology, 2012.",
                        "Archer B.R., Thornby J.I., Bushong S.C. Diagnostic X-ray shielding design based on an "
-                       "empirical model of photon attenuation. <i>Health Physics</i> 44:507–517, 1983."])]
+                       "empirical model of photon attenuation. <i>Health Physics</i> 44:507–517, 1983.",
+                       "Yang K., Schultz T.J., Li X., Liu B. Radiation shielding calculation for digital breast tomosynthesis rooms with an updated workload survey. <i>J. Radiol. Prot.</i> 37:230–246, 2017.",
+                       "Li X., Marschall T.A., Yang K., Liu B. Radiation shielding transmission data for modern digital radiography. <i>Med. Phys.</i>, 2024, doi:10.1002/mp.17449."])]
     return story
 
 

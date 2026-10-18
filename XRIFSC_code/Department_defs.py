@@ -4,7 +4,7 @@ from tkinter import *
 from tkinter import ttk
 import theme
 from tooltips import tip
-from Depcalculations import wb, PRIMARY_KERMA
+from Depcalculations import wb, PRIMARY_KERMA, KVP_DATA
 
 # NCRP 147 shielding design goals P (mGy/week). Supervised areas are treated as uncontrolled.
 DESIGN_GOALS = {"Controlled Area": "0.1", "Uncontrolled Area": "0.02", "Supervised Area": "0.02"}
@@ -363,13 +363,22 @@ class dep_defs():
         return None
 
     def on_distribution(self, e, nr, i):
-        """A workload distribution was chosen: NCRP 147 values for it. DBT has no NCRP 147 unshielded air kerma,
-        so it must be written."""
+        """A workload distribution was chosen: its suggested values. The suggested secondary air kerma of DBT has
+        its own choices (2D, 3D, 2D + 3D), so the panel is rebuilt."""
         self.uns(e, nr, i)
-        if (self.d[f"vsexroom {e}{nr}{i}"].get() == DBT and self.d[f"radiob_w {e}{nr}{i}"].get() == 2
-                and f"unairkerv {e}{nr}{i}" in self.d and self.d[f"unairkerv {e}{nr}{i}"].get() != 2):
-            self.d[f"unairkerv {e}{nr}{i}"].set(2)
+        unairkerv = self.d.get(f"unairkerv {e}{nr}{i}")
+        if self.d[f"radiob_w {e}{nr}{i}"].get() == 2 and unairkerv is not None and unairkerv.get() == 1:
             self.unairk(e, nr, i)
+        else:
+            self.update_kerma_label(e, nr, i)
+
+    def update_kerma_label(self, e, nr, i):
+        """The suggested secondary air kerma comes from NCRP 147, or for DBT from Yang et al. 2017."""
+        button, distribution = self.d.get(f"airkncrp {e}{nr}{i}"), self.d.get(f"vsexroom {e}{nr}{i}")
+        if button is not None:
+            source = "Yang et al. 2017" if distribution is not None and distribution.get() == DBT else "NCRP 147"
+            button.configure(text="Select Unshielded Secondary\nAir Kerma (mGy∙patient⁻¹)\n"
+                                  f"Suggested ({source})")
 
     def update_checkboxes(self, e, nr, i):
         # Loop through all the checkboxes with the same 'e' and 'nr' but different 'i'
@@ -391,6 +400,9 @@ class dep_defs():
             # Destroy existing widget if it exists
             if self.d.get(selxroom_key):
                 self.d[selxroom_key].destroy()
+            if self.d.get(f"kvpbox {e}{nr}{i}") is not None:  # the data choice of 'Give kVp'
+                self.d[f"kvpbox {e}{nr}{i}"].destroy()
+                self.d[f"kvpbox {e}{nr}{i}"] = None
             # The workload distributions of this kind of room
             self.xrooms = DISTRIBUTIONS.get(self.room_type_of(nr), DISTRIBUTIONS["X-Ray room"])
             self.d[vsexroom_key] = StringVar()
@@ -405,14 +417,27 @@ class dep_defs():
                 self.d[selxroom_key].destroy()
 
             if self.d[radiob_w_key].get() == 1:
-                # Define spinbox for kVp values for primary barrier
-                self.d[vsexroom_key] = IntVar(value=25)
+                # Define spinbox for kVp values for primary barrier, and the transmission data to use
+                self.d[vsexroom_key] = IntVar(value=80)
                 self.d[selxroom_key] = ttk.Spinbox(master=self.d[barrierf_key], from_=25, to=150, increment=5,
                                                    textvariable=self.d[vsexroom_key], width=10)
-                self.d[selxroom_key].grid(row=i * 10 + 5, column=2, columnspan=2, pady=6.5, padx=5, sticky="w")
+                self.d[selxroom_key].grid(row=i * 10 + 5, column=2, pady=6.5, padx=5, sticky="w")
                 tip(self.d[selxroom_key], "kvp")
+                if self.d.get(f"kvpdata {e}{nr}{i}") is None:
+                    self.d[f"kvpdata {e}{nr}{i}"] = StringVar(value=KVP_DATA[0])
+                if self.d.get(f"kvpbox {e}{nr}{i}") is not None:
+                    self.d[f"kvpbox {e}{nr}{i}"].destroy()
+                self.d[f"kvpbox {e}{nr}{i}"] = ttk.Combobox(master=self.d[barrierf_key], values=KVP_DATA,
+                                                            textvariable=self.d[f"kvpdata {e}{nr}{i}"],
+                                                            state="readonly", width=34)
+                self.d[f"kvpbox {e}{nr}{i}"].grid(row=i * 10 + 5, column=3, columnspan=2, pady=6.5, padx=5,
+                                                  sticky="w")
+                tip(self.d[f"kvpbox {e}{nr}{i}"], "kvp_data")
 
             elif self.d[radiob_w_key].get() == 2:
+                if self.d.get(f"kvpbox {e}{nr}{i}") is not None:
+                    self.d[f"kvpbox {e}{nr}{i}"].destroy()
+                    self.d[f"kvpbox {e}{nr}{i}"] = None
                 # Custom Spinbox for secondary barrier
                 def increment_spinbox(spinbox, values):
                     current_value = int(spinbox.get())
@@ -709,12 +734,23 @@ class dep_defs():
 
     def unairk(self, e, nr, i):
         # Destroy any existing widgets related to secondary barrier
-        self.destroy_widgets([f"leak {e}{nr}{i}", f"side {e}{nr}{i}", f"forw {e}{nr}{i}", f"entk {e}{nr}{i}"])
+        self.destroy_widgets([f"leak {e}{nr}{i}", f"side {e}{nr}{i}", f"forw {e}{nr}{i}", f"entk {e}{nr}{i}",
+                              f"dbt1 {e}{nr}{i}", f"dbt2 {e}{nr}{i}", f"dbt3 {e}{nr}{i}"])
         if f"radside {e}{nr}{i}" in self.d:
             self.destroy_widgets([f"radside {e}{nr}{i}", f"radforward {e}{nr}{i}", f"radleak {e}{nr}{i}"])
         unairkerv_key = f"unairkerv {e}{nr}{i}"
 
-        if self.d[unairkerv_key].get() == 1:
+        distribution = self.d.get(f"vsexroom {e}{nr}{i}")
+        dbt = distribution is not None and distribution.get() == DBT
+        self.update_kerma_label(e, nr, i)
+        if self.d[unairkerv_key].get() == 1 and dbt:
+            # Digital breast tomosynthesis (Yang et al. 2017): the scatter per patient of the mode
+            self.d[f"dbtmode {e}{nr}{i}"] = IntVar(value=3)
+            for k, text in ((1, "2D"), (2, "3D (tomosynthesis)"), (3, "2D + 3D")):
+                self.create_radio_button(key=f"dbt{k} {e}{nr}{i}", master=self.d[f"barrierf {e}{nr}"], text=text,
+                                         variable=self.d[f"dbtmode {e}{nr}{i}"], value=k, row=i * 10 + 7,
+                                         column=k - 1, tip_key="dbt_mode")
+        elif self.d[unairkerv_key].get() == 1:
             # NCRP-suggested mode: create radio buttons for different types of scatter/leakage
             self.d[f"airkerv {e}{nr}{i}"] = IntVar(value=0)
 

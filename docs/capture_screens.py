@@ -183,6 +183,75 @@ record("mammography", t, range(1, 8))
 inputs, results = room_parts(t)
 shot("mammo_room.png", root, widget=inputs, height=760)
 
+
+def fill(key, text):
+    d[key].delete(0, "end")
+    d[key].insert(0, text)
+
+
+def beyond_office(t, e, nr):
+    """An office (T = 1, uncontrolled area) beyond barrier e."""
+    d[f"area {e}{nr}"].set("Uncontrolled Area")
+    app.set_design_goal(e, nr)
+    d[f"vraoccup {e}{nr}"].set(2)
+    app.occupation3(e, nr, t)
+    d[f"vselocation {e}{nr}"].set("Administrative or clerical offices")
+
+
+# digital breast tomosynthesis: the example of Yang et al. 2017 (100 patients/week, 2D + 3D, an office 2 m away)
+t = app.creatroom("Mammography Room")
+nr = d[f"nr {t}"]
+d[f"vname_room {t}"].set("DBT room")
+d[f"vrawork {t}"].set(2)
+app.workload(t)
+fill(f"numpapwe {t}", "100")
+e = 4
+d[f"radiob_w {e}{nr}0"].set(2)
+app.barrier_sel(e, nr, t, 0)
+d[f"vsexroom {e}{nr}0"].set("Digital Breast Tomosynthesis")
+app.on_distribution(e, nr, 0)
+fill(f"entryd {e}{nr}0", "1.7")
+beyond_office(t, e, nr)
+d[f"vmater {e}1{nr}"].set("Gypsum Wallboard")
+app.choosetype(e, nr, t, notify=False)
+record("dbt", t, [e])
+inputs, results = room_parts(t)
+app.depnote.select(app.standalone[t])  # the room's own tab
+select_barrier(t, e)
+shot("dbt_barrier.png", root, widget=inputs, height=840)
+
+# transmission data for a kVp: NCRP 147 or modern digital radiography (Li et al. 2024)
+t = app.creatroom("X-Ray room")
+nr = d[f"nr {t}"]
+d[f"vrawork {t}"].set(2)
+app.workload(t)
+fill(f"numpapwe {t}", "120")
+e = 1
+d[f"radiob_w {e}{nr}0"].set(1)
+app.barrier_sel(e, nr, t, 0)
+d[f"vselxray {e}{nr}0"].set(2)
+app.XrRoom(e, nr, 0)
+d[f"vsexroom {e}{nr}0"].set(80)
+fill(f"entryd {e}{nr}0", "1")
+fill(f"use_ent {e}{nr}0", "0.89")
+fill(f"entk {e}{nr}0", "5.2")
+beyond_office(t, e, nr)
+d[f"vnumbmat {e}{nr}"].set(2)
+app.numbmater(e, nr, t)
+d[f"vmater {e}1{nr}"].set("Lead")
+d[f"vmater {e}2{nr}"].set("Concrete")
+values["kvp_data"] = {}
+for data in ("NCRP 147", "DR 600, default filtration (Li 2024)", "DR 600, +1 mm Al +0.1 mm Cu (Li 2024)"):
+    d[f"kvpdata {e}{nr}0"].set(data)
+    app.choosetype(e, nr, t, notify=False)
+    rec = app.calc[(nr, e)]
+    values["kvp_data"][data] = {"K_total": rec["K_total"], "thickness": rec["thickness"],
+                                "params": rec["shield"]["params"], "d": rec["distributions"][0]["d"]}
+inputs, results = room_parts(t)
+app.depnote.select(app.standalone[t])  # the room's own tab
+select_barrier(t, e)
+shot("kvp_data.png", root, widget=inputs, height=520)
+
 # ---------- department ----------
 app.open_example("department")
 info = app.departments[1]

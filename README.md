@@ -11,8 +11,8 @@ the thickness you plan to install.
 ## What it does
 
 - **Room types**: X-ray rooms (radiography, chest), fluoroscopy rooms (R&F, cardiac and peripheral
-  angiography), CT rooms (from the DLP, with the scans or phases per procedure) and mammography rooms (also
-  digital breast tomosynthesis).
+  angiography), CT rooms (from the DLP, with the scans or phases per procedure) and mammography rooms, including
+  digital breast tomosynthesis (Yang et al., J. Radiol. Prot. 2017).
   You can also design **departments**, with several rooms on one floor plan.
 - **Required thickness** of lead, concrete, gypsum wallboard, steel, plate glass or wood for every barrier. The program
   uses the NCRP 147 workloads, unshielded air kerma, use and occupancy factors, preshielding and Archer transmission
@@ -41,6 +41,9 @@ from the Archer equation *x* = (1/αγ)·ln[(*B*^−γ + β/α) / (1 + β/α)].
   floor (the person is 1.7 m above the floor below, with a 3 m storey).
 - CT rooms use the NCRP 147 DLP method, with the scans (phases) per procedure. The NCRP default of 1.4 means 40 % of
   the procedures are scanned again with contrast.
+
+- For primary beams given by their kVp, you can also use the transmission data of modern digital radiography
+  (Li et al., Med. Phys. 2024).
 
 The [User Guide](User%20Guide.pdf) explains every step and works through the examples by hand.
 
@@ -125,6 +128,10 @@ The guide recalculates every worked example by hand and stops if a result differ
   BIR, 2012.
 - Archer B.R., Thornby J.I., Bushong S.C., Diagnostic X-ray shielding design based on an empirical model of photon
   attenuation, *Health Physics* 44:507–517, 1983.
+- Yang K., Schultz T.J., Li X., Liu B., Radiation shielding calculation for digital breast tomosynthesis rooms with
+  an updated workload survey, *J. Radiol. Prot.* 37:230–246, 2017.
+- Li X., Marschall T.A., Yang K., Liu B., Radiation shielding transmission data for modern digital radiography,
+  *Med. Phys.*, 2024, doi:10.1002/mp.17449.
 
 The program supports a qualified expert. The final shielding design and its verification remain the responsibility of
 the radiation protection expert or medical physicist.

@@ -38,15 +38,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.03994,
-     0.1448,
-     0.42310000000000003
-    ],
     "Lead": [
      2.651,
      16.56,
      0.4585
+    ],
+    "Concrete": [
+     0.03994,
+     0.1448,
+     0.42310000000000003
     ]
    },
    "preshielding": {
@@ -101,15 +101,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.0361,
-     0.1433,
-     0.56
-    ],
     "Lead": [
      2.298,
      17.38,
      0.6193
+    ],
+    "Concrete": [
+     0.0361,
+     0.1433,
+     0.56
     ]
    },
    "preshielding": {},
@@ -287,15 +287,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.298,
-     17.38,
-     0.6193
-    ],
     "Gypsum Wallboard": [
      0.0138,
      0.057,
      0.7937
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
     ]
    },
    "preshielding": {},
@@ -346,15 +346,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.298,
-     17.38,
-     0.6193
-    ],
     "Gypsum Wallboard": [
      0.0138,
      0.057,
      0.7937
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
     ]
    },
    "preshielding": {},
@@ -428,15 +428,15 @@
     ]
    ],
    "params": {
-    "Concrete": [
-     0.03552,
-     0.1177,
-     0.6007
-    ],
     "Lead": [
      2.264,
      13.08,
      0.56
+    ],
+    "Concrete": [
+     0.03552,
+     0.1177,
+     0.6007
     ]
    },
    "preshielding": {
@@ -1001,15 +1001,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.2539,
-     1.8411,
-     0.3924
-    ],
     "Lead": [
      29.91,
      184.4,
      0.355
+    ],
+    "Concrete": [
+     0.2539,
+     1.8411,
+     0.3924
     ]
    },
    "preshielding": {},
@@ -1060,15 +1060,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.2539,
-     1.8411,
-     0.3924
-    ],
     "Lead": [
      29.91,
      184.4,
      0.355
+    ],
+    "Concrete": [
+     0.2539,
+     1.8411,
+     0.3924
     ]
    },
    "preshielding": {},
@@ -1178,15 +1178,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Gypsum Wallboard": [
      0.0883,
      0.7526,
      0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "preshielding": {},
@@ -1237,15 +1237,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Gypsum Wallboard": [
      0.0883,
      0.7526,
      0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "preshielding": {},
@@ -1296,15 +1296,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Gypsum Wallboard": [
      0.0883,
      0.7526,
      0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "preshielding": {},
@@ -1355,15 +1355,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Gypsum Wallboard": [
      0.0883,
      0.7526,
      0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "preshielding": {},
@@ -1375,6 +1375,138 @@
     "basis": "required thickness",
     "transmission": 0.12022727272727272
    }
+  }
+ },
+ "dbt": {
+  "Barrier 1": {
+   "kind": "xray",
+   "P": 0.02,
+   "T": 1.0,
+   "K_total": 2.6205,
+   "B": 0.0076321312726578905,
+   "distributions": [
+    {
+     "no": 1,
+     "radiation": "Secondary",
+     "distribution": "Digital Breast Tomosynthesis",
+     "k1_source": "DBT 2D + 3D (Yang et al. 2017)",
+     "preshielding": "",
+     "N": 100.0,
+     "U": 1,
+     "T": 1.0,
+     "K1": 0.10482,
+     "d": 2.0,
+     "K": 2.6205,
+     "set": true
+    }
+   ],
+   "beyond": 0.3,
+   "area": "Uncontrolled Area",
+   "location": "Administrative or clerical offices",
+   "thickness": [
+    [
+     "Gypsum Wallboard",
+     22.820292262650508
+    ]
+   ],
+   "missing": [],
+   "layers": null,
+   "params": {
+    "Gypsum Wallboard": [
+     0.0629,
+     0.3191,
+     0.2934
+    ]
+   },
+   "preshielding": {},
+   "check": {
+    "K": 2.6205,
+    "P": 0.02,
+    "dose": 0.02,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.0076321312726578905
+   }
+  }
+ },
+ "kvp_data": {
+  "NCRP 147": {
+   "K_total": 104.98298676748584,
+   "thickness": [
+    [
+     "Lead",
+     1.4865128374159227
+    ],
+    [
+     "Concrete",
+     123.62805284239862
+    ]
+   ],
+   "params": {
+    "Lead": [
+     4.04,
+     21.69,
+     0.7187
+    ],
+    "Concrete": [
+     0.04583,
+     0.1549,
+     0.4926
+    ]
+   },
+   "d": 2.3
+  },
+  "DR 600, default filtration (Li 2024)": {
+   "K_total": 104.98298676748584,
+   "thickness": [
+    [
+     "Lead",
+     1.7030223302584573
+    ],
+    [
+     "Concrete",
+     151.52160296981222
+    ]
+   ],
+   "params": {
+    "Lead": [
+     3.202,
+     16.12,
+     0.5649
+    ],
+    "Concrete": [
+     0.04815,
+     0.06696,
+     0.6831
+    ]
+   },
+   "d": 2.3
+  },
+  "DR 600, +1 mm Al +0.1 mm Cu (Li 2024)": {
+   "K_total": 104.98298676748584,
+   "thickness": [
+    [
+     "Lead",
+     1.908787538837414
+    ],
+    [
+     "Concrete",
+     165.4001299477419
+    ]
+   ],
+   "params": {
+    "Lead": [
+     3.144,
+     8.461,
+     0.4943
+    ],
+    "Concrete": [
+     0.04731,
+     0.01904,
+     0.4446
+    ]
+   },
+   "d": 2.3
   }
  }
 }

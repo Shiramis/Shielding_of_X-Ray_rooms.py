@@ -67,10 +67,19 @@ TIPS = {
               "The floor plan fills it in from the floor-to-floor height.",
     "workload_distribution": "Choose the NCRP 147 workload distribution (room type), or give the kVp. The list "
                              "shows those of this kind of room.\n"
-                             "Digital Breast Tomosynthesis: DBT transmission data (not NCRP 147); write its "
-                             "unshielded air kerma and give the patients per week.\n"
+                             "Digital Breast Tomosynthesis: data of Yang et al., J. Radiol. Prot. 37 (2017) 230 "
+                             "(not NCRP 147); give the workload as patients per week.\n"
                              "It sets Wnorm, the unshielded air kerma and the transmission parameters "
                              "(α, β, γ) used for the thickness.",
+    "kvp_data": "Transmission data for this kVp:\n"
+                "  NCRP 147: radiographic systems installed before 2000, 25–150 kVp.\n"
+                "  DR 600 (Li et al., Med. Phys. 2024): modern digital radiography (Agfa DR 600, Monte Carlo with "
+                "measured HVLs), 60–120 kV every 10 kV, with the default filtration or with 1 mm Al + 0.1 mm Cu "
+                "added. Lead, concrete, gypsum wallboard and steel only.",
+    "dbt_mode": "Digital breast tomosynthesis (Yang et al., J. Radiol. Prot. 37 (2017) 230, table 9).\n"
+                "Unshielded scatter air kerma per patient at 1 m: both breasts, a CC and an oblique view each, one "
+                "oblique toward and one away from the barrier:\n"
+                "  2D 0.0669 · 3D 0.0379 · 2D + 3D 0.1048 mGy/patient.",
     "kvp": "Tube voltage (kVp) for a single-kVp transmission curve.\n"
            "Primary: 25–150 kVp. Secondary: 30, 50, 70, 100, 125 or 150 kVp.\n"
            "With kVp you must write the unshielded air kerma yourself.",

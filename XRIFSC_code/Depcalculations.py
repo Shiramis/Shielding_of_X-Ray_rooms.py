@@ -74,6 +74,26 @@ WORKLOAD_NORM = {row[0]: row[1] for row in wb['Workload'].iter_rows(max_col=2, v
 # NCRP 147 unshielded secondary air kerma per patient at 1 m: the whole row of each workload distribution
 UNSHIELDED_SECONDARY = {row[0]: row for row in wb['Uns Air Kerma'].iter_rows(min_row=2, values_only=True) if row[0]}
 
+# Digital breast tomosynthesis: Yang K, Schultz TJ, Li X, Liu B, J. Radiol. Prot. 37 (2017) 230, table 9.
+# Unshielded scatter air kerma per view at 1 m (mGy/view): CC views, oblique views with the beam toward (T) or
+# away (A) from the barrier, in 2D and 3D mode
+DBT = "Digital Breast Tomosynthesis"
+DBT_VIEW_KERMA = {"2D": {"CC": 6.07e-3, "T": 4.83e-2, "A": 6.49e-3},
+                  "3D": {"CC": 7.85e-3, "T": 1.43e-2, "A": 7.89e-3}}
+DBT_MODES = {1: ("2D",), 2: ("3D",), 3: ("2D", "3D")}  # the choice 2D, 3D, 2D + 3D
+
+
+def dbt_kerma(mode):
+    """Unshielded scatter air kerma per patient at 1 m (mGy/patient) in a DBT mode: both breasts, a CC and an
+    oblique view each, one oblique toward and one away from the barrier (as in the example of Yang et al.)."""
+    return sum(2 * DBT_VIEW_KERMA[m]["CC"] + DBT_VIEW_KERMA[m]["T"] + DBT_VIEW_KERMA[m]["A"]
+               for m in DBT_MODES[mode])
+
+
+# Transmission data for a primary beam at a given kVp: NCRP 147, or modern digital radiography (Li X, Marschall TA,
+# Yang K, Liu B, Med. Phys. 2024, doi:10.1002/mp.17449, tables 1 and 2: Agfa DR 600, 60-120 kV every 10 kV)
+KVP_DATA = ["NCRP 147", "DR 600, default filtration (Li 2024)", "DR 600, +1 mm Al +0.1 mm Cu (Li 2024)"]
+
 # What to do for each missing input, shown in the "Missing data" window
 NL = chr(10)
 
@@ -88,7 +108,10 @@ MISSING_HELP = {
     "Unshielded Air Kerma": "primary: type K in 'Primary Unshielded Air Kerma'. Secondary: choose 'Select "
                             "Unshielded Secondary Air Kerma (NCRP 147)' and the type of scatter (needs an X-ray "
                             "room, not a kVp), or choose 'Write' and type the value. Digital Breast "
-                            "Tomosynthesis has no NCRP 147 value: write it.",
+                            "Tomosynthesis: choose 2D, 3D or 2D + 3D.",
+    "kVp for the DR 600 data (60-120 kV, every 10 kV)": "the DR 600 transmission data (Li et al. 2024) exist for "
+                                                        "60, 70, ... 120 kV: choose one of these, or the NCRP 147 "
+                                                        "data.",
     "Patients per week (DBT)": "NCRP 147 gives no workload per patient (Wnorm) for Digital Breast Tomosynthesis: "
                                "at the top of the room choose 'The Number of Patients per week' (or tick "
                                "'Different Workload' on this radiation type).",
@@ -303,13 +326,17 @@ class departprimsec():
         if distribution in (None, "", "Select X-ray room"):
             distribution = ""
         elif value(f"vselxray {e}{nr}{i}") == 2:
-            distribution = f"{distribution} kVp"
+            data = self.kvp_data(e, nr, i)
+            distribution = f"{distribution} kVp" + (f" ({data})" if data != "NCRP 147" else "")
         source = ""
         if radiation == "Primary":
             ncrp = PRIMARY_KERMA.get(distribution) == value(f"entk {e}{nr}{i}")
             source = "Primary (NCRP 147)" if ncrp else "Primary (entered)"
         elif value(f"unairkerv {e}{nr}{i}") == 2:
             source = "Secondary (entered)"
+        elif value(f"unairkerv {e}{nr}{i}") == 1 and distribution == DBT:
+            mode = {1: "2D", 2: "3D", 3: "2D + 3D"}.get(value(f"dbtmode {e}{nr}{i}"), "")
+            source = f"DBT {mode} (Yang et al. 2017)" if mode else ""
         elif value(f"unairkerv {e}{nr}{i}") == 1:
             if value(f"airkerv {e}{nr}{i}") == 1:
                 source = {1: "Leakage + side-scatter", 2: "Leakage + forward/backscatter",
@@ -333,12 +360,24 @@ class departprimsec():
                     return float(factor)
         return None
 
-    def transmission_params(self, sheet, distribution):
+    def transmission_params(self, sheet, distribution, data="NCRP 147"):
         # (alpha, beta, gamma) per material for a workload distribution or kVp, or None if it is not in the table
-        if distribution == "Digital Breast Tomosynthesis":  # one set of data, sheet 'DBT abc'
+        if distribution == DBT:  # Yang et al. 2017, table 8: scatter from a Hologic DBT room (sheet 'DBT abc')
             names = {"Gypsum": "Gypsum Wallboard", "Glass": "Plate Glass"}
             return {names.get(row[0], row[0]): tuple(float(v) for v in row[1:4])
                     for row in wb["DBT abc"].iter_rows(min_row=2, values_only=True) if row[0]}
+        if data in KVP_DATA[1:]:  # Li et al. 2024 (sheet 'prim abc DR 600'): one block of rows per filtration
+            blocks = []
+            for row in wb["prim abc DR 600"].iter_rows(values_only=True):
+                if isinstance(row[0], str) and "filtration" in row[0].lower():
+                    blocks.append([])
+                elif isinstance(row[0], (int, float)) and blocks:
+                    blocks[-1].append(row)
+            for row in blocks[KVP_DATA.index(data) - 1]:
+                if row[0] == distribution:  # lead, concrete, gypsum wallboard, steel
+                    return {material: tuple(float(row[col + k]) for k in range(3))
+                            for material, col in MATERIAL_COLUMNS.items() if col + 2 < len(row) and row[col] is not None}
+            return None
         for row in wb[sheet].iter_rows(min_row=3, values_only=True):
             if row[0] is not None and row[0] == distribution:
                 return {material: tuple(float(row[col + k] or 0) for k in range(3))
@@ -423,7 +462,13 @@ class departprimsec():
         elif radiation == 2:  # secondary
             Us = 1
             source = self.d[f"unairkerv {e}{nr}{i}"].get() if f"unairkerv {e}{nr}{i}" in self.d else 0
-            if source == 1:  # NCRP 147 values for the workload distribution
+            if source == 1 and distribution == DBT:  # Yang et al. 2017: per view, in the chosen mode
+                mode = self.d[f"dbtmode {e}{nr}{i}"].get() if f"dbtmode {e}{nr}{i}" in self.d else 0
+                if mode in DBT_MODES:
+                    K1 = dbt_kerma(mode)
+                else:
+                    need.append("Unshielded Air Kerma")
+            elif source == 1:  # NCRP 147 values for the workload distribution
                 kind = self.d[f"airkerv {e}{nr}{i}"].get() if f"airkerv {e}{nr}{i}" in self.d else 0
                 if kind == 1:
                     column = {1: 6, 2: 8}.get(self.d[f"radiob_leak {e}{nr}{i}"].get(), 4)
@@ -453,6 +498,13 @@ class departprimsec():
         self.last_distribution = dict(self.describe_distribution(e, nr, i), N=n, U=Us, T=T, K1=K1, d=d, K=K)
         return K
 
+    def kvp_data(self, e, nr, i):
+        """The transmission data chosen for a primary beam given by its kVp (NCRP 147 otherwise)."""
+        var = self.d.get(f"kvpdata {e}{nr}{i}")
+        if var is None or self.d[f"vselxray {e}{nr}{i}"].get() != 2:
+            return "NCRP 147"
+        return var.get() if var.get() in KVP_DATA else "NCRP 147"
+
     def beyond_distance(self, e, nr):
         """Distance (m) from the barrier to the occupied point beyond it, or None if it is not a number >= 0."""
         value = self.entry_number(f"beyond {e}{nr}")
@@ -480,9 +532,12 @@ class departprimsec():
             # NCRP 147 transmission parameters (alpha, beta, gamma) of the distribution set for the calculation
             primary = self.d[f"radiob_w {e}{nr}{i}"].get() == 1
             distribution = self.d.get(f"vsexroom {e}{nr}{i}")
+            data = self.kvp_data(e, nr, i) if primary else "NCRP 147"
             params = self.transmission_params('prim abc' if primary else 'sec abc',
-                                              distribution.get() if distribution is not None else None)
-            if params is None:
+                                              distribution.get() if distribution is not None else None, data)
+            if params is None and data != "NCRP 147":
+                self.need.append("kVp for the DR 600 data (60-120 kV, every 10 kV)")
+            elif params is None:
                 self.need.append("Workload Distribution (X-ray room or kVp)")
             elif primary:
                 preshielding = self.preshielding(e, nr, i)
@@ -588,7 +643,7 @@ class departprimsec():
         elif self.is_layered(e, nr):
             no_data = [m for m in materials if not has_data(m)]
             if no_data:
-                thicknesses = [f"No NCRP 147 data for {no_data[0]}"] * count
+                thicknesses = [f"No transmission data for {no_data[0]}"] * count
             else:
                 start = self.last_shield["start"]
                 shares = [self.entry_number(f"share {e}{o}{nr}") for o in range(1, count + 1)]
@@ -603,7 +658,7 @@ class departprimsec():
                     # 0: no additional shielding is needed
                     thicknesses.append(max(archer_thickness(params[material], B) - preshielding.get(material, 0), 0.0))
                 else:
-                    thicknesses.append(f"No NCRP 147 data for {material}")
+                    thicknesses.append(f"No transmission data for {material}")
         for o, value in enumerate(thicknesses, start=1):
             self.thm[f"xbar {e}{o}{nr}"] = value
 
