@@ -35,12 +35,23 @@ is *K* = *N*·*U*·*T*·*K*¹ / *d*². The barrier must transmit *B* = *P* / Σ*
 from the Archer equation *x* = (1/αγ)·ln[(*B*^−γ + β/α) / (1 + β/α)]. CT rooms use the NCRP 147 DLP method. The
 [User Guide](User%20Guide.pdf) explains every step and works through the examples by hand.
 
-## Running the program
+## Installing
 
-**Windows, ready to run:** start `Shielding_of_X-Ray_rooms.exe`. Keep `Data Shielding.xlsx` (the NCRP 147 data) and
-the PDF files of the Help menu in the same folder.
+Download `Shielding_of_X-ray_Rooms_Setup_<version>.exe` from the
+[Releases](https://github.com/Shiramis/Shielding_of_X-Ray_rooms.py/releases) page and run it (Windows 10 or 11,
+64-bit).
 
-**From the source code** (Python 3.12 or newer):
+- **No administrator rights are needed**: the setup installs the program for the current user, or for all users if you
+  choose so and have the rights.
+- You get a Start menu entry with the program, the **User Guide** and the **Examples**. You can also choose a desktop
+  icon, and whether `.shield` project files open with the program on a double-click.
+- To remove it, use **Settings › Apps** or **Uninstall** in its Start menu folder. Your projects are not touched.
+
+The setup is not digitally signed, so Windows SmartScreen may warn the first time: choose **More info › Run anyway**.
+
+## Running from the source code
+
+With Python 3.12 or newer (keep `Data Shielding.xlsx`, the NCRP 147 data, in the project folder):
 
 ```bash
 python -m venv venv
@@ -62,7 +73,7 @@ The full manual is in **Help › User Guide** (F1), the file [`User Guide.pdf`](
 ## Project layout
 
 | Path | Contents |
-|---|---|
+| --- | --- |
 | `XRIFSC_code/Shielding_of_X-Ray_rooms.py` | Main window, menus, start screen, workspace |
 | `XRIFSC_code/Department.py`, `Room.py`, `CTroom.py` | Departments and rooms |
 | `XRIFSC_code/Department_defs.py` | Barrier inputs, materials, area and occupancy |
@@ -73,20 +84,20 @@ The full manual is in **Help › User Guide** (F1), the file [`User Guide.pdf`](
 | `Data Shielding.xlsx` | NCRP 147 data read by the program |
 | `Examples/` | The examples as project files (`.shield`) |
 | `User Guide.pdf`, `docs/` | User guide, its pictures and the scripts that build it |
+| `installer/` | The Windows installer: Inno Setup script and build script |
 
-## Building the Windows executable
+## Building the installer
 
-With [PyInstaller](https://pyinstaller.org) installed in the same environment:
+You need [Inno Setup 6](https://jrsoftware.org/isinfo.php) and, in the program's environment, PyInstaller:
 
 ```bash
-pyinstaller --onefile --windowed --name Shielding_of_X-Ray_rooms --icon XRIFSC_code/app_icon.ico ^
-  --add-data "XRIFSC_code/app_icon.png;." --add-data "XRIFSC_code/app_icon.ico;." ^
-  --add-data "Data Shielding.xlsx;." --add-data "User Guide.pdf;." ^
-  --add-data "5_NCRP_147_2004.pdf;." --add-data "book.9780905749747.pdf;." ^
-  XRIFSC_code/Shielding_of_X-Ray_rooms.py
+venv\Scripts\python.exe -m pip install -r installer\requirements.txt
+venv\Scripts\python.exe installer\build_installer.py
 ```
 
-The program writes its `Examples` folder next to the executable the first time it runs.
+The script packs the program and its data with PyInstaller (`installer/build/dist`), then Inno Setup makes one setup
+file in `installer/Output`. Set the version number in `installer/build_installer.py`. Publish the setup file as a GitHub
+release asset rather than committing it.
 
 ## Updating the user guide
 

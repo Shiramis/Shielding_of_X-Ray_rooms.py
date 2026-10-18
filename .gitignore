@@ -16,3 +16,10 @@ dist/
 
 # Temporary crops made while building the user guide
 docs/images/_*.png
+
+# Not distributed: BIR 2012 is copyrighted (the Help menu shows it only when the PDF is present)
+book.9780905749747.pdf
+
+# Installer build (installer/build_installer.py)
+installer/build/
+installer/Output/

@@ -1,8 +1,9 @@
 import tkinter
-import PyPDF2
 import os
 import sys
 import platform
+import traceback
+from datetime import datetime
 from tkinter import *
 from tkinter import ttk
 from tkinter import font
@@ -33,6 +34,7 @@ root.title("Shielding of X-ray Rooms")
 theme.apply_theme(root)
 # Icons next to this file (inside the bundle for the .exe), whatever folder the program is started from
 HERE = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+BIR_BOOK = "book.9780905749747.pdf"  # BIR 2012: in the Help menu only when this file is next to the program
 
 
 def set_app_icon(window):
@@ -49,6 +51,24 @@ def set_app_icon(window):
         pass  # a missing icon must not stop the program
 
 
+def report_error(kind, value, trace):
+    """An unexpected error: shown to the user and kept in a log file (the installed program has no console)."""
+    details = "".join(traceback.format_exception(kind, value, trace))
+    if sys.stderr is not None:
+        sys.stderr.write(details)
+    folder = os.path.join(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~"), "Shielding of X-ray Rooms")
+    where = ""
+    try:
+        os.makedirs(folder, exist_ok=True)
+        with open(os.path.join(folder, "errors.log"), "a", encoding="utf-8") as log:
+            log.write(f"{datetime.now():%Y-%m-%d %H:%M:%S}\n{details}\n")
+        where = f"\n\nThe details are saved in:\n{os.path.join(folder, 'errors.log')}"
+    except OSError:
+        pass
+    messagebox.showerror("Unexpected error", f"Something went wrong: {value}{where}", parent=root)
+
+
+root.report_callback_exception = report_error
 root.state('zoomed')
 
 
@@ -109,7 +129,8 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room,Repo
                                    command=self.open_guide)
         self.help_menu.add_separator()
         self.help_menu.add_command(label= "NCRP Report No. 147", command=self.opencpr)
-        self.help_menu.add_command(label="BIR 2012", command=self.openbir)
+        if os.path.exists(resource_path(BIR_BOOK)):  # not distributed with the program
+            self.help_menu.add_command(label="BIR 2012", command=self.openbir)
 
         self.departments = {}  # department id -> its frame, name, rooms
         self.dep_count = 0
@@ -359,7 +380,7 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room,Repo
     def opencpr(self):
         self.open_document("5_NCRP_147_2004.pdf")
     def openbir(self):
-        self.open_document("book.9780905749747.pdf")
+        self.open_document(BIR_BOOK)
 
     def open_document(self, name):
         # The reports are in the project folder (next to Data Shielding.xlsx), wherever the program is started
@@ -376,4 +397,7 @@ except OSError:
     pass
 app = App(root)
 set_app_icon(root)
+# A project file given when starting, e.g. a double-click on a .shield file
+if len(sys.argv) > 1 and os.path.isfile(sys.argv[1]):
+    root.after(300, lambda: app.open_project_file(os.path.abspath(sys.argv[1])))
 root.mainloop()

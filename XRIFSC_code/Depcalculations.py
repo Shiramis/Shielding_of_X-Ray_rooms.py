@@ -1,7 +1,6 @@
 from tkinter import *
 from tkinter import ttk, messagebox
 import theme
-import pandas as pd
 import math
 import os
 from openpyxl import load_workbook
@@ -20,8 +19,10 @@ def resource_path(relative_path):
 
 # Update the excel file path
 excel_path = resource_path('Data Shielding.xlsx')
-if not os.path.exists(excel_path):
-    print(f"Excel file not found at: {excel_path}")
+if not os.path.exists(excel_path):  # without the NCRP 147 data nothing can be calculated
+    messagebox.showerror("Shielding of X-ray Rooms", "Cannot find the NCRP 147 data file:\n" + excel_path
+                         + "\n\nKeep 'Data Shielding.xlsx' next to the program, or install the program again.")
+    sys.exit(1)
 
 wb = load_workbook(excel_path)
 

@@ -65,7 +65,7 @@ S = {
                          spaceAfter=5),
     "H3": ParagraphStyle("H3", fontName="Body-Bold", fontSize=10.5, leading=14, textColor=TEXT, spaceBefore=8,
                          spaceAfter=3),
-    "formula": ParagraphStyle("formula", fontName="Body", fontSize=11.5, leading=17, textColor=TEXT,
+    "formula": ParagraphStyle("formula", fontName="Body", fontSize=11.5, leading=22, textColor=TEXT,
                               alignment=TA_CENTER),
     "note": ParagraphStyle("note", fontName="Body", fontSize=9.4, leading=13, textColor=TEXT),
     "toc1": ParagraphStyle("toc1", fontName="Body-Bold", fontSize=10.5, leading=16, textColor=NAVY, spaceBefore=4),
@@ -312,15 +312,20 @@ def introduction():
                        "<b>Departments</b>: several rooms of any type on one floor plan, each with its own results, "
                        "in one report."])]
     story += H2("Files the program uses")
+    story += [P("The setup (section 3.1) puts these files in the program's folder:")]
     story += table([["File", "What it is"],
-                    ["Shielding_of_X-Ray_rooms.exe", "The program (or <font name='Mono'>Shielding_of_X-Ray_rooms.py"
-                     "</font> in the folder <font name='Mono'>XRIFSC_code</font>, run with Python)."],
+                    ["Shielding of X-ray Rooms.exe", "The program. (From the source code: <font name='Mono'>"
+                     "Shielding_of_X-Ray_rooms.py</font> in the folder <font name='Mono'>XRIFSC_code</font>, run "
+                     "with Python.)"],
                     ["Data Shielding.xlsx", "The NCRP 147 data: workloads, unshielded air kerma, transmission "
                                             "parameters, occupancy and use factors. <b>Required</b>: keep it next to "
                                             "the program."],
-                    ["Examples\\*.shield", "The built-in examples as project files. The folder is created next to "
-                                           "the program when it starts."],
-                    ["User Guide.pdf, NCRP and BIR reports", "Opened from the Help menu."]], [55, 115])
+                    ["Examples\\*.shield", "The built-in examples as project files."],
+                    ["User Guide.pdf, 5_NCRP_147_2004.pdf", "This guide and NCRP Report No. 147, opened from the Help "
+                                                            "menu."]], [55, 115])
+    story += [P("BIR 2012 (<i>Radiation Shielding for Diagnostic Radiology</i>) is not distributed with the program. "
+                "If you have its PDF, save it as <font name='Mono'>book.9780905749747.pdf</font> in the program's "
+                "folder and it appears in the Help menu.", "small"), Spacer(1, 6)]
     story += H2("How this guide is organised")
     story += [P("Section 2 summarises the NCRP 147 method as the program applies it. Sections 3 to 10 describe the "
                 "program screen by screen. Section 11 works through the examples by hand, section 12 lists the "
@@ -411,6 +416,18 @@ def method():
 
 def getting_started():
     story = H1("Getting started")
+    story += H2("Installing")
+    story += [steps(["Run <b>Shielding_of_X-ray_Rooms_Setup</b> (Windows 10 or 11, 64-bit). It is not digitally "
+                     "signed, so Windows may warn the first time: choose <b>More info › Run anyway</b>.",
+                     "Choose <b>Install for me only</b> (no administrator rights needed) or <b>Install for all users"
+                     "</b>.",
+                     "Choose the extra tasks: a desktop icon, and whether <b>.shield</b> project files open with the "
+                     "program when you double-click them.",
+                     "Finish: the program has a Start menu folder with the program, the <b>User Guide</b>, the "
+                     "<b>Examples</b> folder and <b>Uninstall</b>."])]
+    story += [P("To remove the program use <b>Settings › Apps</b> or <b>Uninstall</b> in its Start menu folder. Your "
+                "project files are not touched. The first start after installing can take a little longer while "
+                "Windows and the program prepare their caches.")]
     story += H2("The start screen")
     story += [P("When the program opens it shows the start screen. Choose what to design, open a saved project, or "
                 "open one of the examples (section 10.3).")]
@@ -426,7 +443,8 @@ def getting_started():
                     ["", "Examples", "Opens a built-in example, or one from the Examples folder."],
                     ["", "Exit", "Closes the program (it asks to save first)."],
                     ["Help", "User Guide (F1)", "This guide."],
-                    ["", "NCRP Report No. 147, BIR 2012", "The reference reports, if they are next to the program."]],
+                    ["", "NCRP Report No. 147", "The report. BIR 2012 also appears if its PDF is in the program's "
+                                                "folder (section 1.2)."]],
                    [17, 68, 85])
     story += H2("The workspace")
     story += [bullets(["Every department and room is a tab of the dark tab bar. <b>Double-click a tab</b> to "
@@ -929,8 +947,12 @@ def troubleshooting():
                      "Increase the planned thickness, or add another material."],
                     ["2D / 3D View not up to date", "It shows the last calculation.",
                      "Press Calculate (or Calculate all barriers), then Refresh."],
-                    ["Cannot find Data Shielding.xlsx", "The data file is not next to the program.",
-                     "Keep the program, Data Shielding.xlsx and the PDFs in one folder."]], [42, 64, 64])
+                    ["Cannot find the NCRP 147 data file", "Data Shielding.xlsx is not next to the program.",
+                     "Install the program again (from the source code: keep it in the project folder)."],
+                    ["Unexpected error", "Something went wrong inside the program; the details are saved in "
+                                         "%LOCALAPPDATA%\\Shielding of X-ray Rooms\\errors.log.",
+                     "Send that file with a description of what you did, so the problem can be fixed."]],
+                   [42, 64, 64])
     story += H1("References")
     story += [bullets(["NCRP Report No. 147, <i>Structural Shielding Design for Medical X-Ray Imaging Facilities</i>. "
                        "National Council on Radiation Protection and Measurements, Bethesda, 2004.",
