@@ -54,9 +54,16 @@ TIPS = {
     "radiation_type_mammo": "Mammography: every barrier is secondary.\n"
                             "NCRP 147 assumes the image receptor intercepts the primary beam, "
                             "so only scatter and leakage are shielded.",
-    "distance": "Distance d (m) from the X-ray source (focal spot) to the barrier.\n"
-                "The program adds the NCRP 147 distance to the occupied point beyond the barrier:\n"
-                "  walls and door +0.3 m · floor +1.7 m · ceiling +0.5 m",
+    "distance": "Distance (m) from the X-ray source (focal spot) to the barrier.\n"
+                "The distance from the barrier to the person beyond it is added: set it under 'Shielding Area' "
+                "(walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m).",
+    "beyond": "Distance (m) from the barrier to the person to protect beyond it (NCRP 147 4.1.2); it is added to "
+              "the distance from the source.\n"
+              "  Walls and door: 0.3 m.\n"
+              "  Ceiling: 0.5 m above the floor of the room above (add the space above a suspended ceiling).\n"
+              "  Floor: the person below is 1.7 m above the lower floor, i.e. floor-to-floor height − 1.7 m below "
+              "this floor: 1.3 m for 3 m, 2.6 m for 4.3 m.\n"
+              "The floor plan fills it in from the floor-to-floor height.",
     "workload_distribution": "Choose the NCRP 147 workload distribution (room type), or give the kVp.\n"
                              "It sets Wnorm, the unshielded air kerma and the transmission parameters "
                              "(α, β, γ) used for the thickness.",
@@ -162,13 +169,18 @@ TIPS = {
     # ===== CT =====
     "ct_body": "Number of body CT procedures per week.",
     "ct_head": "Number of head CT procedures per week.",
-    "ct_dlp_body": "DLP per body procedure (mGy·cm). NCRP 147 typical value: 550 mGy·cm.\n"
-                   "K¹sec = 1.2 × 3×10⁻⁴ cm⁻¹ × 1.4 × DLP\n"
-                   "(1.4 accounts for repeat scans with contrast).",
-    "ct_dlp_head": "DLP per head procedure (mGy·cm). NCRP 147 typical value: 1200 mGy·cm.\n"
-                   "K¹sec = 9×10⁻⁵ cm⁻¹ × 1.4 × DLP",
+    "ct_dlp_body": "DLP of one body scan (one phase), mGy·cm. NCRP 147 typical value: 550 mGy·cm.\n"
+                   "K¹sec per scan = 1.2 × 3×10⁻⁴ cm⁻¹ × DLP; the scans per procedure are set above.",
+    "ct_dlp_head": "DLP of one head scan (one phase), mGy·cm. NCRP 147 typical value: 1200 mGy·cm.\n"
+                   "K¹sec per scan = 9×10⁻⁵ cm⁻¹ × DLP; the scans per procedure are set above.",
+    "ct_phases": "Scans (phases) per procedure, e.g. without and with contrast, or 3–4 phases.\n"
+                 "Set how many scans a procedure can have and, for scan 1, 2, ..., the % of the procedures "
+                 "that have it. Their sum / 100 is the mean number of scans per procedure.\n"
+                 "NCRP 147: every procedure scanned once and 40 % again with contrast: 100 % + 40 % = 1.4.",
     "ct_kvp": "Tube voltage. CT transmission data (NCRP 147) are available for 120 and 140 kVp.",
-    "ct_distance": "Distance (m) from the CT isocenter to the occupied point beyond the barrier.",
+    "ct_distance": "Distance (m) from the CT isocenter to the barrier. The distance from the barrier to the "
+                   "person beyond it is added: set it under 'Shielding Area' (walls and door 0.3 m, ceiling "
+                   "0.5 m, floor 1.3 m).",
     "ct_materials": "CT transmission data (NCRP 147) are available for lead and concrete.",
 
     # ===== Floor plan and 2D / 3D view =====
@@ -182,6 +194,11 @@ TIPS = {
     "plan_load": "Load the drawing of the room or department: PDF (choose the page), PNG or JPG.\n"
                  "Then set its scale with two points of known distance.",
     "plan_height": "Floor-to-ceiling height of the room, used for the 3D view and the ceiling distance.",
+    "plan_floor_to_floor": "From the floor of this room to the floor of the room above (NCRP 147: 3 to 5 m), "
+                           "taken the same for the storey below.\n"
+                           "It sets where the people are (NCRP 147 4.1.2): below, 1.7 m above the lower floor "
+                           "(floor-to-floor − 1.7 m under this floor); above, 0.5 m above the floor of the room "
+                           "above.",
     "plan_source_height": "Height of the source (CT: isocenter) above the floor.\n"
                           "Floor distance = this height; ceiling distance = room height − this height.",
     "plan_select": "Click a wall or the door to choose what is beyond it and see the suggested values.",

@@ -8,6 +8,10 @@ from Depcalculations import wb, PRIMARY_KERMA
 
 # NCRP 147 shielding design goals P (mGy/week). Supervised areas are treated as uncontrolled.
 DESIGN_GOALS = {"Controlled Area": "0.1", "Uncontrolled Area": "0.02", "Supervised Area": "0.02"}
+# NCRP 147 4.1.2: the person to protect is 0.3 m beyond walls and doors, 0.5 m above the floor of the room above,
+# and not more than 1.7 m above the floor below, i.e. (floor-to-floor height - 1.7 m) below this floor: 1.3 m for
+# 3 m. Barrier 1 is the floor and barrier 2 the ceiling; walls and door take 0.3 m.
+BEYOND_DEFAULT = {1: "1.3", 2: "0.5"}
 # NCRP 147 Table 4.1 locations, exactly as in the occupancy sheet the calculation reads
 OCCUPANCY_LOCATIONS = [row[0] for row in wb['Occupancy Factor ( T )'].iter_rows(min_row=2, values_only=True) if row[0]]
 
@@ -114,7 +118,7 @@ class dep_defs():
     def _add_ct_room_widgets(self, index, room_number, t):
         """Add CT room specific widgets."""
         dist_label = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
-                               text='Distance from the CT Unit Isocenter (m):')
+                               text='Distance from the CT Unit Isocenter\nto the Barrier (m):')
         dist_label.grid(row=7, column=0, padx=5, pady=6.5, sticky="w")
         self.d[f"dist_var {index}{room_number}"] = StringVar()
         dist_entry = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"],
@@ -769,6 +773,18 @@ class dep_defs():
         self.d[f"dikeent {index}{room_number}"].grid(row=107, column=1, pady=6.5, padx=5, sticky="w")
         tip(self.ladike, "design_goal")
         tip(self.d[f"dikeent {index}{room_number}"], "design_goal")
+
+        # Where the person beyond the barrier is: added to the distance from the source (NCRP 147 4.1.2)
+        beyond_label = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
+                                 text="Occupied point beyond\nthe barrier (m):")
+        beyond_label.grid(row=108, column=0, pady=6.5, padx=5, sticky="w")
+        self.d[f"beyond {index}{room_number}"] = StringVar(value=BEYOND_DEFAULT.get(index, "0.3"))
+        beyond_entry = ttk.Entry(master=self.d[f"barrierf {index}{room_number}"],
+                                 textvariable=self.d[f"beyond {index}{room_number}"], width=10)
+        beyond_entry.grid(row=108, column=1, pady=6.5, padx=5, sticky="w")
+        self.d[f"beyond_entry {index}{room_number}"] = beyond_entry
+        tip(beyond_label, "beyond")
+        tip(beyond_entry, "beyond")
 
     def set_design_goal(self, e, nr):
         # NCRP 147 shielding design goal P for the area classification

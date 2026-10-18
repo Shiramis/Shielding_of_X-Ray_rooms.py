@@ -10,7 +10,8 @@ the thickness you plan to install.
 
 ## What it does
 
-- **Room types**: X-ray rooms (radiography, R&F, chest, angiography), CT rooms (from the DLP) and mammography rooms.
+- **Room types**: X-ray rooms (radiography, R&F, chest, angiography), CT rooms (from the DLP, with the
+  scans or phases per procedure) and mammography rooms.
   You can also design **departments**, with several rooms on one floor plan.
 - **Required thickness** of lead, concrete, gypsum wallboard, steel, plate glass or wood for every barrier. The program
   uses the NCRP 147 workloads, unshielded air kerma, use and occupancy factors, preshielding and Archer transmission
@@ -32,8 +33,15 @@ the thickness you plan to install.
 
 For each workload distribution that reaches a barrier, the unshielded weekly air kerma at the occupied point beyond it
 is *K* = *N*·*U*·*T*·*K*¹ / *d*². The barrier must transmit *B* = *P* / Σ*K*, and the thickness of each material comes
-from the Archer equation *x* = (1/αγ)·ln[(*B*^−γ + β/α) / (1 + β/α)]. CT rooms use the NCRP 147 DLP method. The
-[User Guide](User%20Guide.pdf) explains every step and works through the examples by hand.
+from the Archer equation *x* = (1/αγ)·ln[(*B*^−γ + β/α) / (1 + β/α)].
+
+- *d* runs from the source to the barrier, plus the distance beyond the barrier to the person (NCRP 147 §4.1.2), which
+  can be edited for each barrier. The defaults are 0.3 m for walls and doors, 0.5 m for the ceiling, and 1.3 m for the
+  floor (the person is 1.7 m above the floor below, with a 3 m storey).
+- CT rooms use the NCRP 147 DLP method, with the scans (phases) per procedure. The NCRP default of 1.4 means 40 % of
+  the procedures are scanned again with contrast.
+
+The [User Guide](User%20Guide.pdf) explains every step and works through the examples by hand.
 
 ## Installing
 

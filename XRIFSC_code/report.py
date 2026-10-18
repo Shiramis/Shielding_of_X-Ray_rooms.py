@@ -11,9 +11,11 @@ NOTES = [
     "Required transmission: B = P / ΣK, with P the shielding design goal of the area beyond the barrier.",
     "Thickness: x = (1/αγ) · ln[(B^−γ + β/α) / (1 + β/α)], using α, β, γ of the radiation type marked "
     "'Used for transmission', minus preshielding where selected.",
-    "d includes the distance to the occupied point: +0.3 m for walls and door, +1.7 m for floor, +0.5 m for ceiling.",
-    "CT rooms: K¹sec = κ · DLP (κ head 9×10⁻⁵ cm⁻¹, κ body 1.2 × 3×10⁻⁴ cm⁻¹, ×1.4 for contrast); "
-    "K = T · Σ N · K¹sec / d², with d from the isocenter.",
+    "d goes from the source to the occupied point: the distance to the barrier plus the distance beyond it "
+    "(NCRP 147 4.1.2: 0.3 m beyond walls and door, 0.5 m above the floor of the room above, 1.7 m above the floor "
+    "below), shown per barrier in the Details sheet.",
+    "CT rooms: K¹sec per scan = κ · DLP (κ head 9×10⁻⁵ cm⁻¹, κ body 1.2 × 3×10⁻⁴ cm⁻¹); "
+    "K = T · Σ N · s · K¹sec / d², with s the scans per procedure (NCRP 147: 1.4) and d from the isocenter.",
     "A thickness of 0 mm means no additional shielding is required (B ≥ 1).",
     "Dose beyond: weekly air kerma × T beyond the barrier with the planned thickness (or with the required "
     "thickness when none is planned), compared with the shielding design goal P.",
@@ -114,8 +116,8 @@ def write_report(path, title, rooms):
     ws = sheet("Details", "Inputs of each radiation type",
                [("Room", 18), ("Barrier", 11), ("Radiation type", 9), ("Primary / secondary", 11),
                 ("Workload distribution", 26), ("K¹ source", 26), ("Preshielding", 11), ("N (patients/week)", 11),
-                ("U", 7), ("T", 7), ("K¹ (mGy/patient at 1 m)", 12), ("d (m)", 8), ("K (mGy/week)", 11),
-                ("Used for transmission", 11)])
+                ("U", 7), ("T", 7), ("K¹ (mGy/patient at 1 m)", 12), ("d (m)", 8), ("of it beyond the barrier (m)", 10),
+                ("K (mGy/week)", 11), ("Used for transmission", 11)])
     row = 4
     for room in rooms:
         ct = room.get("ct") or {}
@@ -127,30 +129,32 @@ def write_report(path, title, rooms):
                 values = [room["name"], barrier["name"], "#1", "Secondary (CT)",
                           f"{rec.get('kvp')} kVp" if rec.get("kvp") else "", "DLP (NCRP 147)", "",
                           f"{ct.get('body') or 0} body + {ct.get('head') or 0} head", None, rec.get("T"), None,
-                          rec.get("d"), rec.get("K_total"), "Yes"]
+                          rec.get("d"), rec.get("beyond"), rec.get("K_total"), "Yes"]
                 rows = [values]
             else:
                 rows = [[room["name"], barrier["name"], f"#{dist['no']}", dist["radiation"], dist["distribution"],
                          dist["k1_source"], dist["preshielding"], dist["N"], dist["U"], dist["T"], dist["K1"],
-                         dist["d"], dist["K"], "Yes" if dist["set"] else ""]
+                         dist["d"], rec.get("beyond"), dist["K"], "Yes" if dist["set"] else ""]
                         for dist in rec["distributions"]]
             for values in rows:
                 for col, value in enumerate(values):
-                    fmt = f_bold if col == 0 else f_sci if col in (10, 12) else f_num
+                    fmt = f_bold if col == 0 else f_sci if col in (10, 13) else f_num
                     cell(ws, row, col, value, fmt)
                 row += 1
 
     # ===== Rooms: room-level inputs =====
     ws = sheet("Rooms", "Room data",
                [("Room", 22), ("Room type", 18), ("Workload", 28), ("Body procedures/week", 12),
-                ("Head procedures/week", 12), ("DLP body (mGy·cm)", 12), ("DLP head (mGy·cm)", 12), ("kVp", 8),
+                ("Head procedures/week", 12), ("Scans per body procedure", 11), ("Scans per head procedure", 11),
+                ("DLP per body scan (mGy·cm)", 12), ("DLP per head scan (mGy·cm)", 12), ("kVp", 8),
                 ("Barriers", 9), ("Calculated", 10)])
     row = 4
     for room in rooms:
         ct = room.get("ct") or {}
         calculated = sum(1 for b in room["barriers"] if b["record"] is not None)
         values = [room["name"], room["type"], room.get("workload"), ct.get("body"), ct.get("head"),
-                  ct.get("dlp_body"), ct.get("dlp_head"), ct.get("kvp"), len(room["barriers"]), calculated]
+                  ct.get("scans_body"), ct.get("scans_head"), ct.get("dlp_body"), ct.get("dlp_head"), ct.get("kvp"),
+                  len(room["barriers"]), calculated]
         for col, value in enumerate(values):
             cell(ws, row, col, value, f_bold if col == 0 else f_num)
         row += 1
@@ -172,7 +176,8 @@ class ReportExport:
         if room_type == "CT Room":
             info["ct"] = {"body": value(f"bp_var {t}"), "head": value(f"hp_var {t}"),
                           "dlp_body": value(f"dlpb_var {t}"), "dlp_head": value(f"dlph_var {t}"),
-                          "kvp": value(f"kvp_var {t}")}
+                          "kvp": value(f"kvp_var {t}"), "scans_body": self.ct_scans(t, "body"),
+                          "scans_head": self.ct_scans(t, "head")}
         elif value(f"vrawork {t}") == 1 and value(f"worentry {t}"):
             info["workload"] = f"{value(f'worentry {t}')} mA·min/week (total workload)"
         elif value(f"vrawork {t}") == 2 and value(f"numpapwe {t}"):

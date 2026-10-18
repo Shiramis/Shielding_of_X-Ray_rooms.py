@@ -7,6 +7,10 @@ from numpy import log as ln
 from tooltips import tip
 
 
+MAX_PHASES = 4             # scans per procedure that can be given
+NCRP_PHASES = ("100", "40")  # NCRP 147: every procedure scanned once, 40 % again with contrast = 1.4 scans
+
+
 class  CT_Room():
     # ============creating def for CT notebook===================================
     def creatCTroom(self):
@@ -68,19 +72,20 @@ class  CT_Room():
         self.d[f"hp_var {str(t)}"] = IntVar()
         self.hp_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.d[f"hp_var "+str(t)], width=10)
         self.hp_entry.grid(row=2, column=1, padx=10, pady=10, sticky="w")
-        self.dlpb_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='DLP for body (mGy\u2022cm):')
+        self.add_ct_phases(t, self.d["frame_1 " + str(t)], row=3)
+        self.dlpb_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='DLP per body scan (mGy\u2022cm):')
         self.dlpb_label.grid(row=4, column=0, padx=10, pady=10, sticky="w")
         self.d[f"dlpb_var {str(t)}"] = IntVar()
         self.dlpb_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.d[f"dlpb_var "+str(t)], width=10)
         self.dlpb_entry.grid(row=4, column=1, padx=10, pady=10, sticky="w")
 
-        self.dlph_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='DLP for head (mGy\u2022cm):')
+        self.dlph_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='DLP per head scan (mGy\u2022cm):')
         self.dlph_label.grid(row=5, column=0, padx=10, pady=10, sticky="w")
         self.d[f"dlph_var {str(t)}"] = IntVar()
         self.dlph_entry = ttk.Entry(master=self.d["frame_1 " + str(t)], textvariable=self.d[f"dlph_var "+str(t)], width=10)
         self.dlph_entry.grid(row=5, column=1, padx=10, pady=10, sticky="w")
 
-        self.kvp_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='Give kVp:')
+        self.kvp_label = ttk.Label(master=self.d["frame_1 " + str(t)], text='Tube voltage (kVp):')
         self.kvp_label.grid(row=6, column=0, padx=10, pady=10, sticky="w")
         self.d[f"kvp_var {str(t)}"] = IntVar()
         self.d[f"kvp_var "+str(t)].set(120)  # default value
@@ -125,3 +130,82 @@ class  CT_Room():
                                   command=lambda f=self.roomframe, r=self.d["resframe " + str(t)]: self.closeroom(f, r))
         self.closBut.pack()
         return t
+
+    # ===================== scans (phases) per procedure =====================
+    def add_ct_phases(self, t, frame, row):
+        """For body and head procedures: how many scans (phases) a procedure can have and, for scan 1, 2, ...,
+        the % of the procedures that have it. Their sum / 100 is the mean number of scans per procedure."""
+        box = ttk.LabelFrame(frame, text="Scans (phases) per procedure")
+        box.grid(row=row, column=0, columnspan=2, padx=10, pady=(2, 8), sticky="we")
+        tip(box, "ct_phases")
+        ttk.Label(box, text="Scans", style="Muted.TLabel").grid(row=0, column=1, padx=4, sticky="w")
+        ttk.Label(box, text="% of procedures with scan 1, 2, …", style="Muted.TLabel").grid(
+            row=0, column=2, padx=4, sticky="w")
+        self.d[f"phases_note {t}"] = ttk.Label(box, style="Muted.TLabel", wraplength=theme.px(330), justify=LEFT)
+        self.d[f"phases_note {t}"].grid(row=3, column=0, columnspan=3, padx=6, pady=(2, 4), sticky="w")
+        for r, (kind, title) in enumerate((("body", "Body"), ("head", "Head")), start=1):
+            label = ttk.Label(box, text=title)
+            label.grid(row=r, column=0, padx=(6, 4), pady=3, sticky="w")
+            self.d[f"phases_{kind} {t}"] = IntVar(value=len(NCRP_PHASES))
+            spin = ttk.Spinbox(box, from_=1, to=MAX_PHASES, width=3, textvariable=self.d[f"phases_{kind} {t}"],
+                               command=lambda k=kind: self.update_ct_phases(t, k))
+            spin.grid(row=r, column=1, padx=4, pady=3, sticky="w")
+            spin.bind("<FocusOut>", lambda event, k=kind: self.update_ct_phases(t, k))
+            spin.bind("<Return>", lambda event, k=kind: self.update_ct_phases(t, k))
+            tip(label, "ct_phases")
+            tip(spin, "ct_phases")
+            self.d[f"phases_row_{kind} {t}"] = ttk.Frame(box)
+            self.d[f"phases_row_{kind} {t}"].grid(row=r, column=2, padx=4, pady=3, sticky="w")
+            for k, value in enumerate(NCRP_PHASES, start=1):
+                self.phase_var(t, kind, k, value)
+            self.update_ct_phases(t, kind)
+
+    def phase_var(self, t, kind, k, value):
+        """% of the procedures that have scan k (kept when the number of scans changes)."""
+        var = self.d.get(f"phase_{kind} {t}#{k}")
+        if var is None:
+            var = self.d[f"phase_{kind} {t}#{k}"] = StringVar(value=value)
+            var.trace_add("write", lambda *args: self.update_scans_note(t))
+        else:
+            var.set(value)
+        return var
+
+    def update_ct_phases(self, t, kind):
+        """One % field per scan; a new scan starts at half of the one before it."""
+        try:
+            count = int(self.d[f"phases_{kind} {t}"].get())
+        except (TclError, ValueError):
+            count = 1
+        count = max(1, min(MAX_PHASES, count))
+        self.d[f"phases_{kind} {t}"].set(count)
+        row = self.d[f"phases_row_{kind} {t}"]
+        for widget in row.winfo_children():
+            widget.destroy()
+        for k in range(1, count + 1):
+            var = self.d.get(f"phase_{kind} {t}#{k}")
+            if var is None:
+                previous = self.entry_number(f"phase_{kind} {t}#{k - 1}") or 0
+                var = self.phase_var(t, kind, k, f"{previous / 2:g}")
+            entry = ttk.Entry(row, textvariable=var, width=5)
+            entry.grid(row=0, column=2 * k, padx=(0 if k == 1 else 8, 0))
+            ttk.Label(row, text="%").grid(row=0, column=2 * k + 1, padx=(2, 0))
+            self.d[f"phase_{kind}_entry {t}#{k}"] = entry
+            tip(entry, "ct_phases")
+        self.update_scans_note(t)
+
+    def set_ct_phases(self, t, kind, values):
+        """Restore the % of each scan, e.g. from a project file."""
+        self.d[f"phases_{kind} {t}"].set(max(1, min(MAX_PHASES, len(values))))
+        for k, value in enumerate(values[:MAX_PHASES], start=1):
+            self.phase_var(t, kind, k, value)
+        self.update_ct_phases(t, kind)
+
+    def update_scans_note(self, t):
+        note = self.d.get(f"phases_note {t}")
+        if note is None:
+            return
+        parts = []
+        for kind, title in (("body", "body"), ("head", "head")):
+            scans = self.ct_scans(t, kind)
+            parts.append(f"{title} {scans:.2f}" if scans is not None else f"{title}: check the %")
+        note.configure(text="Mean scans per procedure: " + ",  ".join(parts) + "  (NCRP 147: 1.4)")

@@ -244,19 +244,23 @@ class ddepartment():
         self.hp_entry = ttk.Entry(self.d[f"frame_1 {t}"], textvariable=self.d[f"hp_var {t}"], width=10)
         self.hp_entry.grid(row=2, column=1, padx=10, pady=10, sticky="w")
 
-        self.kvp_label = ttk.Label(self.d[f"frame_1 {t}"], text='Give kVp:')
+        self.add_ct_phases(t, self.d[f"frame_1 {t}"], row=3)
+
+        # NCRP 147 has CT transmission data for 120 and 140 kVp only
+        self.kvp_label = ttk.Label(self.d[f"frame_1 {t}"], text='Tube voltage (kVp):')
         self.kvp_label.grid(row=6, column=0, padx=10, pady=10, sticky="w")
-        self.d[f"kvp_var {t}"] = IntVar()
-        self.kvp_entry = ttk.Entry(self.d[f"frame_1 {t}"], textvariable=self.d[f"kvp_var {t}"], width=10)
+        self.d[f"kvp_var {t}"] = IntVar(value=120)
+        self.kvp_entry = ttk.Combobox(self.d[f"frame_1 {t}"], textvariable=self.d[f"kvp_var {t}"], values=[120, 140],
+                                      state="readonly", width=7)
         self.kvp_entry.grid(row=6, column=1, padx=10, pady=10, sticky="w")
 
-        self.dlpb_label = ttk.Label(self.d[f"frame_1 {t}"], text='Give DLP/body procedure:')
+        self.dlpb_label = ttk.Label(self.d[f"frame_1 {t}"], text='DLP per body scan (mGy\u2022cm):')
         self.dlpb_label.grid(row=7, column=0, padx=10, pady=10, sticky="w")
         self.d[f"dlpb_var {t}"] = IntVar()
         self.dlpb_entry = ttk.Entry(self.d[f"frame_1 {t}"], textvariable=self.d[f"dlpb_var {t}"], width=10)
         self.dlpb_entry.grid(row=7, column=1, padx=10, pady=10, sticky="w")
 
-        self.dlph_label = ttk.Label(self.d[f"frame_1 {t}"], text='Give DLP/head procedure:')
+        self.dlph_label = ttk.Label(self.d[f"frame_1 {t}"], text='DLP per head scan (mGy\u2022cm):')
         self.dlph_label.grid(row=8, column=0, padx=10, pady=10, sticky="w")
         self.d[f"dlph_var {t}"] = IntVar()
         self.dlph_entry = ttk.Entry(self.d[f"frame_1 {t}"], textvariable=self.d[f"dlph_var {t}"], width=10)

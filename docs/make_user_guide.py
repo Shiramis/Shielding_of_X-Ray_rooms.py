@@ -372,13 +372,24 @@ def method():
                 "the program treats it as uncontrolled. If your national dose constraint is lower, type it in "
                 "<b>Shielding Design Goal</b>.")]
     story += H2("Distances")
-    story += [P("In X-ray and mammography rooms you enter the distance from the source (focal spot) to the barrier; "
-                "the program adds the NCRP 147 distance from the barrier to the occupied point:")]
-    story += table([["Barrier", "Added distance"], ["Walls and door", "0.3 m"], ["Floor (to the person below)",
-                                                                               "1.7 m"],
-                    ["Ceiling (to the person above)", "0.5 m"]], [80, 40])
-    story += [P("In CT rooms you enter the whole distance from the isocenter to the occupied point. The floor plan "
-                "(section 8) measures the distances for you and adds these values in both cases.")]
+    story += [P("<i>d</i> goes to the person to protect. For every barrier you enter the distance from the source "
+                "(focal spot; CT: the isocenter) to the barrier and, under <b>Shielding Area</b>, the distance from "
+                "the barrier to that person, the <b>occupied point beyond the barrier</b>. The program adds the two. "
+                "NCRP 147 (section 4.1.2) places the person:")]
+    story += table([["Barrier", "Where the person is (NCRP 147 4.1.2)", "Distance beyond the barrier"],
+                    ["Walls and door", "0.3 m beyond the wall", "0.3 m"],
+                    ["Ceiling", "0.5 m above the floor of the room above", "0.5 m, plus any space above a "
+                                                                          "suspended ceiling"],
+                    ["Floor", "not more than 1.7 m above the floor below",
+                     "floor-to-floor height − 1.7 m: <b>1.3 m</b> for a 3 m storey, 2.6 m for 4.3 m"]],
+                   [30, 70, 70])
+    story += [P("These are the values filled in; change them where the building differs. The floor plan "
+                "(section 8) measures the distances to the barriers and sets the floor and ceiling values from the "
+                "floor-to-floor height.")]
+    story += note("Earlier versions of the program added 1.7 m below the floor. NCRP 147 puts the person 1.7 m "
+                  "<i>above the floor below</i>, which for a 3 m storey is 1.3 m under the floor: closer to the "
+                  "source, so the floor needs more shielding. Projects saved with an earlier version are converted "
+                  "when you open them and show the corrected results.", "Note")
     story += H2("Preshielding")
     story += [P("Behind the image receptor the primary beam is already attenuated by the grid, the cassette and "
                 "their supports. NCRP 147 credits this as an equivalent thickness, which the program subtracts "
@@ -386,15 +397,20 @@ def method():
                 "7 mm steel; <b>Cross-table</b> (grid and cassette only) 0.3 mm lead, 30 mm concrete or 2 mm steel. "
                 "Use it only for primary barriers behind the image receptor.")]
     story += H2("CT rooms")
-    story += [P("NCRP 147 finds the secondary air kerma of CT from the dose-length product (DLP). Per procedure, at "
-                "1 m from the isocenter:")]
+    story += [P("NCRP 147 finds the secondary air kerma of CT from the dose-length product (DLP). Per scan, at 1 m "
+                "from the isocenter:")]
     story += formula("<i>K</i><super>1</super><sub>sec, body</sub> = 1.2 × 3×10<super>−4</super> cm<super>−1"
-                     "</super> × 1.4 × DLP<sub>body</sub><br/><i>K</i><super>1</super><sub>sec, head</sub> = "
-                     "9×10<super>−5</super> cm<super>−1</super> × 1.4 × DLP<sub>head</sub>")
-    story += [P("The factor 1.4 accounts for repeated scans with contrast. The weekly air kerma is <i>K</i> = "
-                "<i>T</i> · (<i>N</i><sub>body</sub><i>K</i><super>1</super><sub>body</sub> + <i>N</i><sub>head"
-                "</sub><i>K</i><super>1</super><sub>head</sub>) / <i>d</i><super>2</super>, and the thickness comes "
-                "from the NCRP 147 CT transmission data of lead and concrete at 120 or 140 kVp.")]
+                     "</super> × DLP<sub>body</sub><br/><i>K</i><super>1</super><sub>sec, head</sub> = "
+                     "9×10<super>−5</super> cm<super>−1</super> × DLP<sub>head</sub>")
+    story += [P("A procedure can have several scans (phases), e.g. without and with contrast. For scan 1, 2, ... "
+                "you give the % of the procedures that have it; their sum / 100 is the mean number of scans per "
+                "procedure <i>s</i>. NCRP 147 assumes every procedure is scanned once and 40 % again with "
+                "contrast: <i>s</i> = 1.4. The weekly air kerma is")]
+    story += formula("<i>K</i> = <i>T</i> · (<i>N</i><sub>body</sub> <i>s</i><sub>body</sub> <i>K</i><super>1"
+                     "</super><sub>body</sub> + <i>N</i><sub>head</sub> <i>s</i><sub>head</sub> <i>K</i><super>1"
+                     "</super><sub>head</sub>) / <i>d</i><super>2</super>")
+    story += [P("and the thickness comes from the NCRP 147 CT transmission data of lead and concrete at 120 or "
+                "140 kVp.")]
     story += H2("Several materials in one barrier")
     story += [P("Under the materials of a barrier you choose how they are used:")]
     story += [bullets(["<b>Each one alone</b>: the thickness of each material as if it were the only one in the "
@@ -483,8 +499,8 @@ def xray_room():
                      "distributions irradiate it; each gets its own block (#1, #2, ...).",
                      "<b>Select Radiation Type</b>: <b>Primary</b> if the useful beam is aimed at the barrier (floor, "
                      "chest bucky wall, cross-table wall), otherwise <b>Secondary</b> (leakage and scatter only).",
-                     "<b>Distance from the Source to the Barrier</b> (m). The program adds the distance to the "
-                     "occupied point (section 2.4).",
+                     "<b>Distance from the Source to the Barrier</b> (m), to the barrier itself. The distance "
+                     "beyond it to the person is set under Shielding Area (section 2.4).",
                      "<b>Workload Distribution</b>: <b>X-Ray Room (Suggested NCRP 147)</b> and the room in the list "
                      "(e.g. <i>Rad Room (floor or other barriers)</i>), or <b>Give kVp</b> for a single-kVp "
                      "transmission curve. With kVp you must write the unshielded air kerma yourself.",
@@ -528,6 +544,8 @@ def xray_room():
                        "<b>Write occupancy factor (T)</b>, <b>or select Location (Suggested NCRP 147)</b>: the "
                        "location beyond the barrier gives <i>T</i> from NCRP 147 Table 4.1 (section 12.2).",
                        "<b>Shielding Design Goal</b> (mGy/week): filled in from the area; you can change it.",
+                       "<b>Occupied point beyond the barrier</b> (m): where the person to protect is, beyond the "
+                       "barrier: walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m (section 2.4).",
                        "<b>Calculate</b>: calculates this barrier. <b>Calculate all barriers</b> at the top "
                        "calculates every barrier of the room."])]
     story += H2("Results")
@@ -555,11 +573,16 @@ def ct_and_mammography():
                     crop=(0, 0, 1180, 700))
     story += table([["Input", "Meaning", "NCRP 147 typical"],
                     ["Body / Head Procedures (weekly)", "Number of body and head CT procedures per week.", "–"],
-                    ["DLP for body / head (mGy·cm)", "Dose-length product per procedure.", "550 / 1200 mGy·cm"],
-                    ["kVp", "Tube voltage: the transmission data exist for 120 and 140 kVp.", "120 kVp"],
-                    ["Distance from the CT Unit Isocenter (m)", "To the occupied point beyond the barrier: add 0.3 m "
-                                                                "beyond walls, 1.7 m below the floor, 0.5 m above "
-                                                                "the ceiling.", "–"],
+                    ["Scans (phases) per procedure", "How many scans a procedure can have and, for scan 1, 2, ..., "
+                                                     "the % of the procedures that have it (section 2.6). The line "
+                                                     "below shows the mean number of scans per procedure.",
+                     "100 % + 40 % = 1.4"],
+                    ["DLP per body / head scan (mGy·cm)", "Dose-length product of one scan (phase).",
+                     "550 / 1200 mGy·cm"],
+                    ["Tube voltage (kVp)", "The transmission data exist for 120 and 140 kVp.", "120 kVp"],
+                    ["Distance from the CT Unit Isocenter to the Barrier (m)", "To the barrier itself; the distance "
+                                                                               "beyond it is set under Shielding "
+                                                                               "Area.", "–"],
                     ["Materials", "NCRP 147 has CT transmission data for lead and concrete.", "–"]], [52, 88, 30])
     story += [P("Area, occupancy, design goal, layers and the planned-thickness check work as in an X-ray room.")]
 
@@ -604,8 +627,10 @@ def floor_plan():
                      "Without a drawing you work on a 1 m grid.",
                      "<b>Set scale</b>: click two points whose real distance you know (e.g. a dimension line) and "
                      "type it in metres.",
-                     "Choose the <b>Room</b> and its <b>Floor-to-ceiling height</b> and <b>Source height above floor"
-                     "</b> (the floor distance is the source height, the ceiling distance the rest).",
+                     "Choose the <b>Room</b> and give its <b>Floor-to-ceiling height</b>, the <b>Source height "
+                     "above floor</b> and the <b>Floor-to-floor height</b> (3 to 5 m). The distance to the floor is "
+                     "the source height and to the ceiling the rest; beyond them the people are 1.7 m above the "
+                     "floor below and 0.5 m above the floor above (section 2.4).",
                      "<b>Draw walls</b>: click the corners in order; click the first corner or press Enter to close. "
                      "<b>Straight walls (90°)</b> keeps them square; Backspace removes the last corner, Esc cancels. "
                      "The first wall becomes Barrier 1, the next Barrier 2, and so on.",
@@ -674,8 +699,10 @@ def report_and_projects():
                                 "thickness of each material, the dose beyond, the goal P, the materials and the "
                                 "status (OK, met, EXCEEDED or what is missing)."],
                     ["Details", "One row per radiation type: workload distribution, source of K¹, preshielding, N, "
-                                "U, T, K¹, d, K and whether it was used for the transmission."],
-                    ["Rooms", "Room type and workload (CT: procedures, DLP and kVp)."]], [25, 145])
+                                "U, T, K¹, d (and the part of it beyond the barrier), K and whether it was used for "
+                                "the transmission."],
+                    ["Rooms", "Room type and workload (CT: procedures, scans per procedure, DLP and kVp)."]],
+                   [25, 145])
     rep = VALUES["xray_report"]
     head = rep["header"]
     pick = ["Barrier", "T", "P (mGy/week)", "ΣK (mGy/week)", "B", "Lead (mm)", "Concrete (mm)",
@@ -734,7 +761,8 @@ def worked_examples():
                      "Leakage and side-scatter at 1 m (NCRP 147)"],
                     ["U", f"{dist['U']:g}", "Secondary radiation"],
                     ["T", f"{dist['T']:g}", f"Location beyond: {b3['location']} (1/5)"],
-                    ["d", f"{dist['d'] - 0.3:.2f} + 0.3 = {dist['d']:.2f} m", "Source to wall, plus 0.3 m"],
+                    ["d", f"{dist['d'] - b3['beyond']:.2f} + {b3['beyond']:g} = {dist['d']:.2f} m",
+                     f"Source to wall, plus {b3['beyond']:g} m beyond it"],
                     ["P", f"{b3['P']:g} mGy/week", "Uncontrolled area"]], [38, 50, 82])
     story += formula(f"<i>K</i> = {dist['N']:g} × {dist['U']:g} × {dist['T']:g} × {dist['K1']:g} / "
                      f"{dist['d']:.2f}<super>2</super> = <b>{fmt(K)}</b> mGy/week<br/><i>B</i> = {b3['P']:g} / "
@@ -768,7 +796,9 @@ def worked_examples():
                     ["U", f"{dist['U']:g}", "NCRP 147 use factor of the floor"],
                     ["K<super>1</super><sub>P</sub>", f"{dist['K1']:g} mGy/patient", "Primary air kerma at 1 m"],
                     ["T", f"{dist['T']:g}", f"Below: {fl['location']}"],
-                    ["d", f"{dist['d'] - 1.7:.2f} + 1.7 = {dist['d']:.2f} m", "Source height, plus 1.7 m"],
+                    ["d", f"{dist['d'] - fl['beyond']:.2f} + {fl['beyond']:g} = {dist['d']:.2f} m",
+                     f"Source height, plus {fl['beyond']:g} m under the floor (person 1.7 m above the floor below, "
+                     f"3 m storey)"],
                     ["Preshielding", f"Bucky: {pre['Concrete']:g} mm concrete, {pre['Lead']:g} mm lead",
                      "Table bucky (NCRP 147)"],
                     ["P", f"{fl['P']:g} mGy/week", "Uncontrolled area"]], [38, 62, 70])
@@ -806,7 +836,8 @@ def worked_examples():
     story += H2("Two radiation types and layers: X-ray room, Barrier 4 (chest bucky wall)")
     story += [P(f"The wall behind the chest bucky receives the primary beam of the chest bucky distribution and the "
                 f"secondary radiation of the whole room. Beyond it are offices (<i>T</i> = {b4['T']:g}, <i>P</i> = "
-                f"{b4['P']:g} mGy/week); the source is {d1['d'] - 0.3:.2f} m away, so <i>d</i> = {d1['d']:.2f} m.")]
+                f"{b4['P']:g} mGy/week); the source is {d1['d'] - b4['beyond']:.2f} m away, so <i>d</i> = "
+                f"{d1['d'] - b4['beyond']:.2f} + {b4['beyond']:g} = {d1['d']:.2f} m.")]
     story += table([["Radiation type", "N", "U", "K<super>1</super> (mGy/patient)", "K (mGy/week)"],
                     [f"#1 Primary, {d1['distribution']}, bucky", f"{d1['N']:g}", f"{d1['U']:g}", f"{d1['K1']:g}",
                      fmt(K1)],
@@ -827,9 +858,10 @@ def worked_examples():
 
     # ---------- CT ----------
     flc = ct["Floor"]
-    body = 1.2 * 3e-4 * 1.4 * 550
-    head = 9e-5 * 1.4 * 1200
-    weekly = 100 * body + 50 * head
+    s_body, s_head = flc["scans"]["body"], flc["scans"]["head"]
+    body = 1.2 * 3e-4 * 550
+    head = 9e-5 * 1200
+    weekly = 100 * s_body * body + 50 * s_head * head
     K = flc["T"] * weekly / flc["d"] ** 2
     close(K, flc["K_total"])
     B = flc["P"] / K
@@ -837,14 +869,17 @@ def worked_examples():
     close(archer_thickness(lead, B), dict(flc["thickness"])["Lead"])
     close(archer_thickness(conc, B), dict(flc["thickness"])["Concrete"])
     story += H2("CT room, floor")
-    story += [P("The example CT room has 100 body and 50 head procedures per week, DLP 550 and 1200 mGy·cm, "
-                "120 kVp. Below the floor are offices (<i>T</i> = 1, <i>P</i> = 0.02 mGy/week); the isocenter is "
-                f"1.0 m above the floor, so the distance to the person below is 1.0 + 1.7 = {flc['d']:.2f} m.")]
-    story += formula(f"<i>K</i><super>1</super><sub>body</sub> = 1.2 × 3×10<super>−4</super> × 1.4 × 550 = "
-                     f"{body:.4f} mGy<br/><i>K</i><super>1</super><sub>head</sub> = 9×10<super>−5</super> × 1.4 × "
+    story += [P(f"The example CT room has 100 body and 50 head procedures per week, DLP 550 and 1200 mGy·cm per "
+                f"scan, 120 kVp, and the NCRP 147 scans per procedure: 100 % + 40 % = {s_body:g}. Below the floor "
+                f"are offices (<i>T</i> = 1, <i>P</i> = 0.02 mGy/week); the isocenter is "
+                f"{flc['d'] - flc['beyond']:.1f} m above the floor and the person below "
+                f"{flc['beyond']:g} m under it, so <i>d</i> = {flc['d']:.2f} m.")]
+    story += formula(f"<i>K</i><super>1</super><sub>body</sub> = 1.2 × 3×10<super>−4</super> × 550 = "
+                     f"{body:.4f} mGy<br/><i>K</i><super>1</super><sub>head</sub> = 9×10<super>−5</super> × "
                      f"1200 = {head:.4f} mGy")
-    story += formula(f"<i>K</i> = 1 × (100 × {body:.4f} + 50 × {head:.4f}) / {flc['d']:.2f}<super>2</super> = "
-                     f"<b>{fmt(K)}</b> mGy/week<br/><i>B</i> = 0.02 / {fmt(K)} = <b>{fmt(B)}</b>")
+    story += formula(f"<i>K</i> = 1 × (100 × {s_body:g} × {body:.4f} + 50 × {s_head:g} × {head:.4f}) / "
+                     f"{flc['d']:.2f}<super>2</super> = <b>{fmt(K)}</b> mGy/week<br/><i>B</i> = 0.02 / {fmt(K)} = "
+                     f"<b>{fmt(B)}</b>")
     story += [P(f"With the NCRP 147 CT data at 120 kVp, lead ({params_text(lead)}) and concrete ({params_text(conc)}): "
                 f"<b>{archer_thickness(lead, B):.2f} mm lead</b> or <b>{archer_thickness(conc, B):.0f} mm concrete"
                 f"</b>.")]
@@ -861,7 +896,8 @@ def worked_examples():
     story += [P(f"Total workload 536 mA·min/week with <i>W</i><sub>norm</sub> = 6.7 mA·min/patient gives <i>N</i> = "
                 f"{dist['N']:g} patients/week. The wall is secondary (leakage and side-scatter, "
                 f"<i>K</i><super>1</super><sub>sec</sub> = {dist['K1']:g} mGy/patient), offices beyond (<i>T</i> = 1), "
-                f"source {dist['d'] - 0.3:.1f} m away (<i>d</i> = {dist['d']:.1f} m):")]
+                f"source {dist['d'] - m2['beyond']:.1f} m away, plus {m2['beyond']:g} m beyond the wall "
+                f"(<i>d</i> = {dist['d']:.1f} m):")]
     story += formula(f"<i>K</i> = {dist['N']:g} × {dist['K1']:g} / {dist['d']:.1f}<super>2</super> = "
                      f"<b>{fmt(K)}</b> mGy/week<br/><i>B</i> = 0.02 / {fmt(K)} = <b>{fmt(B)}</b>")
     story += [P(f"Mammography transmission data: <b>{archer_thickness(gyp, B):.2f} mm gypsum wallboard</b> or "
@@ -918,11 +954,15 @@ def reference():
     story += H2("Other values")
     story += table([["Quantity", "Value"],
                     ["Design goal P", "Controlled 0.1 mGy/week; uncontrolled 0.02 mGy/week"],
-                    ["Distance beyond the barrier to the occupied point", "Walls and door 0.3 m; floor 1.7 m; "
-                                                                          "ceiling 0.5 m"],
-                    ["CT secondary air kerma per mGy·cm of DLP at 1 m", "Body 1.2 × 3×10<super>−4</super> × 1.4; "
-                                                                        "head 9×10<super>−5</super> × 1.4"],
-                    ["CT typical DLP per procedure", "Body 550 mGy·cm; head 1200 mGy·cm"],
+                    ["Occupied point beyond the barrier (4.1.2)", "Walls and door 0.3 m; ceiling 0.5 m above the "
+                                                                  "floor of the room above; floor: 1.7 m above the "
+                                                                  "floor below (1.3 m under a floor with a 3 m storey)"],
+                    ["CT secondary air kerma per mGy·cm of DLP at 1 m, per scan", "Body 1.2 × 3×10<super>−4</super> "
+                                                                                  "cm<super>−1</super>; head "
+                                                                                  "9×10<super>−5</super> cm<super>−1"
+                                                                                  "</super>"],
+                    ["CT scans per procedure", "1.4: every procedure once, 40 % again with contrast"],
+                    ["CT typical DLP per scan", "Body 550 mGy·cm; head 1200 mGy·cm"],
                     ["Materials", "Lead, concrete (2.35 g/cm³), gypsum wallboard, steel, plate glass, wood; CT: "
                                   "lead and concrete"]], [70, 100])
     return story

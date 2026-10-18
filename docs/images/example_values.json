@@ -4,8 +4,8 @@
    "kind": "xray",
    "P": 0.02,
    "T": 1.0,
-   "K_total": 76.18106995884773,
-   "B": 0.0002625324114088159,
+   "K_total": 104.98298676748584,
+   "B": 0.00019050705848458656,
    "distributions": [
     {
      "no": 1,
@@ -17,21 +17,22 @@
      "U": 0.89,
      "T": 1.0,
      "K1": 5.2,
-     "d": 2.7,
-     "K": 76.18106995884773,
+     "d": 2.3,
+     "K": 104.98298676748584,
      "set": true
     }
    ],
+   "beyond": 1.3,
    "area": "Uncontrolled Area",
    "location": "Administrative or clerical offices",
    "thickness": [
     [
      "Concrete",
-     50.020375280895024
+     57.29618591136796
     ],
     [
      "Lead",
-     0.7403766166874551
+     0.8471912911474037
     ]
    ],
    "missing": [],
@@ -54,9 +55,9 @@
     "Steel": 7.0
    },
    "check": {
-    "K": 76.18106995884773,
+    "K": 104.98298676748584,
     "P": 0.02,
-    "dose": 0.0023509214268869886,
+    "dose": 0.00323973860151345,
     "ok": true,
     "basis": "planned Concrete 100 mm",
     "transmission": 3.085965356166477e-05
@@ -84,6 +85,7 @@
      "set": true
     }
    ],
+   "beyond": 0.5,
    "area": "Uncontrolled Area",
    "location": "Patient rooms",
    "thickness": [
@@ -142,6 +144,7 @@
      "set": true
     }
    ],
+   "beyond": 0.3,
    "area": "Uncontrolled Area",
    "location": "Corridor doors",
    "thickness": [
@@ -205,6 +208,7 @@
      "set": false
     }
    ],
+   "beyond": 0.3,
    "area": "Uncontrolled Area",
    "location": "Outdoor areas with only transient pedestrian or vehicular traffic",
    "thickness": [
@@ -220,15 +224,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.03994,
-     0.1448,
-     0.42310000000000003
-    ],
     "Lead": [
      2.651,
      16.56,
      0.4585
+    ],
+    "Concrete": [
+     0.03994,
+     0.1448,
+     0.42310000000000003
     ]
    },
    "preshielding": {
@@ -267,6 +271,7 @@
      "set": true
     }
    ],
+   "beyond": 0.3,
    "area": "Controlled Area",
    "location": "X-ray control rooms",
    "thickness": [
@@ -282,15 +287,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Gypsum Wallboard": [
-     0.0138,
-     0.057,
-     0.7937
-    ],
     "Lead": [
      2.298,
      17.38,
      0.6193
+    ],
+    "Gypsum Wallboard": [
+     0.0138,
+     0.057,
+     0.7937
     ]
    },
    "preshielding": {},
@@ -325,6 +330,7 @@
      "set": true
     }
    ],
+   "beyond": 0.3,
    "area": "Uncontrolled Area",
    "location": "Corridors",
    "thickness": [
@@ -340,15 +346,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Gypsum Wallboard": [
-     0.0138,
-     0.057,
-     0.7937
-    ],
     "Lead": [
      2.298,
      17.38,
      0.6193
+    ],
+    "Gypsum Wallboard": [
+     0.0138,
+     0.057,
+     0.7937
     ]
    },
    "preshielding": {},
@@ -397,6 +403,7 @@
      "set": false
     }
    ],
+   "beyond": 0.3,
    "area": "Uncontrolled Area",
    "location": "Administrative or clerical offices",
    "thickness": [
@@ -478,15 +485,15 @@
     "Administrative or clerical offices",
     1,
     0.02,
-    76.18106995884773,
-    0.0002625324114088159,
-    0.7403766166874551,
-    50.02037528089502,
+    104.9829867674858,
+    0.0001905070584845866,
+    0.8471912911474037,
+    57.29618591136796,
     null,
     null,
     null,
     null,
-    0.002350921426886989,
+    0.00323973860151345,
     "met (planned Concrete 100 mm)",
     "Each material alone",
     "OK"
@@ -624,54 +631,64 @@
    "kind": "ct",
    "P": 0.02,
    "T": 1.0,
-   "K_total": 4.839506172839505,
-   "B": 0.004132653061224492,
-   "d": 2.7,
+   "K_total": 6.6691871455576575,
+   "B": 0.002998866213151927,
+   "d": 2.3,
    "kvp": 120,
+   "beyond": 1.3,
+   "scans": {
+    "body": 1.4,
+    "head": 1.4
+   },
    "area": "Uncontrolled Area",
    "location": "Administrative or clerical offices",
    "thickness": [
     [
      "Lead",
-     1.5094164818295612
+     1.6373342373979718
     ],
     [
      "Concrete",
-     131.19326324626311
+     139.4913416331336
     ]
    ],
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.0383,
-     0.0142,
-     0.658
-    ],
     "Lead": [
      2.246,
      5.73,
      0.547
+    ],
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
     ]
    },
    "preshielding": {},
    "check": {
-    "K": 4.839506172839505,
+    "K": 6.6691871455576575,
     "P": 0.02,
-    "dose": 0.020000000000000004,
+    "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.004132653061224492
+    "transmission": 0.002998866213151927
    }
   },
   "Ceiling": {
    "kind": "ct",
    "P": 0.02,
    "T": 0.2,
-   "K_total": 1.12896,
-   "B": 0.017715419501133787,
+   "K_total": 1.1289600000000002,
+   "B": 0.017715419501133783,
    "d": 2.5,
    "kvp": 120,
+   "beyond": 0.5,
+   "scans": {
+    "body": 1.4,
+    "head": 1.4
+   },
    "area": "Uncontrolled Area",
    "location": "Patient rooms",
    "thickness": [
@@ -681,41 +698,46 @@
     ],
     [
      "Concrete",
-     93.81694892676212
+     93.81694892676214
     ]
    ],
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.0383,
-     0.0142,
-     0.658
-    ],
     "Lead": [
      2.246,
      5.73,
      0.547
+    ],
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
     ]
    },
    "preshielding": {},
    "check": {
-    "K": 1.12896,
+    "K": 1.1289600000000002,
     "P": 0.02,
     "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.017715419501133787
+    "transmission": 0.017715419501133783
    }
   },
   "Door": {
    "kind": "ct",
    "P": 0.02,
    "T": 0.13,
-   "K_total": 0.49955886677776684,
-   "B": 0.04003532182103611,
+   "K_total": 0.49955886677776695,
+   "B": 0.0400353218210361,
    "d": 3.03,
    "kvp": 120,
+   "beyond": 0.3,
+   "scans": {
+    "body": 1.4,
+    "head": 1.4
+   },
    "area": "Uncontrolled Area",
    "location": "Corridor doors",
    "thickness": [
@@ -735,22 +757,27 @@
    },
    "preshielding": {},
    "check": {
-    "K": 0.49955886677776684,
+    "K": 0.49955886677776695,
     "P": 0.02,
     "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.04003532182103611
+    "transmission": 0.0400353218210361
    }
   },
   "Barrier 1": {
    "kind": "ct",
    "P": 0.02,
    "T": 0.03,
-   "K_total": 0.13499999999999998,
-   "B": 0.14814814814814817,
+   "K_total": 0.135,
+   "B": 0.14814814814814814,
    "d": 2.8,
    "kvp": 120,
+   "beyond": 0.3,
+   "scans": {
+    "body": 1.4,
+    "head": 1.4
+   },
    "area": "Uncontrolled Area",
    "location": "Unattended parking lots",
    "thickness": [
@@ -760,41 +787,46 @@
     ],
     [
      "Concrete",
-     41.3249871639076
+     41.32498716390761
     ]
    ],
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.0383,
-     0.0142,
-     0.658
-    ],
     "Lead": [
      2.246,
      5.73,
      0.547
+    ],
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
     ]
    },
    "preshielding": {},
    "check": {
-    "K": 0.13499999999999998,
+    "K": 0.135,
     "P": 0.02,
     "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.14814814814814817
+    "transmission": 0.14814814814814814
    }
   },
   "Barrier 2": {
    "kind": "ct",
    "P": 0.02,
    "T": 1.0,
-   "K_total": 2.4432132963988917,
-   "B": 0.008185941043083901,
+   "K_total": 2.443213296398892,
+   "B": 0.0081859410430839,
    "d": 3.8,
    "kvp": 120,
+   "beyond": 0.3,
+   "scans": {
+    "body": 1.4,
+    "head": 1.4
+   },
    "area": "Uncontrolled Area",
    "location": "Adjacent x-ray rooms",
    "thickness": [
@@ -804,41 +836,46 @@
     ],
     [
      "Concrete",
-     113.57012631050894
+     113.57012631050895
     ]
    ],
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.0383,
-     0.0142,
-     0.658
-    ],
     "Lead": [
      2.246,
      5.73,
      0.547
+    ],
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
     ]
    },
    "preshielding": {},
    "check": {
-    "K": 2.4432132963988917,
+    "K": 2.443213296398892,
     "P": 0.02,
     "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.008185941043083901
+    "transmission": 0.0081859410430839
    }
   },
   "Barrier 3": {
    "kind": "ct",
    "P": 0.02,
    "T": 0.2,
-   "K_total": 0.9,
-   "B": 0.022222222222222223,
+   "K_total": 0.9000000000000002,
+   "B": 0.022222222222222216,
    "d": 2.8,
    "kvp": 120,
+   "beyond": 0.3,
+   "scans": {
+    "body": 1.4,
+    "head": 1.4
+   },
    "area": "Uncontrolled Area",
    "location": "Corridors",
    "thickness": [
@@ -848,75 +885,80 @@
     ],
     [
      "Concrete",
-     88.0609556444775
+     88.06095564447752
     ]
    ],
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.0383,
-     0.0142,
-     0.658
-    ],
     "Lead": [
      2.246,
      5.73,
      0.547
+    ],
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
     ]
    },
    "preshielding": {},
    "check": {
-    "K": 0.9,
+    "K": 0.9000000000000002,
     "P": 0.02,
     "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.022222222222222223
+    "transmission": 0.022222222222222216
    }
   },
   "Barrier 4": {
    "kind": "ct",
    "P": 0.1,
    "T": 1.0,
-   "K_total": 2.4432132963988917,
-   "B": 0.040929705215419505,
+   "K_total": 2.443213296398892,
+   "B": 0.0409297052154195,
    "d": 3.8,
    "kvp": 120,
+   "beyond": 0.3,
+   "scans": {
+    "body": 1.4,
+    "head": 1.4
+   },
    "area": "Controlled Area",
    "location": "X-ray control rooms",
    "thickness": [
     [
      "Lead",
-     0.6905567856516206
+     0.6905567856516208
     ],
     [
      "Concrete",
-     72.68698039552628
+     72.68698039552629
     ]
    ],
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.0383,
-     0.0142,
-     0.658
-    ],
     "Lead": [
      2.246,
      5.73,
      0.547
+    ],
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
     ]
    },
    "preshielding": {},
    "check": {
-    "K": 2.4432132963988917,
+    "K": 2.443213296398892,
     "P": 0.1,
     "dose": 0.1,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.040929705215419505
+    "transmission": 0.0409297052154195
    }
   }
  },
@@ -925,8 +967,8 @@
    "kind": "xray",
    "P": 0.02,
    "T": 1.0,
-   "K_total": 0.5377229080932784,
-   "B": 0.03719387755102042,
+   "K_total": 0.7410207939508507,
+   "B": 0.026989795918367344,
    "distributions": [
     {
      "no": 1,
@@ -938,21 +980,22 @@
      "U": 1,
      "T": 1.0,
      "K1": 0.049,
-     "d": 2.7,
-     "K": 0.5377229080932784,
+     "d": 2.3,
+     "K": 0.7410207939508507,
      "set": true
     }
    ],
+   "beyond": 1.3,
    "area": "Uncontrolled Area",
    "location": "Administrative or clerical offices",
    "thickness": [
     [
      "Concrete",
-     2.7850480144610055
+     3.224989583409991
     ],
     [
      "Lead",
-     0.0253911479172833
+     0.02920671924680825
     ]
    ],
    "missing": [],
@@ -971,12 +1014,12 @@
    },
    "preshielding": {},
    "check": {
-    "K": 0.5377229080932784,
+    "K": 0.7410207939508507,
     "P": 0.02,
     "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
-    "transmission": 0.03719387755102042
+    "transmission": 0.026989795918367344
    }
   },
   "Ceiling": {
@@ -1001,6 +1044,7 @@
      "set": true
     }
    ],
+   "beyond": 0.5,
    "area": "Uncontrolled Area",
    "location": "Patient rooms",
    "thickness": [
@@ -1059,6 +1103,7 @@
      "set": true
     }
    ],
+   "beyond": 0.3,
    "area": "Uncontrolled Area",
    "location": "Corridor doors",
    "thickness": [
@@ -1117,6 +1162,7 @@
      "set": true
     }
    ],
+   "beyond": 0.3,
    "area": "Uncontrolled Area",
    "location": "Outdoor areas with seating",
    "thickness": [
@@ -1175,6 +1221,7 @@
      "set": true
     }
    ],
+   "beyond": 0.3,
    "area": "Uncontrolled Area",
    "location": "Administrative or clerical offices",
    "thickness": [
@@ -1233,6 +1280,7 @@
      "set": true
     }
    ],
+   "beyond": 0.3,
    "area": "Uncontrolled Area",
    "location": "Corridors",
    "thickness": [
@@ -1291,6 +1339,7 @@
      "set": true
     }
    ],
+   "beyond": 0.3,
    "area": "Uncontrolled Area",
    "location": "Adjacent x-ray rooms",
    "thickness": [

@@ -10,7 +10,9 @@ from PIL import Image
 
 
 FORMAT = "xray-shielding-project"
-VERSION = 1
+VERSION = 2  # 2: distance beyond each barrier, CT distance to the barrier, CT scans per procedure
+# Version 1 CT distances went to the occupied point: these were added (floor, ceiling; walls and door 0.3 m)
+OLD_CT_OFFSETS = {1: 1.7, 2: 0.5}
 FILE_TYPES = [("Shielding project", "*.shield"), ("All files", "*.*")]
 # Inputs of one radiation type of an X-ray / mammography barrier (keys "<name> <e><nr><i>")
 RADIATION_KEYS = ["radiob_w", "setv", "entryd", "vselxray", "vsexroom", "use_ent", "entk", "preshvar", "radiob_pre",
@@ -49,10 +51,16 @@ class ProjectFile:
         names = CT_KEYS if ct else ["vrawork", "worentry", "numpapwe"]
         data = {"barriers": self.d[f"x {t}"], "room": {name: self.read_input(f"{name} {t}") for name in names},
                 "barrier_data": []}
+        if ct:  # % of the procedures with each scan
+            data["room"]["phases"] = {
+                kind: [self.read_input(f"phase_{kind} {t}#{k}")
+                       for k in range(1, int(self.read_input(f"phases_{kind} {t}") or 1) + 1)]
+                for kind in ("body", "head")}
         for e in range(1, self.d[f"x {t}"] + 1):
             count = int(self.read_input(f"vnumbmat {e}{nr}") or 1)
             barrier = {name: self.read_input(f"{name} {e}{nr}")
-                       for name in ("area", "vraoccup", "occupentry", "vselocation", "dikeent", "dist_var")}
+                       for name in ("area", "vraoccup", "occupentry", "vselocation", "dikeent", "dist_var",
+                                    "beyond")}
             barrier.update(materials=[self.read_input(f"vmater {e}{o}{nr}") for o in range(1, count + 1)],
                            matmode=self.read_input(f"matmode {e}{nr}"),
                            shares=[self.read_input(f"share {e}{o}{nr}") for o in range(1, count + 1)],
@@ -114,7 +122,7 @@ class ProjectFile:
                 archive.writestr(name, buffer.getvalue())
 
     # ===================== rebuilding the project =====================
-    def restore_room(self, t, data):
+    def restore_room(self, t, data, version=VERSION):
         nr = self.d[f"nr {t}"]
         room_type = self.d[f"vselroom {t}"].get()
         if data["barriers"] != self.d[f"x {t}"]:
@@ -124,6 +132,9 @@ class ProjectFile:
         if room_type == "CT Room":
             for name in CT_KEYS:
                 self.write_input(f"{name} {t}", room.get(name))
+            for kind, values in (room.get("phases") or {}).items():  # older files: the NCRP 147 1.4
+                if values:
+                    self.set_ct_phases(t, kind, values)
         elif room.get("vrawork") in ("1", "2"):
             self.write_input(f"vrawork {t}", room["vrawork"])
             self.workload(t)
@@ -131,7 +142,14 @@ class ProjectFile:
             self.write_input(f"numpapwe {t}", room.get("numpapwe"))
         for e, barrier in enumerate(data["barrier_data"], start=1):
             if room_type == "CT Room":
-                self.write_input(f"dist_var {e}{nr}", barrier.get("dist_var"))
+                distance = barrier.get("dist_var")
+                if version < 2 and distance:  # it went to the occupied point: keep the part to the barrier
+                    try:
+                        value = float(distance.replace(",", ".")) - OLD_CT_OFFSETS.get(e, 0.3)
+                        distance = f"{max(value, 0.0):.2f}"
+                    except ValueError:
+                        pass
+                self.write_input(f"dist_var {e}{nr}", distance)
             else:
                 self.restore_radiation(t, e, nr, barrier["radiation"])
             self.write_input(f"area {e}{nr}", barrier.get("area"))
@@ -141,6 +159,7 @@ class ProjectFile:
                 self.write_input(f"occupentry {e}{nr}", barrier.get("occupentry"))
                 self.write_input(f"vselocation {e}{nr}", barrier.get("vselocation"))
             self.write_input(f"dikeent {e}{nr}", barrier.get("dikeent"))
+            self.write_input(f"beyond {e}{nr}", barrier.get("beyond"))  # older files: the NCRP 147 default
             self.write_input(f"vnumbmat {e}{nr}", str(len(barrier["materials"])))
             self.numbmater(e, nr, t)
             for o, material in enumerate(barrier["materials"], start=1):
@@ -252,6 +271,7 @@ class ProjectFile:
 
     def build_project(self, project, archive=None):
         """Replace the current work with the project (archive holds its floor plan drawings, if any)."""
+        version = project.get("version", 1)
         self.reset_workspace()
         self.hide_start_buttons()
         for workspace in project["workspaces"]:
@@ -267,7 +287,7 @@ class ProjectFile:
                     self.d[f"vselroom {t}"].set(room["type"])
                     if room["designed"]:
                         self.desroom(t)
-                        self.restore_room(t, room["data"])
+                        self.restore_room(t, room["data"], version)
                 info["rooms_note"].select(0)
                 self.restore_plan(("dep", dep), workspace.get("plan"), dict(enumerate(info["rooms"])), archive)
             else:
@@ -276,7 +296,7 @@ class ProjectFile:
                 else:
                     t = self.creatroom(workspace["type"])
                 self.d[f"vname_room {t}"].set(workspace["name"])
-                self.restore_room(t, workspace["data"])
+                self.restore_room(t, workspace["data"], version)
                 self.restore_plan(("room", t), workspace.get("plan"), {0: t}, archive)
         if self.depnote is not None and self.depnote.tabs():
             self.depnote.select(0)

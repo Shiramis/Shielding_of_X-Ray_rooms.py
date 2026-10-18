@@ -28,8 +28,7 @@ DEFAULT_HEIGHT = 2.8          # floor-to-ceiling height (m)
 DEFAULT_SOURCE_HEIGHT = 1.0   # height of the source / isocenter above the floor (m)
 DOOR_HEIGHT = 2.1
 SCHEMATIC_DISTANCE = 2.5      # wall distance used in a schematic room when none is entered (m)
-# NCRP 147 distance from the barrier to the occupied point beyond it (m): floor (barrier 1), ceiling (2), walls
-CT_OFFSETS = {1: 1.7, 2: 0.5}
+DEFAULT_FLOOR_TO_FLOOR = 3.0  # floor of this room to the floor of the room above, also below (m)
 AREAS = ["Controlled Area", "Uncontrolled Area", "Supervised Area"]
 MATERIALS = ["Lead", "Concrete", "Gypsum Wallboard", "Steel", "Plate Glass", "Wood"]
 SHORT = {"Lead": "Pb", "Concrete": "Concrete", "Gypsum Wallboard": "Gypsum", "Steel": "Steel",
@@ -158,7 +157,7 @@ def maximize(window):
 
 def new_room_plan():
     return {"outline": [], "closed": False, "walls": [], "door": None, "source": None,
-            "height": DEFAULT_HEIGHT, "source_height": DEFAULT_SOURCE_HEIGHT,
+            "height": DEFAULT_HEIGHT, "source_height": DEFAULT_SOURCE_HEIGHT, "floor_to_floor": DEFAULT_FLOOR_TO_FLOOR,
             "floor": {"location": "", "area": "", "primary": True}, "ceiling": {"location": "", "area": ""}}
 
 
@@ -226,10 +225,12 @@ class PlanEditor(Toplevel):
         self.room_box = ttk.Combobox(box, state="readonly", width=32)
         self.room_box.grid(row=0, column=0, columnspan=2, padx=5, pady=4, sticky="w")
         self.room_box.bind("<<ComboboxSelected>>", lambda e: self.on_room_change())
-        self.height_var, self.source_height_var = StringVar(), StringVar()
+        self.height_var, self.source_height_var, self.storey_var = StringVar(), StringVar(), StringVar()
         for row, (text, var, key) in enumerate((("Floor-to-ceiling height (m):", self.height_var, "plan_height"),
                                                 ("Source height above floor (m):", self.source_height_var,
-                                                 "plan_source_height")), start=1):
+                                                 "plan_source_height"),
+                                                ("Floor-to-floor height (m):", self.storey_var,
+                                                 "plan_floor_to_floor")), start=1):
             label = ttk.Label(box, text=text)
             label.grid(row=row, column=0, padx=5, pady=2, sticky="w")
             entry = ttk.Entry(box, textvariable=var, width=8)
@@ -321,8 +322,13 @@ class PlanEditor(Toplevel):
     def on_room_change(self):
         self.selected = None  # the selection belonged to the previous room
         room = self.room_plan()
+        room.setdefault("floor_to_floor", max(DEFAULT_FLOOR_TO_FLOOR, room["height"]))  # older plans
+        # while the fields show this room, they must not store the previous room's values into it
+        self.showing_room = True
         self.height_var.set(f"{room['height']:g}")
         self.source_height_var.set(f"{room['source_height']:g}")
+        self.storey_var.set(f"{room['floor_to_floor']:g}")
+        self.showing_room = False
         self.floor_location.set(room["floor"]["location"])
         self.floor_area.set(room["floor"]["area"])
         self.floor_primary.set(room["floor"].get("primary", True))
@@ -335,8 +341,11 @@ class PlanEditor(Toplevel):
         self.select(None)
 
     def store_heights(self):
+        if getattr(self, "showing_room", False):
+            return
         room = self.room_plan()
-        for key, var in (("height", self.height_var), ("source_height", self.source_height_var)):
+        for key, var in (("height", self.height_var), ("source_height", self.source_height_var),
+                         ("floor_to_floor", self.storey_var)):
             try:
                 room[key] = float(var.get())
             except ValueError:
@@ -431,11 +440,8 @@ class PlanEditor(Toplevel):
             lines.append("Distance: place the source to compute it." if self.plan["scale"]
                          else "Distance: set the scale of the drawing first.")
         else:
-            if ct:
-                lines.append(f"Distance isocenter → {name.lower()}: {d:.2f} m; to the occupied point 0.3 m "
-                             f"beyond it: {d + 0.3:.2f} m (this is applied)")
-            else:
-                lines.append(f"Distance source → {name.lower()}: {d:.2f} m  (the program adds +0.3 m)")
+            lines.append(f"Distance {'isocenter' if ct else 'source'} → {name.lower()}: {d:.2f} m, plus 0.3 m "
+                         f"beyond it to the occupied point ({d + 0.3:.2f} m)")
         neighbour = self.neighbour_of(self.selected)
         if neighbour and not self.location_var.get():
             lines.append(f"Shared with room '{neighbour}': suggested 'Adjacent x-ray rooms' (T = 1).")
@@ -483,10 +489,14 @@ class PlanEditor(Toplevel):
                                           location=location,
                                           area=item["area"] or (suggested_area(location) if location else ""),
                                           primary=item.get("primary", False))
-        for e, key, distance in ((1, "floor", room["source_height"]),
-                                 (2, "ceiling", room["height"] - room["source_height"])):
+        # NCRP 147 4.1.2: the person below is 1.7 m above the lower floor, the person above 0.5 m above the floor
+        # of the room above; the floor-to-floor height is taken the same for the storey below
+        storey = room.get("floor_to_floor") or max(DEFAULT_FLOOR_TO_FLOOR, room["height"])
+        for e, key, distance, beyond in ((1, "floor", room["source_height"], max(storey - 1.7, 0.0)),
+                                         (2, "ceiling", room["height"] - room["source_height"],
+                                          max(storey - room["height"], 0.0) + 0.5)):
             side = room[key]
-            self.app.apply_barrier_inputs(self.t, e, distance=distance if distance > 0 else None,
+            self.app.apply_barrier_inputs(self.t, e, distance=distance if distance > 0 else None, beyond=beyond,
                                           location=side["location"],
                                           area=side["area"] or (suggested_area(side["location"])
                                                                 if side["location"] else ""),
@@ -1592,17 +1602,19 @@ class PlanViews:
         except (AttributeError, ValueError, TclError):
             return None
 
-    def apply_barrier_inputs(self, t, e, distance=None, location="", area="", primary=False):
-        """Fill a barrier of room t with values from the floor plan."""
+    def apply_barrier_inputs(self, t, e, distance=None, location="", area="", primary=False, beyond=None):
+        """Fill a barrier of room t with values from the floor plan (distance: from the source to the barrier;
+        beyond: from the barrier to the occupied point)."""
         nr = self.d[f"nr {t}"]
         room_type = self.d[f"vselroom {t}"].get()
         if e > self.d[f"x {t}"]:  # more walls on the plan than barriers in the room
             self.d[f"vnumwall {t}"].set(e)
             self.barriers(t)
+        if beyond is not None:
+            self.d[f"beyond {e}{nr}"].set(f"{beyond:.2f}")
         if room_type == "CT Room":
             if distance is not None:
-                # CT expects the distance to the occupied point (the X-ray calculation adds these itself)
-                self.d[f"dist_var {e}{nr}"].set(f"{distance + CT_OFFSETS.get(e, 0.3):.2f}")
+                self.d[f"dist_var {e}{nr}"].set(f"{distance:.2f}")
         else:
             if room_type == "X-Ray room" and self.d[f"radiob_w {e}{nr}0"].get() == 0:
                 self.d[f"radiob_w {e}{nr}0"].set(1 if primary else 2)

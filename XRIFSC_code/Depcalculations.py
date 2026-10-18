@@ -92,6 +92,12 @@ MISSING_HELP = {
                             "or 'select Location' and pick what is beyond the barrier.",
     "Distance from the Source to the Barrier (m)": "type the distance from the X-ray source to the barrier "
                                                    "in metres.",
+    "Distance beyond the barrier (m)": "under 'Shielding Area' type how far beyond the barrier the person to "
+                                       "protect is (NCRP 147 4.1.2): walls and door 0.3 m, ceiling 0.5 m, floor "
+                                       "the floor-to-floor height minus 1.7 m (1.3 m for 3 m).",
+    "Scans per procedure (%)": "at the top of the CT room, under 'Scans (phases) per procedure', give for each "
+                               "scan the % of the procedures that have it, from 0 to 100 (the first is "
+                               "normally 100 %).",
     "Shielding Design Goal (P)": "classify the area beyond the barrier (fills in P) or type P in mGy/week.",
     "Set for the calculation": "tick 'Set for the calculation' on the radiation type whose transmission "
                                "should be used.",
@@ -135,6 +141,9 @@ class departprimsec():
             if P is None:
                 missing.append("Shielding Design Goal (P)")
                 fields.append("dikeent " + str(e) + nr)
+            if self.beyond_distance(e, nr) is None:
+                missing.append("Distance beyond the barrier (m)")
+                fields.append(f"beyond_entry {e}{nr}")
             if ci is None:
                 missing.append("Set for the calculation")
             else:
@@ -149,7 +158,8 @@ class departprimsec():
             self.B = P / Ktotal if not missing else None
             self.depcalc(e, nr, ci if ci is not None else 0, t)
             self.record_barrier(e, nr, kind="xray", P=P, T=self.occupancy_factor(e, nr),
-                                K_total=Ktotal if not missing else None, B=self.B, distributions=distributions)
+                                K_total=Ktotal if not missing else None, B=self.B, distributions=distributions,
+                                beyond=self.beyond_distance(e, nr))
             self.show_barrier_result(e, nr, t)
         self.highlight_missing(e, nr, self.need_fields if self.calc[(nr, e)]["missing"] else [])
         if notify and self.calc[(nr, e)]["missing"]:
@@ -354,10 +364,9 @@ class departprimsec():
         need, fields = [], []
         radiation = self.d[f"radiob_w {e}{nr}{i}"].get()
         barrier = self.barn[f"lab_bar {e}{nr}"].cget("text")
-        # ======== Distance, plus the NCRP 147 distance to the occupied point ===========
+        # ======== Distance: from the source to the barrier, plus beyond it to the occupied point ===========
         D = self.entry_number(f"entryd {e}{nr}{i}")
-        if D is not None:
-            D += {"Floor": 1.7, "Ceiling": 0.5}.get(barrier, 0.3)  # from fig. 4.4 NCRP 147
+        beyond = self.beyond_distance(e, nr)  # if missing, it is reported once for the barrier (choosetype)
         # ======== Workload: patients per week N ===========
         distribution_var = self.d.get(f"vsexroom {e}{nr}{i}")  # workload distribution or kVp
         distribution = distribution_var.get() if distribution_var is not None else None
@@ -427,11 +436,33 @@ class departprimsec():
         if D is None:
             need.append("Distance from the Source to the Barrier (m)")
             fields.append(f"entryd {e}{nr}{i}")
+        d = D + beyond if D is not None and beyond is not None else None  # source to the occupied point
         self.need, self.need_fields = need, fields
         # ========== Calculate Kerma (None if there are missing variables) ==========
-        K = n * Us * T * K1 / (D ** 2) if None not in (n, Us, T, K1, D) else None
-        self.last_distribution = dict(self.describe_distribution(e, nr, i), N=n, U=Us, T=T, K1=K1, d=D, K=K)
+        K = n * Us * T * K1 / (d ** 2) if None not in (n, Us, T, K1, d) and d > 0 else None
+        self.last_distribution = dict(self.describe_distribution(e, nr, i), N=n, U=Us, T=T, K1=K1, d=d, K=K)
         return K
+
+    def beyond_distance(self, e, nr):
+        """Distance (m) from the barrier to the occupied point beyond it, or None if it is not a number >= 0."""
+        value = self.entry_number(f"beyond {e}{nr}")
+        return value if value is not None and value >= 0 else None
+
+    def ct_scans(self, t, kind):
+        """Mean number of scans (phases) per body or head procedure: the sum of the % of the procedures that have
+        each scan, / 100. NCRP 147: 100 % + 40 % repeated with contrast = 1.4. None if a % is not 0 to 100."""
+        count = self.d.get(f"phases_{kind} {t}")
+        try:
+            count = int(count.get())
+        except (AttributeError, TclError, ValueError):
+            return None
+        total = 0.0
+        for k in range(1, count + 1):
+            value = self.entry_number(f"phase_{kind} {t}#{k}")
+            if value is None or not 0 <= value <= 100:
+                return None
+            total += value / 100
+        return total
 
     def depcalc(self, e, nr, i, t):  # Barrier calculations
         params, preshielding = None, {}
@@ -451,17 +482,28 @@ class departprimsec():
     def depCTcal(self, e, nr, t):
         def number(key):
             return self.entry_number(key) or 0.0
-        # NCRP 147 CT method: K1sec = kappa * DLP (x1.2 for body, x1.4 for contrast), K = T * sum(N * K1sec) / d^2
-        d = number(f"dist_var {e}{nr}")
+        # NCRP 147 CT method: K1sec per scan = kappa * DLP (x1.2 for body); each procedure has on average 'scans'
+        # scans (NCRP 147: 1.4, repeats with contrast); K = T * sum(N * scans * K1sec) / d^2
+        d = number(f"dist_var {e}{nr}")  # isocenter to the barrier
+        beyond = self.beyond_distance(e, nr)  # barrier to the occupied point
         P = number(f"dikeent {e}{nr}")
         T = self.occupancy_factor(e, nr)
-        k1sec_body = 1.2 * 3e-4 * 1.4 * number(f"dlpb_var {t}")
-        k1sec_head = 9e-5 * 1.4 * number(f"dlph_var {t}")
-        workload = number(f"bp_var {t}") * k1sec_body + number(f"hp_var {t}") * k1sec_head
+        scans = {kind: self.ct_scans(t, kind) for kind in ("body", "head")}
+        k1sec_body = 1.2 * 3e-4 * number(f"dlpb_var {t}")
+        k1sec_head = 9e-5 * number(f"dlph_var {t}")
+        workload = (number(f"bp_var {t}") * (scans["body"] or 0) * k1sec_body
+                    + number(f"hp_var {t}") * (scans["head"] or 0) * k1sec_head)
         self.need, self.need_fields = [], []
         if d <= 0:
             self.need.append("Distance")
             self.need_fields.append(f"dist_entry {e}{nr}")
+        if beyond is None:
+            self.need.append("Distance beyond the barrier (m)")
+            self.need_fields.append(f"beyond_entry {e}{nr}")
+        for kind, procedures in (("body", "bp_var"), ("head", "hp_var")):
+            if scans[kind] is None and number(f"{procedures} {t}") > 0:
+                self.need.append("Scans per procedure (%)")
+                self.need_fields += [f"phase_{kind}_entry {t}#{k}" for k in range(1, 9)]
         if P <= 0:
             self.need.append("Shielding Design Goal (P)")
             self.need_fields.append(f"dikeent {e}{nr}")
@@ -476,7 +518,9 @@ class departprimsec():
         self.need += problems
         self.need_fields += fields
         K = B = None
+        self.need = list(dict.fromkeys(self.need))
         if not self.need:
+            d += beyond  # isocenter to the occupied point
             K = T * workload / d ** 2
             self.d["K " + self.barn[f"lab_bar {e}{nr}"].cget("text") + nr] = K
             B = P / K
@@ -484,8 +528,8 @@ class departprimsec():
         ct_params = {"Lead": (2.246, 5.73, 0.547) if kvp_120 else (2.009, 3.99, 0.342),
                      "Concrete": (0.0383, 0.0142, 0.658) if kvp_120 else (0.0336, 0.0122, 0.519)}
         self.material_thicknesses(e, nr, ct_params, B)
-        self.record_barrier(e, nr, kind="ct", P=P or None, T=T, K_total=K, B=B, d=d or None,
-                            kvp=int(number(f"kvp_var {t}")) or None)
+        self.record_barrier(e, nr, kind="ct", P=P or None, T=T, K_total=K, B=B, d=d if K else None,
+                            kvp=int(number(f"kvp_var {t}")) or None, beyond=beyond, scans=scans)
         self.show_barrier_result(e, nr, t)
 
     # ===================== material thicknesses: each alone, or layers =====================

@@ -70,7 +70,7 @@ def plan_room(outline, source, door, beyond, door_beyond, below, above, floor_pr
             "walls": [{"location": location, "area": area, "primary": False} for location, area in beyond],
             "door": {"a": door[0], "b": door[1], "wall": 2, "location": door_beyond[0], "area": door_beyond[1]},
             "source": source, "height": HEIGHT, "source_height": SOURCE_HEIGHT,
-            "floor": {"location": below[0], "area": below[1], "primary": floor_primary},
+            "floor_to_floor": HEIGHT, "floor": {"location": below[0], "area": below[1], "primary": floor_primary},
             "ceiling": {"location": above[0], "area": above[1]}}
 
 
@@ -125,11 +125,12 @@ def ct_room(x=0.0):
     outline, source, door, (top, right, bottom, left, door_d) = room_geometry((x, 0, x + 7, 5), (x + 3.5, 2.5),
                                                                                  (x + 1.0, x + 2.4))
     materials = ["Lead", "Concrete"]
-    # CT distances go to the occupied point: 0.3 m beyond walls and door, 1.7 m floor, 0.5 m ceiling (NCRP 147)
-    top, right, bottom, left, door_d = (f"{float(d) + 0.3:.2f}" for d in (top, right, bottom, left, door_d))
-    floor_d, ceiling_d = f"{SOURCE_HEIGHT + 1.7:.2f}", f"{HEIGHT - SOURCE_HEIGHT + 0.5:.2f}"
+    # From the isocenter to each barrier; the occupied point beyond it takes the NCRP 147 defaults
+    floor_d, ceiling_d = f"{SOURCE_HEIGHT:.2f}", f"{HEIGHT - SOURCE_HEIGHT:.2f}"
+    # NCRP 147: every procedure scanned once and 40 % again with contrast (1.4 scans per procedure)
+    phases = {"body": ["100", "40"], "head": ["100", "40"]}
     data = {"barriers": 7, "room": {"bp_var": "100", "hp_var": "50", "dlpb_var": "550", "dlph_var": "1200",
-                                    "kvp_var": "120"}, "barrier_data": [
+                                    "kvp_var": "120", "phases": phases}, "barrier_data": [
         barrier(floor_d, *OFFICES, materials, ct=True),
         barrier(ceiling_d, *PATIENT_ROOMS, materials, ct=True),
         barrier(door_d, *CORRIDOR_DOOR, ["Lead"], ct=True),
