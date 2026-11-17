@@ -35,8 +35,9 @@ import plan_view  # noqa: E402
 import project  # noqa: E402
 import report  # noqa: E402
 
-examples.messagebox.showinfo = lambda *a, **k: None  # no pop-ups while capturing
+project.messagebox.showinfo = lambda *a, **k: None  # no pop-ups while capturing
 project.messagebox.askyesnocancel = lambda *a, **k: False
+app.show_note = lambda *a, **k: None  # the note of an example (captured once, below)
 d = app.d
 user32, gdi32 = ctypes.windll.user32, ctypes.windll.gdi32
 
@@ -320,6 +321,18 @@ inputs, results = room_parts(t)
 app.depnote.select(app.standalone[t])
 select_barrier(t, e)
 shot("biondi_barrier.png", root, widget=inputs, height=640)
+
+# a worked example of NCRP 147, opened from its file, with the note that comes with it
+del app.show_note
+app.open_project_file(os.path.join(ROOT, "Examples", "NCRP 147", "5.3 Radiographic room.shield"))
+note = [w for w in root.winfo_children() if w.winfo_class() == "Toplevel"][-1]
+shot("ncrp_note.png", note)
+note.destroy()
+app.show_note = lambda *a, **k: None
+t = next(iter(app.standalone))
+inputs, results = room_parts(t)
+select_barrier(t, 7)
+shot("ncrp_results.png", root, widget=results)
 
 # ---------- department ----------
 app.open_example("department")

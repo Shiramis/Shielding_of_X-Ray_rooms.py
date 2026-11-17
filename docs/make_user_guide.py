@@ -68,8 +68,8 @@ S = {
     "formula": ParagraphStyle("formula", fontName="Body", fontSize=11.5, leading=22, textColor=TEXT,
                               alignment=TA_CENTER),
     "note": ParagraphStyle("note", fontName="Body", fontSize=9.4, leading=13, textColor=TEXT),
-    "toc1": ParagraphStyle("toc1", fontName="Body-Bold", fontSize=10.5, leading=16, textColor=NAVY, spaceBefore=4),
-    "toc2": ParagraphStyle("toc2", fontName="Body", fontSize=9.6, leading=13.4, leftIndent=14, textColor=TEXT),
+    "toc1": ParagraphStyle("toc1", fontName="Body-Bold", fontSize=10.5, leading=15.5, textColor=NAVY, spaceBefore=3),
+    "toc2": ParagraphStyle("toc2", fontName="Body", fontSize=9.6, leading=13, leftIndent=14, textColor=TEXT),
 }
 
 
@@ -929,7 +929,14 @@ def report_and_projects():
     story += [P("<b>File › Examples</b> and the start screen open four examples with NCRP 147 typical values, "
                 "already calculated: a radiology department, an X-ray room, a CT room and a mammography room. The "
                 "same examples are files in the <b>Examples</b> folder next to the program (<b>Open from the "
-                "Examples folder...</b>). Change any value and press Calculate to see its effect.")]
+                "Examples folder...</b>). Change any value and press Calculate to see its effect."),
+              P("<b>File › Examples › NCRP 147 examples</b> opens the worked examples of Section 5 of NCRP 147, one "
+                "file each in the folder <b>Examples\\NCRP 147</b>. Each opens with a note that says which barrier "
+                "is which calculation of the report, and gives the result of NCRP 147 next to that of the program "
+                f"({fig('ncrp_note.png')}); section 11.9 compares them all.")]
+    story += figure("ncrp_note.png", "The note of the example of Section 5.3 of NCRP 147 (the radiographic room). "
+                                     "It scrolls to the notes on the differences and the distances.",
+                    width=150 * mm, crop=(0, 0, 1043, 588))
     return story
 
 
@@ -1187,12 +1194,48 @@ def worked_examples():
                 f"angiography would give {archer_thickness(peripheral, B):.2f} mm of lead for the same "
                 f"<i>B</i>: their transmission data are more penetrating.")]
 
+    story += ncrp_examples()
     story += H2("A whole department")
     story += [P("The example department puts the three rooms on one floor plan, with a control room between the "
                 "X-ray and CT rooms and a corridor below. Its 2D / 3D view shows every barrier, and the radiation "
                 "of each room crossing the walls of the others.")]
     story += figure("viewer_department.png", "The example department in the 2D / 3D view.",
-                    crop=(0, 140, 1130, 1000))
+                    width=145 * mm, crop=(0, 140, 1130, 1000))
+    return story
+
+
+def ncrp_examples():
+    rows = json.load(open(os.path.join(IMAGES, "ncrp147_examples.json"), encoding="utf-8"))
+    story = H2("The examples of NCRP 147")
+    story += [P("Section 5 of NCRP 147 works through the shielding of a cardiac angiography suite, a dedicated chest "
+                "unit, a radiographic room, an R&amp;F room, a mammography room, two CT rooms and a bone densitometry "
+                "unit. Each is a file in <b>Examples\\NCRP 147</b> (section 10.3), made and checked by "
+                "<font name='Mono'>tools/ncrp147_examples.py</font> of the source code. A room holds all the "
+                "calculations of its example; where the report "
+                "calculates one wall or floor twice (e.g. behind the chest bucky and outside the beam), the second "
+                "calculation is another barrier. NCRP 147 gives the distance to the occupied point; the distance "
+                "entered is that minus the distance beyond the barrier (section 2.4).")]
+    table_rows = [["Section", "Example", "Barrier", "NCRP 147", "Program"]]
+    for row in rows:
+        unit = row["material"].lower()
+        ncrp = "no shielding" if row["ncrp"] == 0 else f"{row['ncrp']:g} mm {unit}"
+        program = "no shielding" if row["program"] == 0 else f"{row['program']:.2f} mm"
+        if not row["same"]:
+            program = f"<font color='{BAD}'>{program}</font>"
+        table_rows.append([row["section"], row["example"].replace("&", "&amp;"), row["barrier"], ncrp, program])
+    story += table(table_rows, [16, 66, 22, 38, 28])
+    story += [P("Most results agree to the second digit. Where they differ a little, NCRP 147 read the thickness "
+                "from a figure (e.g. 0.53 against 0.51 mm lead for the darkroom, 62 against 65 mm concrete for the "
+                "R&amp;F floor, where the report's own Figure 4.8c gives 65 mm), or rounded before subtracting the "
+                "preshielding (1.4 against 1.31 mm for the chest unit)."),
+              P(f"Two results are <font color='{BAD}'>lower</font> than NCRP 147: the cross-table wall of the "
+                "radiographic room (0.61 against 0.78 mm lead) and the floor under the table of the R&amp;F room "
+                "(62 against 69 mm concrete). In both, a primary beam behind the image receptor (with preshielding) "
+                "and secondary radiation that does not pass through it reach the same barrier. The program finds "
+                "one thickness for the sum of the air kerma, with the transmission of the radiation type set for "
+                "the calculation, and takes the preshielding off the whole of it. NCRP 147 follows each part through "
+                "its own thickness. For such barriers, check the result as NCRP 147 does (Sections 5.3.5 and 5.4.2), "
+                "or calculate the barrier without the preshielding, which is on the safe side.")]
     return story
 
 

@@ -18,7 +18,7 @@ from CTroom import CT_Room
 from report import ReportExport
 from plan_view import PlanViews
 from project import ProjectFile
-from examples import Examples, EXAMPLES, ensure_example_files
+from examples import Examples, EXAMPLES, ensure_example_files, ncrp_example_files
 import theme
 from PIL import ImageTk
 
@@ -265,6 +265,12 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room,Repo
         menu = Menu(parent, tearoff=0)
         for key, (title, _, _) in EXAMPLES.items():
             menu.add_command(label=f"Example: {title}", command=lambda key=key: self.open_example(key))
+        ncrp = ncrp_example_files()
+        if ncrp:  # the worked examples of NCRP 147, Section 5
+            submenu = Menu(menu, tearoff=0)
+            for name, path in ncrp:
+                submenu.add_command(label=f"§{name}", command=lambda path=path: self.open_ncrp_example(path))
+            menu.add_cascade(label="NCRP 147 examples", menu=submenu)
         menu.add_separator()
         menu.add_command(label="Open from the Examples folder...", command=self.open_examples_folder)
         return menu

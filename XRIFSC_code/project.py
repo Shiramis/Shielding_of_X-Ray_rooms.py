@@ -3,11 +3,12 @@ import json
 import os
 import zipfile
 from datetime import datetime
-from tkinter import Variable, TclError, filedialog, messagebox
-from tkinter import ttk
+from tkinter import Variable, TclError, filedialog, messagebox, Toplevel, Frame, Label, Text
+from tkinter import ttk, BOTH, LEFT, RIGHT, X, Y, WORD, DISABLED, SOLID
 
 from PIL import Image
 
+import theme
 from Depcalculations import LEGACY_DISTRIBUTIONS
 
 FORMAT = "xray-shielding-project"
@@ -361,9 +362,41 @@ class ProjectFile:
         if project.get("description"):
             # An example file: Save asks for a new name, so the example itself stays unchanged
             self.set_project_path(None)
-            messagebox.showinfo(project.get("title", "Example"), project["description"], parent=self.master)
+            self.show_note(project.get("title", "Example"), project["description"])
         else:
             self.set_project_path(path)
+
+    def show_note(self, title, text):
+        """The note of an example: a window as tall as its text, which scrolls when the text is long."""
+        background = "#fff8d6"
+        window = Toplevel(self.master)
+        window.title(title)
+        window.transient(self.master)
+        window.configure(background=background)
+        Label(window, text=title, background=background, font=(theme.SEMIBOLD, 13), anchor="w",
+              justify=LEFT).pack(fill=X, padx=14, pady=(12, 4))
+        box = Frame(window, background=background)
+        box.pack(fill=BOTH, expand=1, padx=14, pady=(0, 8))
+        note = Text(box, wrap=WORD, width=96, height=5, background="#fffdf0", relief=SOLID, borderwidth=1,
+                    font=theme.BASE, padx=10, pady=8, spacing1=1, spacing3=2)
+        note.insert("1.0", text)
+        note.configure(state=DISABLED)
+        lines = sum(max(1, -(-len(line) // 92)) for line in text.split("\n"))
+        note.configure(height=min(30, max(4, lines)))
+        if lines > 30:
+            scroll = ttk.Scrollbar(box, orient="vertical", command=note.yview)
+            note.configure(yscrollcommand=scroll.set)
+            scroll.pack(side=RIGHT, fill=Y)
+        note.pack(side=LEFT, fill=BOTH, expand=1)
+        ttk.Button(window, text="OK", command=window.destroy).pack(pady=(0, 12))
+        window.bind("<Return>", lambda event: window.destroy())
+        window.bind("<Escape>", lambda event: window.destroy())
+        window.update_idletasks()  # centre it on the program window
+        x = self.master.winfo_rootx() + (self.master.winfo_width() - window.winfo_reqwidth()) // 2
+        y = self.master.winfo_rooty() + (self.master.winfo_height() - window.winfo_reqheight()) // 3
+        window.geometry(f"+{max(x, 0)}+{max(y, 0)}")
+        window.focus_set()
+        return window
 
     def new_project(self, event=None):
         if not self.keep_current_work("New project"):

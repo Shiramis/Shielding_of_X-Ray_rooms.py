@@ -26,6 +26,10 @@ the thickness you plan to install.
 - **2D / 3D view**: every wall in the colours of its materials, the dose beyond each barrier and a radiation map.
   Point at a wall to see its materials and thicknesses.
 - **Excel report** (summary, details, rooms), **project files** (`.shield`) and **built-in examples**.
+- **The worked examples of NCRP 147** (Section 5: cardiac angiography, chest unit, radiographic room, R&F room,
+  mammography, CT, bone densitometry), one file each in `Examples/NCRP 147` (**File › Examples › NCRP 147
+  examples**). Each opens with a note that gives the result of NCRP 147 next to that of the program; the User Guide
+  (section 11.9) compares them all.
 - A **note on every field** says what to enter, with the NCRP 147 typical values.
 
 ![2D view with the radiation map](docs/images/viewer_goal.png)
@@ -103,7 +107,8 @@ The full manual is in **Help › User Guide** (F1), the file [`User Guide.pdf`](
 | `XRIFSC_code/theme.py`, `tooltips.py` | Look of the program and the guidance notes |
 | `Data Shielding.xlsx` | NCRP 147 data read by the program, and the data of the literature (sheets named after the source) |
 | `tools/literature_data.py` | Writes the literature sheets; `--check` compares its NCRP 147 method with the NCRP 147 tables |
-| `Examples/` | The examples as project files (`.shield`) |
+| `tools/ncrp147_examples.py` | Writes `Examples/NCRP 147` and checks the program against the results of NCRP 147 |
+| `Examples/` | The examples as project files (`.shield`); `Examples/NCRP 147`: the worked examples of NCRP 147 |
 | `User Guide.pdf`, `docs/` | User guide, its pictures and the scripts that build it |
 | `installer/` | The Windows installer: Inno Setup script and build script |
 

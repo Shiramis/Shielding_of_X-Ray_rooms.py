@@ -287,15 +287,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.298,
-     17.38,
-     0.6193
-    ],
     "Gypsum Wallboard": [
      0.0138,
      0.057,
      0.7937
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
     ]
    },
    "preshielding": {},
@@ -346,15 +346,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.298,
-     17.38,
-     0.6193
-    ],
     "Gypsum Wallboard": [
      0.0138,
      0.057,
      0.7937
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
     ]
    },
    "preshielding": {},
@@ -1119,15 +1119,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Wood": [
-     0.01888,
-     0.04172,
-     0.2903
-    ],
     "Lead": [
      29.91,
      184.4,
      0.355
+    ],
+    "Wood": [
+     0.01888,
+     0.04172,
+     0.2903
     ]
    },
    "preshielding": {},

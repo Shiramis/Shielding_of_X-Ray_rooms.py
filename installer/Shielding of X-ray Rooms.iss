@@ -65,6 +65,7 @@ Type: filesandordirs; Name: "{app}\_internal"
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\Examples\*.shield"; DestDir: "{app}\Examples"; Flags: ignoreversion
+Source: "..\Examples\NCRP 147\*.shield"; DestDir: "{app}\Examples\NCRP 147"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}\{#AppName}"; Filename: "{app}\{#AppExe}"

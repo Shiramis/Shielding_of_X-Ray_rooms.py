@@ -8,7 +8,7 @@ import os
 import sys
 import zipfile
 from datetime import datetime
-from tkinter import filedialog, messagebox
+from tkinter import filedialog
 
 from plan_view import edges, point_segment_distance
 from project import FORMAT, VERSION, FILE_TYPES
@@ -233,6 +233,18 @@ def example_file_name(title):
     return f"Example - {title}.shield"
 
 
+def ncrp_example_files():
+    """The worked examples of NCRP 147 (Examples/NCRP 147, made by tools/ncrp147_examples.py), in the order of the
+    report: [(name, path)]."""
+    folder = os.path.join(examples_folder(), "NCRP 147")
+    try:
+        names = [name[:-len(".shield")] for name in os.listdir(folder) if name.endswith(".shield")]
+    except OSError:
+        return []
+    section = lambda name: [int(part) for part in name.split()[0].split(".") if part.isdigit()]
+    return [(name, os.path.join(folder, name + ".shield")) for name in sorted(names, key=section)]
+
+
 def write_example_files(folder=None):
     """Write every example as a project file (.shield) that File > Open project can open."""
     folder = folder or examples_folder()
@@ -269,7 +281,12 @@ class Examples:
             return
         self.build_project(build())
         self.set_project_path(None)
-        messagebox.showinfo(f"Example: {title}", description + NOTE, parent=self.master)
+        self.show_note(f"Example: {title}", description + NOTE)
+
+    def open_ncrp_example(self, path):
+        """One of the worked examples of NCRP 147, from its file."""
+        if self.keep_current_work("Open example"):
+            self.open_project_file(path)
 
     def open_examples_folder(self):
         """Open one of the example files, starting in the examples folder."""
