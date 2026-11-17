@@ -52,7 +52,8 @@ TIPS = {
     # ===== Barrier: radiation =====
     "num_radiation": "How many workload distributions irradiate this barrier.\n"
                      "Example: a wall that is primary for the chest bucky and secondary for the table.\n"
-                     "Their air kerma values are added: K = Σ N·U·T·K¹ / d².",
+                     "Their air kerma values are added: K = Σ N·U·T·K¹ / d². Each goes through the barrier with "
+                     "the transmission data of its own workload distribution and its own preshielding (NCRP 147).",
     "radiation_type": "Primary: the useful beam is aimed at this barrier (e.g. floor, chest bucky wall).\n"
                       "Secondary: only leakage and scatter reach it.",
     "radiation_type_mammo": "Mammography: every barrier is secondary.\n"
@@ -91,10 +92,6 @@ TIPS = {
     "kvp": "Tube voltage (kVp) for a single-kVp transmission curve.\n"
            "Primary: 25–150 kVp. Secondary: 30, 50, 70, 100, 125 or 150 kVp.\n"
            "With kVp you must write the unshielded air kerma yourself.",
-    "set_calc": "The transmission parameters (α, β, γ) of the distribution ticked here are used to find the "
-                "thickness from B = P / ΣK.\n"
-                "Tick the distribution that gives the most air kerma, or the most penetrating one "
-                "for a conservative result. Only one can be ticked per barrier.",
     "use_factor": "Use factor U: fraction of the primary beam aimed at this barrier.\n"
                   "NCRP 147 (Rad Room): Floor 0.89 · Cross-table wall 0.09 · Wall No. 3 0.02\n"
                   "Chest image receptor (chest bucky distribution) 1.\n"
@@ -108,7 +105,7 @@ TIPS = {
                      "Kirby 2023 (NCRP 147 method): DR Room chest bucky 3.05 · floor 1.22 · cross-table 0.461\n"
                      "Filled in automatically when you pick one of these rooms.",
     "preshielding": "Preshielding: attenuation by the image receptor before the barrier (NCRP 147). "
-                    "It is subtracted from the calculated thickness.\n"
+                    "Only this primary beam passes through it; the other radiation types of the barrier do not.\n"
                     "  Bucky (table or wall bucky): 0.85 mm lead / 72 mm concrete / 7 mm steel\n"
                     "  Cross-table (grid and cassette only): 0.3 mm lead / 30 mm concrete / 2 mm steel\n"
                     "Use only for primary barriers behind the image receptor.",
@@ -186,8 +183,9 @@ TIPS = {
                    "Filled in when you classify the area. If your national dose constraint is lower, "
                    "enter that value instead.",
     "calculate_all": "Calculates every barrier of this room and shows, per barrier, what is still missing.",
-    "calculate": "Calculates the thickness for each material:\n"
-                 "B = P / ΣK, then x = (1/αγ)·ln[(B^−γ + β/α) / (1 + β/α)].\n"
+    "calculate": "Calculates the thickness for each material: the x at which the air kerma beyond the barrier, "
+                 "Σ K·B(x + preshielding) over the radiation types, equals P. With one radiation type: B = P / K, "
+                 "x = (1/αγ)·ln[(B^−γ + β/α) / (1 + β/α)].\n"
                  "Anything missing appears in red in the results tab.",
 
     # ===== CT =====

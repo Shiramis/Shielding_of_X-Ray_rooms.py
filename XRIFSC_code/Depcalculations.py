@@ -68,6 +68,80 @@ def layered_thicknesses(layers, fractions, B, start=1.0):
     return thicknesses
 
 
+# ===================== several radiation types on one barrier (NCRP 147 Sections 5.3.5, 5.4.2) =====================
+# Each radiation type goes through the barrier with its own transmission data (its workload distribution, primary or
+# secondary) and its own preshielding. A component: {"K": air kerma beyond the barrier without it (mGy/week),
+# "params": {material: (alpha, beta, gamma)}, "pre": {material: preshielding thickness (mm)}, "start": transmission
+# of the preshielding, in front of layers}.
+def has_data(params, material):
+    values = params.get(material)
+    return bool(values) and bool(values[0]) and bool(values[2])
+
+
+def preshielding_transmission(params, preshielding):
+    """Transmission of the preshielding: Table 4.6 gives it in lead, concrete and steel; the first with data."""
+    for material in ("Lead", "Concrete", "Steel"):
+        if preshielding.get(material) and has_data(params, material):
+            return archer_transmission(params[material], preshielding[material])
+    return 1.0
+
+
+def through(params, layers, start=1.0):
+    """Transmission of one radiation type through the layers [(material, mm)] one after the other, from the inside out,
+    after what is in front of them lets 'start' through. Each layer begins at the equivalent thickness of that."""
+    transmission = start
+    for material, x in layers:
+        transmission = archer_transmission(params[material], archer_thickness(params[material], transmission) + x)
+    return transmission
+
+
+def thickness_for(dose, goal, high):
+    """The thickness x >= 0 at which dose(x), which falls with x, comes down to goal; 0 if dose(0) <= goal.
+    high: a thickness at which it is already below the goal (doubled until it is)."""
+    if dose(0.0) <= goal:
+        return 0.0
+    low, high = 0.0, max(high, 1e-6)
+    while dose(high) > goal:
+        low, high = high, 2 * high
+    for _ in range(200):
+        middle = (low + high) / 2
+        low, high = (middle, high) if dose(middle) > goal else (low, middle)
+        if high - low <= 1e-12 * high:
+            break
+    return (low + high) / 2
+
+
+def thickness_alone(components, material, P):
+    """Thickness of one material, the only one of the barrier: sum of K B(x + preshielding) = P."""
+    if len(components) == 1:  # the Archer equation, minus the preshielding
+        c = components[0]
+        return max(archer_thickness(c["params"][material], P / c["K"]) - c["pre"].get(material, 0.0), 0.0)
+    total = sum(c["K"] for c in components)
+    dose = lambda x: sum(c["K"] * archer_transmission(c["params"][material], x + c["pre"].get(material, 0.0))
+                         for c in components)
+    return thickness_for(dose, P, max(archer_thickness(c["params"][material], min(P / total, 1.0))
+                                      for c in components))
+
+
+def thickness_layers(components, materials, fractions, P):
+    """Layers of one barrier, from the inside out, each giving its fraction of the attenuation of the air kerma from
+    what the preshielding lets through down to P; every radiation type goes through all of them."""
+    if len(components) == 1:
+        c = components[0]
+        return layered_thicknesses([c["params"][m] for m in materials], fractions, P / c["K"], c["start"])
+    total = sum(c["K"] for c in components)
+    effective = lambda layers: sum(c["K"] * through(c["params"], layers, c["start"]) for c in components) / total
+    begin = effective([])
+    attenuation = math.log(begin * total / P) if P < begin * total else 0.0
+    layers, done = [], 0.0
+    for material, fraction in zip(materials, fractions):
+        done += fraction
+        goal = begin * math.exp(-done * attenuation)
+        high = max(archer_thickness(c["params"][material], goal) for c in components)
+        layers.append((material, thickness_for(lambda x: effective(layers + [(material, x)]), goal, high)))
+    return [x for _, x in layers]
+
+
 # NCRP 147 total workload per patient Wnorm (mA·min/patient) of each workload distribution
 WORKLOAD_NORM = {row[0]: row[1] for row in wb['Workload'].iter_rows(max_col=2, values_only=True)
                  if row[0] and isinstance(row[1], (int, float))}
@@ -146,7 +220,8 @@ MISSING_HELP = {
     "Workload": "at the top of the room choose 'Write total Workload' or 'The Number of Patients per week' "
                 "and type the value (or tick 'Different Workload' on this radiation type).",
     "Workload Distribution (X-ray room or kVp)": "at 'Workload Distribution' choose 'X-Ray Room' and select the "
-                                                 "room in the list, or 'Give kVp'.",
+                                                 "room in the list, or 'Give kVp'. Every radiation type needs it: "
+                                                 "it goes through the barrier with these transmission data.",
     "Secondary radiation only": "this workload distribution (Biondi et al. 2024) has data for secondary radiation "
                                 "only: in fluoroscopy and angiography the image receptor stops the primary beam. "
                                 "Choose 'Secondary', or another workload distribution.",
@@ -173,8 +248,6 @@ MISSING_HELP = {
                                "scan the % of the procedures that have it, from 0 to 100 (the first is "
                                "normally 100 %).",
     "Shielding Design Goal (P)": "classify the area beyond the barrier (fills in P) or type P in mGy/week.",
-    "Set for the calculation": "tick 'Set for the calculation' on the radiation type whose transmission "
-                               "should be used.",
     "Unshielded air kerma is zero": "check the workload, U, T and the air kerma values.",
     "Select Material": "choose the material(s) under 'Select Materials'.",
     "Material shares (must total 100 %)": "under 'Layers', give each material its share of the shielding; "
@@ -192,9 +265,8 @@ class departprimsec():
             self.depCTcal(e, nr, t)
         else:
             Ktotal = 0
-            ci = None
             missing, fields = [], []
-            distributions = []
+            distributions, components = [], []
             num = self.d[f"num_barriers_var {e}{nr}"].get()
             for i in range(num):
                 K = self.calkerma(e, nr, i, t)
@@ -204,10 +276,15 @@ class departprimsec():
                 fields += self.need_fields
                 if K is not None:
                     Ktotal += K
-                is_set = self.d[f"setv {e}{nr}{i}"].get() == 1
-                if is_set:
-                    ci = i
-                distributions.append(dict(self.last_distribution, set=is_set))
+                distributions.append(dict(self.last_distribution))
+                # it goes through the barrier with the transmission data of its own workload distribution or kVp
+                if self.d[f"radiob_w {e}{nr}{i}"].get() in (1, 2):
+                    params, problem = self.radiation_transmission(e, nr, i)
+                    if problem:
+                        missing.append(prefix + problem)
+                    elif K:
+                        components.append({"K": K, "params": params, "pre": self.preshielding(e, nr, i)
+                                           if self.d[f"radiob_w {e}{nr}{i}"].get() == 1 else {}})
             problems, layer_fields = self.layer_problems(e, nr)
             missing += problems
             fields += layer_fields
@@ -218,19 +295,11 @@ class departprimsec():
             if self.beyond_distance(e, nr) is None:
                 missing.append("Distance beyond the barrier (m)")
                 fields.append(f"beyond_entry {e}{nr}")
-            if ci is None:
-                missing.append("Set for the calculation")
-            else:
-                # its transmission curve needs the workload distribution (X-ray room) or the kVp
-                distribution = self.d.get(f"vsexroom {e}{nr}{ci}")
-                if distribution is None or distribution.get() in ("", "Select X-ray room"):
-                    prefix = f"Radiation Type #{ci + 1}: " if num > 1 else ""
-                    missing.append(prefix + "Workload Distribution (X-ray room or kVp)")
             if not missing and Ktotal <= 0:
                 missing.append("Unshielded air kerma is zero")
             self.need, self.need_fields = list(dict.fromkeys(missing)), fields
             self.B = P / Ktotal if not missing else None
-            self.depcalc(e, nr, ci if ci is not None else 0, t)
+            self.material_thicknesses(e, nr, components, P)
             self.record_barrier(e, nr, kind="xray", P=P, T=self.occupancy_factor(e, nr),
                                 K_total=Ktotal if not missing else None, B=self.B, distributions=distributions,
                                 beyond=self.beyond_distance(e, nr))
@@ -580,25 +649,26 @@ class departprimsec():
             total += value / 100
         return total
 
-    def depcalc(self, e, nr, i, t):  # Barrier calculations
-        params, preshielding = None, {}
-        if not self.need:
-            # NCRP 147 transmission parameters (alpha, beta, gamma) of the distribution set for the calculation
-            primary = self.d[f"radiob_w {e}{nr}{i}"].get() == 1
-            distribution = self.d.get(f"vsexroom {e}{nr}{i}")
-            data = self.kvp_data(e, nr, i) if primary else "NCRP 147"
-            params = self.transmission_params('prim abc' if primary else 'sec abc',
-                                              distribution.get() if distribution is not None else None, data)
-            if params is None and data != "NCRP 147":
-                self.need.append("kVp for the DR 600 data (60-120 kV, every 10 kV)")
-            elif params is None and primary and distribution is not None and distribution.get() in BIONDI:
-                self.need.append("Secondary radiation only")
-            elif params is None:
-                self.need.append("Workload Distribution (X-ray room or kVp)")
-            elif primary:
-                preshielding = self.preshielding(e, nr, i)
-
-        self.material_thicknesses(e, nr, params, self.B, preshielding)
+    def radiation_transmission(self, e, nr, i):
+        """Transmission data (alpha, beta, gamma per material) of radiation type i: those of its workload distribution
+        or kVp, primary or secondary. Returns (data, None), or (None, what is missing)."""
+        primary = self.d[f"radiob_w {e}{nr}{i}"].get() == 1
+        variable = self.d.get(f"vsexroom {e}{nr}{i}")
+        try:
+            distribution = variable.get() if variable is not None else None
+        except TclError:  # a kVp that is not a number
+            distribution = None
+        if distribution in (None, "", "Select X-ray room"):
+            return None, "Workload Distribution (X-ray room or kVp)"
+        data = self.kvp_data(e, nr, i) if primary else "NCRP 147"
+        params = self.transmission_params("prim abc" if primary else "sec abc", distribution, data)
+        if params is None and data != "NCRP 147":
+            return None, "kVp for the DR 600 data (60-120 kV, every 10 kV)"
+        if params is None and primary and distribution in BIONDI:
+            return None, "Secondary radiation only"
+        if params is None:
+            return None, "Workload Distribution (X-ray room or kVp)"
+        return params, None
 
     def depCTcal(self, e, nr, t):
         def number(key):
@@ -648,7 +718,7 @@ class departprimsec():
         kvp_120 = number(f"kvp_var {t}") == 120
         ct_params = {"Lead": (2.246, 5.73, 0.547) if kvp_120 else (2.009, 3.99, 0.342),
                      "Concrete": (0.0383, 0.0142, 0.658) if kvp_120 else (0.0336, 0.0122, 0.519)}
-        self.material_thicknesses(e, nr, ct_params, B)
+        self.material_thicknesses(e, nr, [{"K": K, "params": ct_params, "pre": {}}] if K else [], P)
         self.record_barrier(e, nr, kind="ct", P=P or None, T=T, K_total=K, B=B, d=d if K else None,
                             kvp=int(number(f"kvp_var {t}")) or None, beyond=beyond, scans=scans)
         self.show_barrier_result(e, nr, t)
@@ -672,47 +742,47 @@ class departprimsec():
             fields += [f"share_entry {e}{o}{nr}" for o in range(1, count + 1)]
         return problems, fields
 
-    def material_thicknesses(self, e, nr, params, B, preshielding=None):
+    def material_thicknesses(self, e, nr, components, P):
         """Thickness of every material of the barrier (self.thm), or the list of what is missing.
-        Each alone: the thickness that by itself gives the transmission B.
-        Layers: from the room side outwards, each material takes its share of the attenuation ln(1/B); a layer
-        starts at the equivalent thickness of what is already in front of it (NCRP 147 treats preshielding the
-        same way), so the hardening of the beam and the order of the layers count."""
-        preshielding = preshielding or {}
+        components: the radiation types, each with its air kerma K, its transmission data and its preshielding; each
+        goes through the barrier on its own (NCRP 147 Sections 5.3.5, 5.4.2), so the thickness gives
+        sum of K B(x + preshielding) = P.
+        Each alone: the thickness of each material if it were the only one.
+        Layers: from the room side outwards, each material takes its share of the attenuation; a layer starts at the
+        equivalent thickness of what is already in front of it (NCRP 147 treats preshielding the same way), so the
+        hardening of the beam and the order of the layers count."""
         count = self.d[f"vnumbmat {e}{nr}"].get()
         materials = [self.d[f"vmater {e}{o}{nr}"].get() for o in range(1, count + 1)]
-        has_data = lambda material: material in params and params[material][0] and params[material][2]
-        self.last_shield = None  # transmission data of this barrier, for the dose check
+        usable = lambda material: all(has_data(c["params"], material) for c in components)
+        self.last_shield = None  # transmission data of this barrier, for the dose check and the views
+        if not self.need and not components:
+            self.need.append("Unshielded air kerma is zero")
         if not self.need:
-            start = 1.0  # transmission of the preshielding, the innermost layer
-            for material in ("Lead", "Concrete", "Steel"):
-                if preshielding.get(material) and has_data(material):
-                    start = archer_transmission(params[material], preshielding[material])
-                    break
-            self.last_shield = {"params": {m: params[m] for m in set(materials) if has_data(m)},
-                                "pre": dict(preshielding), "start": start}
+            for c in components:
+                c["start"] = preshielding_transmission(c["params"], c["pre"])
+            main = max(components, key=lambda c: c["K"])  # the views show the other rooms' rays through it
+            self.last_shield = {"components": components, "params": {m: main["params"][m] for m in set(materials)
+                                                                      if usable(m)}}
         if self.need:
             if "Select Material" in materials:
                 self.need.append("Select Material")
             self.need = list(dict.fromkeys(self.need))
             thicknesses = ["\n".join(self.need)] * count
         elif self.is_layered(e, nr):
-            no_data = [m for m in materials if not has_data(m)]
+            no_data = [m for m in materials if not usable(m)]
             if no_data:
                 thicknesses = [f"No transmission data for {no_data[0]}"] * count
             else:
-                start = self.last_shield["start"]
                 shares = [self.entry_number(f"share {e}{o}{nr}") for o in range(1, count + 1)]
                 fractions = [share / sum(shares) for share in shares]
-                thicknesses = layered_thicknesses([params[m] for m in materials], fractions, B, start)
+                thicknesses = thickness_layers(components, materials, fractions, P)
         else:
             thicknesses = []
             for material in materials:
                 if material == "Select Material":
                     thicknesses.append("Select Material")
-                elif has_data(material):
-                    # 0: no additional shielding is needed
-                    thicknesses.append(max(archer_thickness(params[material], B) - preshielding.get(material, 0), 0.0))
+                elif usable(material):  # 0: no additional shielding is needed
+                    thicknesses.append(thickness_alone(components, material, P))
                 else:
                     thicknesses.append(f"No transmission data for {material}")
         for o, value in enumerate(thicknesses, start=1):
@@ -740,14 +810,14 @@ class departprimsec():
         if not rec or rec["missing"] or not rec.get("K_total") or not rec.get("P") or not rec.get("shield"):
             return None
         K, P, shield = rec["K_total"], rec["P"], rec["shield"]
-        params = shield["params"]
         planned = self.planned_layers(nr, e)
         if planned:
             first = planned[0][0]
-            # in front of the first layer: the preshielding, as in the calculation of the required thickness
-            start = archer_thickness(params[first], shield["start"]) if rec.get("layers") else \
-                shield["pre"].get(first, 0)
-            transmission = stack_transmission(params, planned, start)
+            # each radiation type through its preshielding, as in the calculation of the required thickness, then
+            # through every planned layer
+            start = (lambda c: c["start"]) if rec.get("layers") else \
+                (lambda c: archer_transmission(c["params"][first], c["pre"].get(first, 0.0)))
+            transmission = sum(c["K"] * through(c["params"], planned, start(c)) for c in shield["components"]) / K
             basis = "planned " + " + ".join(f"{m} {x:g} mm" for m, x in planned)
         else:
             transmission, basis = min(1.0, P / K), "required thickness"

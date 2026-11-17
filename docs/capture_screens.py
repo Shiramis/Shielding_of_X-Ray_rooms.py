@@ -129,7 +129,10 @@ def record(key, t, barriers):
         rec = dict(app.calc[(nr, e)])
         shield = rec.pop("shield", None) or {}
         rec["params"] = shield.get("params", {})
-        rec["preshielding"] = shield.get("pre", {})
+        # each radiation type: its air kerma, transmission data and preshielding
+        rec["components"] = [{"K": c["K"], "params": c["params"], "pre": c["pre"]}
+                             for c in shield.get("components", [])]
+        rec["preshielding"] = next((c["pre"] for c in shield.get("components", []) if c["pre"]), {})
         rec["check"] = app.dose_check(nr, e)
         rows[app.barn[f"lab_bar {e}{nr}"].cget("text")] = rec
     values[key] = rows

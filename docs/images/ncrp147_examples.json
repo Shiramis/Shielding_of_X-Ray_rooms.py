@@ -7,10 +7,11 @@
   "setup": "a wall to a fully occupied uncontrolled area (T = 1, P = 0.02 mGy/week), d = 4 m from the isocenter; leakage + forward/backscatter, K¹sec = 3.8 mGy/patient at 1 m (Table 4.7)",
   "ncrp_text": "K = 5.9 mGy/week, B = 3.4×10⁻³: 1.3 mm lead (Equation 4.10, Figure C.2)",
   "ncrp": 1.3,
+  "below": false,
   "program": 1.3349187967161613,
+  "planned_dose": null,
   "K": 5.9375,
-  "B": 0.003368421052631579,
-  "same": true
+  "B": 0.003368421052631579
  },
  {
   "section": "5.2",
@@ -20,10 +21,11 @@
   "setup": "the wall behind the image receptor, primary, U = 1, K¹P = 1.2 mGy/patient, an office (T = 1, P = 0.02) at d = 3 m, wall bucky preshielding 0.85 mm lead (Table 4.6)",
   "ncrp_text": "B = 5×10⁻⁴: 2.2 mm lead in all, minus 0.85 mm = 1.4 mm (the total rounded to 2.2 mm first)",
   "ncrp": 1.4,
+  "below": false,
   "program": 1.307099274856781,
+  "planned_dose": null,
   "K": 40.0,
-  "B": 0.0005,
-  "same": true
+  "B": 0.0005
  },
  {
   "section": "5.2",
@@ -33,10 +35,11 @@
   "setup": "the adjacent wall, secondary, leakage + side-scatter 2.7×10⁻³ mGy/patient, an office at d = 2.1 m",
   "ncrp_text": "K = 0.18 mGy/week, B = 0.11: 0.42 mm lead",
   "ncrp": 0.42,
+  "below": false,
   "program": 0.42145347127848587,
+  "planned_dose": null,
   "K": 0.1836734693877551,
-  "B": 0.10888888888888888,
-  "same": true
+  "B": 0.10888888888888888
  },
  {
   "section": "5.3",
@@ -46,10 +49,11 @@
   "setup": "5.3.1.1, under the table: primary Rad Room (floor), U = 1 (instead of 0.89, to be safe), K¹P = 5.2, d = 4.1 m, table bucky (72 mm concrete); an office below",
   "ncrp_text": "K = 39 mGy/week, B = 5.1×10⁻⁴: 107 mm concrete in all, minus 72 mm = 35 mm",
   "ncrp": 35,
+  "below": false,
   "program": 34.97086225403105,
+  "planned_dose": null,
   "K": 38.667459845330164,
-  "B": 0.0005172307692307692,
-  "same": true
+  "B": 0.0005172307692307692
  },
  {
   "section": "5.3",
@@ -59,10 +63,11 @@
   "setup": "5.3.2: secondary Rad Room (all barriers), leakage + forward/backscatter, d = 2.7 m",
   "ncrp_text": "K = 0.84 mGy/week, B = 2.4×10⁻²: 44 mm concrete",
   "ncrp": 44,
+  "below": false,
   "program": 43.9390155483363,
+  "planned_dose": null,
   "K": 0.8401920438957475,
-  "B": 0.023804081632653063,
-  "same": true
+  "B": 0.023804081632653063
  },
  {
   "section": "5.3",
@@ -72,10 +77,11 @@
   "setup": "5.3.3.1, chest bucky wall behind the image receptor: primary Rad Room (chest bucky), U = 1, K¹P = 2.3, d = 2.5 m, wall bucky; a staff rest room (T = 1/5)",
   "ncrp_text": "B = 2.2×10⁻³: 1.3 mm lead in all (Figure B.2), minus 0.85 mm = 0.45 mm",
   "ncrp": 0.45,
+  "below": false,
   "program": 0.48366198769922264,
+  "planned_dose": null,
   "K": 9.2,
-  "B": 0.002173913043478261,
-  "same": true
+  "B": 0.002173913043478261
  },
  {
   "section": "5.3",
@@ -83,12 +89,13 @@
   "barrier": "Barrier 2",
   "material": "Lead",
   "setup": "5.3.3.2, the same wall outside the beam: the over-table tube (Rad Room floor, leakage + side-scatter, 4.5 m), side-scatter of the chest patient (0.8 m) and leakage of the chest tube (2.5 m)",
-  "ncrp_text": "K = 0.14 + 0.96 + 0.008 = 1.1 mGy/week, B = 9.1×10⁻² (P/T = 0.1); with the chest bucky transmission 0.35 mm lead",
+  "ncrp_text": "K = 0.14 + 0.96 + 0.008 = 1.1 mGy/week, B = 9.1×10⁻² (P/T = 0.1); with the chest bucky transmission for all of them, to be simple and safe, 0.35 mm lead (with each source's own workload distribution and place, and 30° scatter from the chest patient: 0.3 mm)",
   "ncrp": 0.35,
-  "program": 0.3564650538505942,
+  "below": false,
+  "program": 0.3357248933461888,
+  "planned_dose": null,
   "K": 0.22136131172839504,
-  "B": 0.09035002478002803,
-  "same": true
+  "B": 0.09035002478002803
  },
  {
   "section": "5.3",
@@ -98,23 +105,25 @@
   "setup": "5.3.4, darkroom wall: secondary, d = 2 m, T = 1, P = 0.025 mGy/week for the stored film",
   "ncrp_text": "K = 1.1 mGy/week, B = 2.3×10⁻²: 0.53 mm lead (Figure C.2)",
   "ncrp": 0.53,
+  "below": false,
   "program": 0.5125789476392419,
+  "planned_dose": null,
   "K": 1.0625,
-  "B": 0.023529411764705882,
-  "same": true
+  "B": 0.023529411764705882
  },
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
   "barrier": "Barrier 4",
   "material": "Lead",
-  "setup": "5.3.5, cross-table wall: primary Rad Room (floor), U = 0.09, d = 2.8 m, grid and cassette (0.3 mm lead), and secondary at 2 m; an office",
-  "ncrp_text": "the primary alone 0.9 − 0.3 = 0.6 mm; with the secondary radiation, each through its own thickness, 0.78 mm lead",
-  "ncrp": 0.78,
-  "program": 0.6137817034369888,
+  "setup": "5.3.5, cross-table wall: primary Rad Room (floor), U = 0.09, d = 2.8 m, behind grid and cassette (0.3 mm lead), and secondary at 2 m, which does not pass through them; an office. 0.8 mm planned, as NCRP 147 tries",
+  "ncrp_text": "the primary alone 0.9 − 0.3 = 0.6 mm. With the secondary radiation, each through its own thickness, 0.8 mm lets 0.72 B_sec(0.8) + 7.5 B_P(0.8 + 0.3) = 0.014 mGy/week through, below 0.02, so less is enough; with all the sources of the room (also the chest bucky exposures) 0.78 mm",
+  "ncrp": 0.8,
+  "below": true,
+  "program": 0.6745251304534747,
+  "planned_dose": 0.012731374220406644,
   "K": 8.180484693877553,
-  "B": 0.002444842909487799,
-  "same": false
+  "B": 0.002444842909487799
  },
  {
   "section": "5.3",
@@ -124,10 +133,11 @@
   "setup": "5.3.6, control wall: secondary, d = 1.8 m, controlled area (P = 0.1)",
   "ncrp_text": "K = 1.3 mGy/week, B = 7.7×10⁻²: 0.27 mm lead",
   "ncrp": 0.27,
+  "below": false,
   "program": 0.26504560742084804,
+  "planned_dose": null,
   "K": 1.3117283950617282,
-  "B": 0.07623529411764707,
-  "same": true
+  "B": 0.07623529411764707
  },
  {
   "section": "5.3",
@@ -137,10 +147,11 @@
   "setup": "5.3.1.2, the floor away from the table: secondary, d = 3 m (distance beyond 1.3 m, as a floor)",
   "ncrp_text": "K = 0.47 mGy/week, B = 4.3×10⁻²: 33 mm concrete",
   "ncrp": 33,
+  "below": false,
   "program": 33.81008485236136,
+  "planned_dose": null,
   "K": 0.4722222222222222,
-  "B": 0.04235294117647059,
-  "same": true
+  "B": 0.04235294117647059
  },
  {
   "section": "5.3",
@@ -150,10 +161,11 @@
   "setup": "5.3.4, the film passbox: 25 patients in one day (Different Workload), P = 5×10⁻⁴ mGy for loaded cassettes, d = 2 m",
   "ncrp_text": "K = 0.21 mGy in a day, B = 2.3×10⁻³: 1.3 mm lead (Figure C.2)",
   "ncrp": 1.3,
+  "below": false,
   "program": 1.2399210038152755,
+  "planned_dose": null,
   "K": 0.21250000000000002,
-  "B": 0.002352941176470588,
-  "same": true
+  "B": 0.002352941176470588
  },
  {
   "section": "5.3",
@@ -163,23 +175,25 @@
   "setup": "5.3.6, loaded cassettes behind the control wall: 25 patients in one day, P = 5×10⁻⁴ mGy, d = 1.8 m",
   "ncrp_text": "K = 0.26 mGy in a day, B = 1.9×10⁻³: 1.3 mm lead",
   "ncrp": 1.3,
+  "below": false,
   "program": 1.3184937752170012,
+  "planned_dose": null,
   "K": 0.2623456790123457,
-  "B": 0.0019058823529411765,
-  "same": true
+  "B": 0.0019058823529411765
  },
  {
   "section": "5.4",
   "example": "Radiographic and fluoroscopic (R&F) room",
   "barrier": "Floor",
   "material": "Concrete",
-  "setup": "5.4.2, under the table: leakage (d = 2.4 m) and forward/backscatter (3 m) of the fluoroscopy tube, and the primary beam of the over-table tube, U = 1, d = 4.1 m, table bucky: Rad Room (floor) for the 60 patients and Rad Tube (R&F room) for the 20, set for the calculation (more penetrating)",
-  "ncrp_text": "1 + 18.6 + 7 mGy/week, each through its own thickness (the fluoroscopy radiation does not pass through the table bucky): 69 mm concrete",
+  "setup": "5.4.2, under the table: leakage (d = 2.4 m) and forward/backscatter (3 m) of the fluoroscopy tube, which do not pass through the table bucky, and the primary beam of the over-table tube, U = 1, d = 4.1 m, behind the table bucky: Rad Room (floor) for the 60 patients and Rad Tube (R&F room) for the 20. 72 mm planned, as NCRP 147 tries",
+  "ncrp_text": "1 + 18.6 + 7 mGy/week, each through its own thickness: 72 mm lets 0.011 + 0.002 + 0.004 = 0.017 mGy/week through; a minimum of 69 mm concrete",
   "ncrp": 69,
-  "program": 62.17665510548201,
+  "below": false,
+  "program": 68.27355664312974,
+  "planned_dose": 0.017114085300606572,
   "K": 26.599456342124398,
-  "B": 0.0007518950666794972,
-  "same": false
+  "B": 0.0007518950666794972
  },
  {
   "section": "5.4",
@@ -189,10 +203,11 @@
   "setup": "5.4.1, the floor away from the table (distance beyond 1.3 m, as a floor): leakage and scatter of the fluoroscopy tube (2.4 and 3 m) and of the radiographic tube, for the 60 radiographic (Rad Room all barriers) and the 20 fluoroscopy patients (Rad Tube R&F room) (4.1 and 3 m)",
   "ncrp_text": "K = 1 + 0.23 + 0.063 = 1.3 mGy/week, B = 1.5×10⁻²: 62 mm concrete from Figure C.3 (65 mm from Figure 4.8c)",
   "ncrp": 62,
-  "program": 64.93315143388385,
+  "below": false,
+  "program": 63.339735956305276,
+  "planned_dose": null,
   "K": 1.311343446361293,
-  "B": 0.015251534642199088,
-  "same": true
+  "B": 0.015251534642199088
  },
  {
   "section": "5.5",
@@ -202,10 +217,11 @@
   "setup": "an adjacent wall to an office (T = 1, P = 0.02), d = 2.1 m",
   "ncrp_text": "K = 1.2 mGy/week, B = 1.7×10⁻²: 9.8 mm gypsum wallboard (Figure C.4)",
   "ncrp": 9.8,
+  "below": false,
   "program": 9.92751647183593,
+  "planned_dose": null,
   "K": 1.2244897959183672,
-  "B": 0.016333333333333335,
-  "same": true
+  "B": 0.016333333333333335
  },
  {
   "section": "5.5",
@@ -215,10 +231,11 @@
   "setup": "the door to a corridor (corridor door, T = 1/8), d = 2.1 m",
   "ncrp_text": "B = 0.13: 41 mm wood (Figure C.7); a 43 mm solid-core door is enough",
   "ncrp": 41,
+  "below": false,
   "program": 40.84866441863891,
+  "planned_dose": null,
   "K": 0.1530612244897959,
-  "B": 0.13066666666666668,
-  "same": true
+  "B": 0.13066666666666668
  },
  {
   "section": "5.6",
@@ -228,10 +245,11 @@
   "setup": "a wall to an office (T = 1, P = 0.02), 3 m from the isocenter",
   "ncrp_text": "K = 3.1 mGy/week, B = 6.5×10⁻³: 1.3 mm lead (Figure A.2)",
   "ncrp": 1.3,
+  "below": false,
   "program": 1.3348283505443346,
+  "planned_dose": null,
   "K": 3.0907439999999995,
-  "B": 0.006470933859290839,
-  "same": true
+  "B": 0.006470933859290839
  },
  {
   "section": "5.6.1",
@@ -241,10 +259,11 @@
   "setup": "an adjoining wall to a fully occupied office (T = 1, P = 0.02), 3 m from the isocenter",
   "ncrp_text": "K¹sec 0.28 (body) and 0.15 (head) mGy per procedure, K = 5.2 mGy/week, B = 3.9×10⁻³: 1.5 mm lead (Figure A.2)",
   "ncrp": 1.5,
+  "below": false,
   "program": 1.5320286300521981,
+  "planned_dose": null,
   "K": 5.124,
-  "B": 0.0039032006245121004,
-  "same": true
+  "B": 0.0039032006245121004
  },
  {
   "section": "5.7",
@@ -254,9 +273,10 @@
   "setup": "an office (T = 1, P = 0.02) 1 m away",
   "ncrp_text": "below 0.02 mGy/week at 1 m: no structural shielding is needed, even in the smallest room",
   "ncrp": 0.0,
+  "below": false,
   "program": 0.0,
+  "planned_dose": null,
   "K": 0.018,
-  "B": 1.1111111111111112,
-  "same": true
+  "B": 1.1111111111111112
  }
 ]

@@ -194,8 +194,6 @@ class dep_defs():
                 tip(self.d[f"label_B {index}{room_number}{i}"], radiation_tip)
 
                 self.d[f"radiob_w {index}{room_number}{i}"] = IntVar(value=0)
-                # The first workload distribution is set for the calculation by default
-                self.d[f"setv {index}{room_number}{i}"] = IntVar(value=1 if i == 0 else 0)
 
                 # Primary Barrier Radiobutton
                 self.d[f"radpw {index}{room_number}{i}"] = ttk.Radiobutton(
@@ -239,12 +237,13 @@ class dep_defs():
                     f"entk {index}{room_number}{i}", f"othwork {index}{room_number}{i}", f"radbucky {index}{room_number}{i}",
                     f"radcross {index}{room_number}{i}", f"radworkl {index}{room_number}{i}",f"radnumb {index}{room_number}{i}",
                     f"worentry {index}{room_number}{i}",f"numpapwe {index}{room_number}{i}", f"airkncrp {index}{room_number}{i}",
-                    f"unairk {index}{room_number}{i}",f"leak {index}{room_number}{i}", f"side {index}{room_number}{i}", f"forw {index}{room_number}{i}"
+                    f"unairk {index}{room_number}{i}",f"leak {index}{room_number}{i}", f"side {index}{room_number}{i}", f"forw {index}{room_number}{i}",
                     f"radside {index}{room_number}{i}", f"radforward {index}{room_number}{i}", f"radleak {index}{room_number}{i}",
-                    f"set {index}{room_number}{i}"]
+                    f"kvpbox {index}{room_number}{i}"]
                 vars_to_delete = [f"vselxray {index}{room_number}{i}", f"preshvar {index}{room_number}{i}",
                     f"oworkvar {index}{room_number}{i}", f"radiob_pre {index}{room_number}{i}",
-                    f"workv {index}{room_number}{i}", f"vsexroom {index}{room_number}{i}", f"setv {index}{room_number}{i}"]
+                    f"workv {index}{room_number}{i}", f"vsexroom {index}{room_number}{i}",
+                    f"radiob_w {index}{room_number}{i}", f"kvpdata {index}{room_number}{i}"]
                 # Destroy and delete widgets
                 for key in keys_to_destroy:
                     if key in self.d and self.d[key] is not None:
@@ -254,9 +253,6 @@ class dep_defs():
                 for var_key in vars_to_delete:
                     if var_key in self.d:
                         del self.d[var_key]
-            # If the distribution set for the calculation was removed, fall back to the first one
-            if not any(self.d[f"setv {index}{room_number}{k}"].get() for k in range(num_barriers)):
-                self.d[f"setv {index}{room_number}0"].set(1)
 
         # Update the previous number of barriers
         self.d[f"prev_num_barriers {index}{room_number}"] = num_barriers
@@ -287,16 +283,6 @@ class dep_defs():
         self.create_radio_button(key=f"selxray2 {e}{nr}{i}", master=self.d[barrierf_key], text="Give kVp",
                                  variable=self.d[f"vselxray {e}{nr}{i}"], value=2, row=i * 10 + 4, column=2,
                                  command=lambda: self.XrRoom(e, nr, i), tip_key="kvp")
-
-        # Create the checkbutton and assign the callback (keeps its value when the radiation type changes)
-        if f"setv {e}{nr}{i}" not in self.d:
-            self.d[f"setv {e}{nr}{i}"] = IntVar(value=1 if i == 0 else 0)
-        self.destroy_widgets([f"set {e}{nr}{i}"])
-        self.d[f"set {e}{nr}{i}"] = ttk.Checkbutton(master=self.d[barrierf_key], text="Set for the calculation",
-                                                    variable=self.d[f"setv {e}{nr}{i}"], offvalue=0, onvalue=1,
-                                                    command=lambda e=e, nr=nr, i=i: self.update_checkboxes(e, nr, i))
-        self.d[f"set {e}{nr}{i}"].grid(row=i * 10 + 4, column=3, padx=5, pady=6.5, sticky="w")
-        tip(self.d[f"set {e}{nr}{i}"], "set_calc")
 
         # ===== Selects Primary  =====
         if self.d[radiob_w_key].get() == 1:
@@ -382,14 +368,6 @@ class dep_defs():
             source = SOURCES.get(distribution.get() if distribution is not None else None, "NCRP 147")
             button.configure(text="Select Unshielded Secondary\nAir Kerma (mGy∙patient⁻¹)\n"
                                   f"Suggested ({source})")
-
-    def update_checkboxes(self, e, nr, i):
-        # Loop through all the checkboxes with the same 'e' and 'nr' but different 'i'
-        for index in range(0, self.d[f"num_barriers_var {e}{nr}"].get()):  # Adjust 'some_max_value' to the range of 'i' you need
-            if index != i:
-                if f"setv {e}{nr}{index}" in self.d:
-                    # Set all other checkbuttons' variables to 0 (unchecked)
-                    self.d[f"setv {e}{nr}{index}"].set(0)
 
     def XrRoom(self, e, nr, i):
         # Access frequently used keys

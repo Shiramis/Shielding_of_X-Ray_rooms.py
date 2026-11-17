@@ -21,18 +21,18 @@ SCATTER = {"leakage + side-scatter": ("1", "1"), "leakage + forward/backscatter"
 
 
 # ===================== building blocks =====================
-def primary(distribution, use, kerma, preshielding=None, use_for_transmission=True):
+def primary(distribution, use, kerma, preshielding=None):
     """Primary radiation type: NCRP 147 workload distribution, use factor U and kerma K1 (mGy/patient at 1 m)."""
-    return {"radiob_w": "1", "setv": "1" if use_for_transmission else "0", "vselxray": "1",
+    return {"radiob_w": "1", "vselxray": "1",
             "vsexroom": distribution, "use_ent": use, "entk": kerma,
             "preshvar": "1" if preshielding else "0", "radiob_pre": {"bucky": "1", "cross-table": "2"}.get(preshielding, "0"),
             "unairkerv": "0", "airkerv": "0", "radiob_leak": "0", "oworkvar": "0"}
 
 
-def secondary(distribution, scatter, use_for_transmission=False):
+def secondary(distribution, scatter):
     """Secondary radiation type with the NCRP 147 unshielded secondary air kerma."""
     kind, leak = SCATTER[scatter]
-    return {"radiob_w": "2", "setv": "1" if use_for_transmission else "0", "vselxray": "1",
+    return {"radiob_w": "2", "vselxray": "1",
             "vsexroom": distribution, "use_ent": None, "entk": None, "preshvar": "0", "radiob_pre": "0",
             "unairkerv": "1", "airkerv": kind, "radiob_leak": leak, "oworkvar": "0"}
 
@@ -99,16 +99,16 @@ def xray_room(x=0.0):
         barrier(f"{SOURCE_HEIGHT:.2f}", *OFFICES, ["Concrete", "Lead"],
                 [primary(rad_floor, "0.89", "5.2", "bucky")], planned=["100", ""]),
         barrier(f"{HEIGHT - SOURCE_HEIGHT:.2f}", *PATIENT_ROOMS, ["Concrete", "Lead"],
-                [secondary(rad_all, "leakage + forward/backscatter", True)]),
-        barrier(door_d, *CORRIDOR_DOOR, ["Lead"], [secondary(rad_all, "leakage + side-scatter", True)]),
+                [secondary(rad_all, "leakage + forward/backscatter")]),
+        barrier(door_d, *CORRIDOR_DOOR, ["Lead"], [secondary(rad_all, "leakage + side-scatter")]),
         # Barrier 1: cross-table wall, primary (U = 0.09) plus secondary from the rest of the work
         barrier(top, *OUTDOORS, ["Lead", "Concrete"],
                 [primary(rad_floor, "0.09", "5.2", "cross-table"), secondary(rad_all, "leakage + side-scatter")]),
         barrier(right, *CONTROL_ROOM, ["Lead", "Gypsum Wallboard"],
-                [secondary(rad_all, "leakage + side-scatter", True)], planned=["0.5", ""]),
+                [secondary(rad_all, "leakage + side-scatter")], planned=["0.5", ""]),
         # Barrier 3: one standard gypsum board (15.9 mm) is planned, but 38.6 mm are needed: goal exceeded
         barrier(bottom, *CORRIDOR, ["Lead", "Gypsum Wallboard"],
-                [secondary(rad_all, "leakage + side-scatter", True)], planned=["", "15.9"]),
+                [secondary(rad_all, "leakage + side-scatter")], planned=["", "15.9"]),
         # Barrier 4: chest bucky wall, primary (U = 1, K = 2.3) plus secondary; one wall of concrete (room side)
         # and lead (outside), each giving half of the shielding
         barrier(left, *OFFICES, ["Concrete", "Lead"],
@@ -149,12 +149,12 @@ def mammography_room(x=0.0):
     outline, source, door, (top, right, bottom, left, door_d) = room_geometry((x, 0, x + 4, 5), (x + 2, 1.5),
                                                                                  (x + 0.4, x + 1.6))
     mammo, materials = "Mammography Room", ["Gypsum Wallboard", "Lead"]
-    side = lambda: [secondary(mammo, "leakage + side-scatter", True)]
+    side = lambda: [secondary(mammo, "leakage + side-scatter")]
     data = {"barriers": 7, "room": {"vrawork": "1", "worentry": "536", "numpapwe": None}, "barrier_data": [
         barrier(f"{SOURCE_HEIGHT:.2f}", *OFFICES, ["Concrete", "Lead"],
-                [secondary(mammo, "leakage + forward/backscatter", True)]),
+                [secondary(mammo, "leakage + forward/backscatter")]),
         barrier(f"{HEIGHT - SOURCE_HEIGHT:.2f}", *PATIENT_ROOMS, ["Concrete", "Lead"],
-                [secondary(mammo, "leakage + forward/backscatter", True)]),
+                [secondary(mammo, "leakage + forward/backscatter")]),
         barrier(door_d, *CORRIDOR_DOOR, ["Lead", "Wood"], side()),
         barrier(top, *OUTDOOR_SEATING, materials, side()),
         barrier(right, *OFFICES, materials, side()),
@@ -201,8 +201,8 @@ EXAMPLES = {
     "xray": ("X-Ray room", lambda: standalone("X-Ray room", "Example Rad Room", xray_room),
              "Radiographic room, 120 patients/week (NCRP 147 average).\n"
              "• Floor: primary beam, U = 0.89, K = 5.2 mGy/patient, with bucky preshielding.\n"
-             "• Barrier 1 (outside wall): cross-table primary, U = 0.09, plus secondary radiation; the primary "
-             "is 'Set for the calculation'.\n"
+             "• Barrier 1 (outside wall): cross-table primary, U = 0.09, behind grid and cassette, plus secondary "
+             "radiation, which does not pass through them: each goes through the wall with its own transmission.\n"
              "• Barrier 4: chest bucky wall, primary U = 1, K = 2.3 mGy/patient, plus secondary. Its materials are "
              "'Layers of one barrier': concrete on the room side and lead outside, half of the shielding each.\n"
              "• Barrier 2: control room (controlled area). Door and Barrier 3: corridor.\n"

@@ -27,6 +27,9 @@ SCATTER = {"leakage + side-scatter": ("1", "1"), "leakage + forward/backscatter"
            "side-scatter": ("2", "0"), "forward/backscatter": ("3", "0")}
 RAD_ALL, RAD_FLOOR = "Rad Room (all barriers)", "Rad Room (floor or other barriers)"
 CHEST_BUCKY, FLUORO, RAD_TUBE = "Rad Room (chest bucky)", "Fluoroscopy Tube (R&F room)", "Rad Tube (R&F room)"
+METHOD = ("Method: every radiation type goes through the barrier with the transmission of its own workload "
+          "distribution and its own preshielding, and the thickness is the one at which the air kerma beyond adds up "
+          "to P (NCRP 147 Sections 5.3.5 and 5.4.2).")
 DISTANCES = ("Distances: NCRP 147 gives the distance d from the source to the occupied point; the program adds the "
              "distance beyond the barrier (walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m) to the distance to the "
              "barrier, so each distance entered is d minus that.")
@@ -38,11 +41,11 @@ def number(value):
 
 # ===================== building blocks, in the format of the project files =====================
 def radiation(kind, distribution, d, *, use=None, kerma=None, preshielding=None, scatter=None, written=None,
-              patients=None, kvp=None, used=False):
+              patients=None, kvp=None):
     """One radiation type of a barrier. d: NCRP 147 distance from the source to the occupied point (m).
-    patients: its own number of patients per week ('Different Workload'). used: 'Set for the calculation'."""
+    patients: its own number of patients per week ('Different Workload')."""
     primary = kind == "primary"
-    item = {"radiob_w": "1" if primary else "2", "setv": "1" if used else "0", "d": d,
+    item = {"radiob_w": "1" if primary else "2", "d": d,
             "vselxray": "2" if kvp else "1", "vsexroom": str(kvp) if kvp else distribution,
             "use_ent": use, "entk": kerma if primary else written,
             "preshvar": "1" if preshielding else "0", "radiob_pre": {"bucky": "1", "cross-table": "2"}.get(preshielding, "0"),
@@ -71,20 +74,21 @@ def default_beyond(e):
     return {1: 1.3, 2: 0.5}.get(e, 0.3)
 
 
-def barrier(e, materials, items=(), *, location=None, T=None, area=UNCONTROLLED, P=None, beyond=None, ct=None):
+def barrier(e, materials, items=(), *, location=None, T=None, area=UNCONTROLLED, P=None, beyond=None, ct=None,
+            planned=None):
     """Barrier e (1 floor, 2 ceiling, 3 door, 4... walls). location: NCRP 147 Table 4.1 (gives T), or T written.
-    ct: NCRP 147 distance from the CT isocenter to the occupied point."""
+    ct: NCRP 147 distance from the CT isocenter to the occupied point. planned: the thickness of each material that
+    NCRP 147 tries, to check the dose beyond it."""
     beyond = default_beyond(e) if beyond is None else beyond
     items = [dict(item) for item in items]
     for item in items:
         item["entryd"] = number(item.pop("d") - beyond)
-    if items and not any(item["setv"] == "1" for item in items):
-        items[0]["setv"] = "1"
     return {"area": area, "vraoccup": "2" if location else "1", "occupentry": None if location else number(T),
             "vselocation": location, "dikeent": number(P if P is not None else GOAL[area]),
             "dist_var": number(ct - beyond) if ct is not None else None, "beyond": number(beyond),
             "materials": list(materials), "matmode": "separate", "shares": [None] * len(materials),
-            "planned": [""] * len(materials), "checkplan": "0", "calculated": True, "radiation": items}
+            "planned": [number(x) for x in planned] if planned else [""] * len(materials),
+            "checkplan": "1" if planned else "0", "calculated": True, "radiation": items}
 
 
 def empty():
@@ -139,11 +143,12 @@ example("5.3 Radiographic room", "NCRP 147 §5.3: Radiographic room (Figures 5.1
                        location=OFFICE),
             4: barrier(4, ["Lead"], [primary(CHEST_BUCKY, 2.5, "1", "2.3", "bucky")], location="Staff rest rooms"),
             5: barrier(5, ["Lead"], [secondary(RAD_FLOOR, 4.5, "leakage + side-scatter"),
-                                     secondary(CHEST_BUCKY, 0.8, "side-scatter", used=True),
+                                     secondary(CHEST_BUCKY, 0.8, "side-scatter"),
                                      secondary(CHEST_BUCKY, 2.5, "leakage")], location="Staff rest rooms"),
             6: barrier(6, ["Lead"], [secondary(RAD_ALL, 2.0, "leakage + side-scatter")], T=1, P=0.025),
             7: barrier(7, ["Lead"], [primary(RAD_FLOOR, 2.8, "0.09", "5.2", "cross-table"),
-                                     secondary(RAD_FLOOR, 2.0, "leakage + side-scatter")], location=OFFICE),
+                                     secondary(RAD_FLOOR, 2.0, "leakage + side-scatter")], location=OFFICE,
+                       planned=[0.8]),
             8: barrier(8, ["Lead"], [secondary(RAD_ALL, 1.8, "leakage + side-scatter")],
                        location="X-ray control rooms", area=CONTROLLED),
             9: barrier(9, ["Concrete"], [secondary(RAD_ALL, 3.0, "leakage + side-scatter")], location=OFFICE,
@@ -166,13 +171,16 @@ example("5.3 Radiographic room", "NCRP 147 §5.3: Radiographic room (Figures 5.1
          ("Barrier 2", "Lead", "5.3.3.2, the same wall outside the beam: the over-table tube (Rad Room floor, leakage "
           "+ side-scatter, 4.5 m), side-scatter of the chest patient (0.8 m) and leakage of the chest tube (2.5 m)",
           0.35, "K = 0.14 + 0.96 + 0.008 = 1.1 mGy/week, B = 9.1×10⁻² (P/T = 0.1); with the chest bucky "
-          "transmission 0.35 mm lead", 0.02),
+          "transmission for all of them, to be simple and safe, 0.35 mm lead (with each source's own workload "
+          "distribution and place, and 30° scatter from the chest patient: 0.3 mm)", 0.02),
          ("Barrier 3", "Lead", "5.3.4, darkroom wall: secondary, d = 2 m, T = 1, P = 0.025 mGy/week for the "
           "stored film", 0.53, "K = 1.1 mGy/week, B = 2.3×10⁻²: 0.53 mm lead (Figure C.2)", 0.03),
-         ("Barrier 4", "Lead", "5.3.5, cross-table wall: primary Rad Room (floor), U = 0.09, d = 2.8 m, grid and "
-          "cassette (0.3 mm lead), and secondary at 2 m; an office",
-          0.78, "the primary alone 0.9 − 0.3 = 0.6 mm; with the secondary radiation, each through its own "
-          "thickness, 0.78 mm lead", None),
+         ("Barrier 4", "Lead", "5.3.5, cross-table wall: primary Rad Room (floor), U = 0.09, d = 2.8 m, behind grid "
+          "and cassette (0.3 mm lead), and secondary at 2 m, which does not pass through them; an office. 0.8 mm "
+          "planned, as NCRP 147 tries",
+          0.8, "the primary alone 0.9 − 0.3 = 0.6 mm. With the secondary radiation, each through its own thickness, "
+          "0.8 mm lets 0.72 B_sec(0.8) + 7.5 B_P(0.8 + 0.3) = 0.014 mGy/week through, below 0.02, so less is "
+          "enough; with all the sources of the room (also the chest bucky exposures) 0.78 mm", "below"),
          ("Barrier 5", "Lead", "5.3.6, control wall: secondary, d = 1.8 m, controlled area (P = 0.1)",
           0.27, "K = 1.3 mGy/week, B = 7.7×10⁻²: 0.27 mm lead", 0.02),
          ("Barrier 6", "Concrete", "5.3.1.2, the floor away from the table: secondary, d = 3 m (distance beyond "
@@ -188,24 +196,25 @@ example("5.4 Radiographic and fluoroscopic room", "NCRP 147 §5.4: Radiographic 
             1: barrier(1, ["Concrete"], [secondary(FLUORO, 2.4, "leakage"),
                                          secondary(FLUORO, 3.0, "forward/backscatter"),
                                          primary(RAD_FLOOR, 4.1, "1", "5.2", "bucky", patients=60),
-                                         primary(RAD_TUBE, 4.1, "1", "5.9", "bucky", used=True)],
-                       location=OFFICE),
+                                         primary(RAD_TUBE, 4.1, "1", "5.9", "bucky")],
+                       location=OFFICE, planned=[72]),
             4: barrier(4, ["Concrete"], [secondary(FLUORO, 2.4, "leakage"),
                                          secondary(FLUORO, 3.0, "forward/backscatter"),
                                          secondary(RAD_ALL, 4.1, "leakage", patients=60),
                                          secondary(RAD_ALL, 3.0, "side-scatter", patients=60),
                                          secondary(RAD_TUBE, 4.1, "leakage"),
-                                         secondary(RAD_TUBE, 3.0, "side-scatter", used=True)],
+                                         secondary(RAD_TUBE, 3.0, "side-scatter")],
                        location=OFFICE, beyond=1.3),
         }, patients=20),
         "The room of Figures 5.1 and 5.2 as an R&F room: 20 fluoroscopy and 60 radiographic-only patients per week, "
         "the fluoroscopy tube under the table, an office below. The room workload is the 20 fluoroscopy patients; "
         "the radiation types of the 60 radiographic patients have their own (Different Workload).",
         [("Floor", "Concrete", "5.4.2, under the table: leakage (d = 2.4 m) and forward/backscatter (3 m) of the "
-          "fluoroscopy tube, and the primary beam of the over-table tube, U = 1, d = 4.1 m, table bucky: Rad Room "
-          "(floor) for the 60 patients and Rad Tube (R&F room) for the 20, set for the calculation (more "
-          "penetrating)", 69, "1 + 18.6 + 7 mGy/week, each through its own thickness (the fluoroscopy radiation does "
-          "not pass through the table bucky): 69 mm concrete", None),
+          "fluoroscopy tube, which do not pass through the table bucky, and the primary beam of the over-table tube, "
+          "U = 1, d = 4.1 m, behind the table bucky: Rad Room (floor) for the 60 patients and Rad Tube (R&F room) for "
+          "the 20. 72 mm planned, as NCRP 147 tries",
+          69, "1 + 18.6 + 7 mGy/week, each through its own thickness: 72 mm lets 0.011 + 0.002 + 0.004 = "
+          "0.017 mGy/week through; a minimum of 69 mm concrete", 1.0),
          ("Barrier 1", "Concrete", "5.4.1, the floor away from the table (distance beyond 1.3 m, as a floor): leakage "
           "and scatter of the fluoroscopy tube (2.4 and 3 m) and of the radiographic tube, for the 60 radiographic "
           "(Rad Room all barriers) and the 20 fluoroscopy patients (Rad Tube R&F room) (4.1 and 3 m)",
@@ -293,27 +302,26 @@ def main():
             rec = app.calc[(nr, names[barrier_name])]
             assert not rec["missing"], (item["file"], barrier_name, rec["missing"])
             value = dict(rec["thickness"])[material]
-            ok = tolerance is None or abs(value - ncrp) <= tolerance
+            # "below": NCRP 147 shows that this thickness is enough
+            ok = value < ncrp if tolerance == "below" else abs(value - ncrp) <= tolerance
             if not ok:
                 failed.append((item["file"], barrier_name, material, ncrp, value))
             shown = "no shielding needed" if value == 0 else f"{value:.2f} mm {material.lower()}"
+            check = app.dose_check(nr, names[barrier_name])
+            if check and check["basis"].startswith("planned"):
+                shown += f"; the {check['basis']} lets {check['dose']:.3f} mGy/week through"
             lines.append(f"• {barrier_name}: {setup}.\n   NCRP 147: {said}. Program: {shown}.")
             rows.append({"section": item["file"].split()[0], "example": item["title"].split(": ", 1)[1],
                          "barrier": barrier_name, "material": material, "setup": setup, "ncrp_text": said,
-                         "ncrp": ncrp, "program": value,
-                         "K": rec["K_total"], "B": rec["B"], "same": tolerance is not None})
-            print(f"{item['file']:42s} {barrier_name:10s} {material:17s} NCRP {ncrp:7.2f}  program {value:7.2f}"
-                  f"{'' if tolerance is not None else '   (differs, see the note)'}")
-        notes = []
-        if any(check[5] is None for check in item["checks"]):
-            notes.append("Where NCRP 147 and the program differ: the program finds one thickness for the sum of the "
-                         "air kerma of all radiation types, with the transmission of the type set for the calculation "
-                         "and, when it has preshielding, takes that preshielding off the whole thickness. Here part "
-                         "of the air kerma does not pass through the image receptor (secondary radiation), so NCRP "
-                         "147, which follows each part through its own thickness, needs more shielding.")
+                         "ncrp": ncrp, "below": tolerance == "below", "program": value,
+                         "planned_dose": check["dose"] if check and check["basis"].startswith("planned") else None,
+                         "K": rec["K_total"], "B": rec["B"]})
+            print(f"{item['file']:42s} {barrier_name:10s} {material:17s} NCRP {'<' if tolerance == 'below' else ' '}"
+                  f"{ncrp:6.2f}  program {value:7.2f}" + (f"  planned: {check['dose']:.4f} mGy/week"
+                                                         if check and check["basis"].startswith("planned") else ""))
         project, _ = app.collect_project()
         project.update(title=item["title"], description="\n\n".join(
-            [item["about"], "\n".join(lines)] + notes + [DISTANCES]))
+            [item["about"], "\n".join(lines), METHOD, DISTANCES]))
         path = os.path.join(FOLDER, item["file"] + ".shield")
         with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("project.json", json.dumps(project, indent=1, ensure_ascii=False))

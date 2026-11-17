@@ -37,8 +37,10 @@ the thickness you plan to install.
 ## The method in brief
 
 For each workload distribution that reaches a barrier, the unshielded weekly air kerma at the occupied point beyond it
-is *K* = *N*·*U*·*T*·*K*¹ / *d*². The barrier must transmit *B* = *P* / Σ*K*, and the thickness of each material comes
-from the Archer equation *x* = (1/αγ)·ln[(*B*^−γ + β/α) / (1 + β/α)].
+is *K* = *N*·*U*·*T*·*K*¹ / *d*². The barrier must transmit *B* = *P* / Σ*K*. With one radiation type the thickness of
+each material comes from the Archer equation *x* = (1/αγ)·ln[(*B*^−γ + β/α) / (1 + β/α)], minus the preshielding.
+With several, each goes through the barrier with the transmission data of its own workload distribution and its own
+preshielding, and the thickness is the one at which Σ *K*·*B*(*x* + *x*pre) = *P* (as in NCRP 147 §5.3.5 and §5.4.2).
 
 - *d* runs from the source to the barrier, plus the distance beyond the barrier to the person (NCRP 147 §4.1.2), which
   can be edited for each barrier. The defaults are 0.3 m for walls and doors, 0.5 m for the ceiling, and 1.3 m for the

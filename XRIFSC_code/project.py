@@ -17,7 +17,7 @@ VERSION = 2  # 2: distance beyond each barrier, CT distance to the barrier, CT s
 OLD_CT_OFFSETS = {1: 1.7, 2: 0.5}
 FILE_TYPES = [("Shielding project", "*.shield"), ("All files", "*.*")]
 # Inputs of one radiation type of an X-ray / mammography barrier (keys "<name> <e><nr><i>")
-RADIATION_KEYS = ["radiob_w", "setv", "entryd", "vselxray", "vsexroom", "use_ent", "entk", "preshvar", "radiob_pre",
+RADIATION_KEYS = ["radiob_w", "entryd", "vselxray", "vsexroom", "use_ent", "entk", "preshvar", "radiob_pre",
                   "unairkerv", "airkerv", "radiob_leak", "oworkvar", "workv", "worentry", "numpapwe", "kvpdata",
                   "dbtmode"]
 CT_KEYS = ["bp_var", "hp_var", "dlpb_var", "dlph_var", "kvp_var"]
@@ -195,7 +195,6 @@ class ProjectFile:
                                             or key("workltit") not in self.d):
                 self.write_input(key("radiob_w"), radiation)
                 self.barrier_sel(e, nr, t, i)
-            self.write_input(key("setv"), saved.get("setv"))
             self.write_input(key("entryd"), saved.get("entryd"))
             if saved.get("vselxray") in ("1", "2"):
                 self.write_input(key("vselxray"), saved["vselxray"])

@@ -198,6 +198,26 @@ def archer_transmission(params, x):
     return ((1 + b / a) * math.exp(a * g * x) - b / a) ** (-1 / g)
 
 
+def through(params, layers, start=1.0):
+    """Transmission of one radiation type through layers [(material, mm)], each starting at the equivalent thickness
+    of what is in front of it ('start': what its preshielding lets through)."""
+    transmission = start
+    for material, x in layers:
+        transmission = archer_transmission(params[material], archer_thickness(params[material], transmission) + x)
+    return transmission
+
+
+def solve(dose, goal):
+    """The thickness at which dose (falling with it) comes down to goal, by halving an interval."""
+    low, high = 0.0, 1.0
+    while dose(high) > goal:
+        low, high = high, 2 * high
+    for _ in range(200):
+        middle = (low + high) / 2
+        low, high = (middle, high) if dose(middle) > goal else (low, middle)
+    return (low + high) / 2
+
+
 def close(a, b, tolerance=1e-6):
     assert abs(a - b) <= tolerance * max(1.0, abs(b)), (a, b)
 
@@ -370,15 +390,26 @@ def method():
     story += H2("Transmission and thickness")
     story += [P("The barrier must let through no more than the fraction")]
     story += formula("<i>B</i> = <i>P</i> / Σ<i>K</i>")
-    story += [P("If <i>B</i> ≥ 1 the barrier needs no shielding and the result says <b>none needed</b>. Otherwise "
-                "the thickness of each material follows from the Archer equation, with the NCRP 147 fitting "
-                "parameters α, β, γ of that material for the workload distribution:")]
+    story += [P("If <i>B</i> ≥ 1 the barrier needs no shielding and the result says <b>none needed</b>. With one "
+                "radiation type, the thickness of each material follows from the Archer equation, with the NCRP 147 "
+                "fitting parameters α, β, γ of that material for the workload distribution (minus the preshielding, "
+                "section 2.5):")]
     story += formula("<i>x</i> = (1 / αγ) · ln[ (<i>B</i><super>−γ</super> + β/α) / (1 + β/α) ]")
-    story += [P("A barrier with several workload distributions takes α, β, γ from the one ticked <b>Set for the "
-                "calculation</b>. Tick the distribution that gives the most air kerma, or the most penetrating one "
-                "for a conservative result. A primary beam given by its kVp can use, instead of the NCRP 147 data, "
-                "those of modern digital radiography (section 4.9); the workload distributions of the literature "
-                "have their own (sections 4.10, 4.11 and 6.1).")]
+    story += [P("When several radiation types reach one barrier, each goes through it with the fitting parameters of "
+                "its own workload distribution, primary or secondary, and its own preshielding, as NCRP 147 does in "
+                "its examples (Sections 5.3.5 and 5.4.2). The program finds the thickness at which their air kerma "
+                "beyond the barrier adds up to <i>P</i>:")]
+    story += formula("Σ<sub><i>i</i></sub> <i>K</i><sub><i>i</i></sub> · <i>B</i><sub><i>i</i></sub>(<i>x</i> + "
+                     "<i>x</i><sub>pre,<i>i</i></sub>) = <i>P</i>")
+    story += [P("Every radiation type therefore needs its workload distribution (or kVp). A primary beam given by its "
+                "kVp can use, instead of the NCRP 147 data, those of modern digital radiography (section 4.9); the "
+                "workload distributions of the literature have their own (sections 4.10, 4.11 and 6.1).")]
+    story += note("Earlier versions used the transmission of one radiation type, ticked <b>Set for the "
+                  "calculation</b>, for the whole Σ<i>K</i>, and took its preshielding off the whole thickness. Where a "
+                  "primary beam behind the image receptor and secondary radiation reach the same barrier, the "
+                  "secondary radiation does not pass through the image receptor, so these barriers now come out "
+                  "somewhat thicker, as in NCRP 147 (section 11.9). Projects of earlier versions open and are "
+                  "calculated this way.", "Note")
     story += H2("Design goal P")
     story += table([["Area beyond the barrier", "P (air kerma)", "Annual"],
                     ["Controlled: occupied only by radiation workers", "0.1 mGy/week", "5 mSv/year"],
@@ -408,10 +439,13 @@ def method():
                   "when you open them and show the corrected results.", "Note")
     story += H2("Preshielding")
     story += [P("Behind the image receptor the primary beam is already attenuated by the grid, the cassette and "
-                "their supports. NCRP 147 credits this as an equivalent thickness, which the program subtracts "
-                "from the calculated thickness: <b>Bucky</b> (table or wall bucky) 0.85 mm lead, 72 mm concrete or "
-                "7 mm steel; <b>Cross-table</b> (grid and cassette only) 0.3 mm lead, 30 mm concrete or 2 mm steel. "
-                "Use it only for primary barriers behind the image receptor.")]
+                "their supports. NCRP 147 credits this as an equivalent thickness <i>x</i><sub>pre</sub>: "
+                "<b>Bucky</b> (table or wall bucky) 0.85 mm lead, 72 mm concrete or 7 mm steel; <b>Cross-table</b> "
+                "(grid and cassette only) 0.3 mm lead, 30 mm concrete or 2 mm steel. Only that primary beam goes "
+                "through it: for it the barrier is <i>x</i> + <i>x</i><sub>pre</sub> thick, while the secondary "
+                "radiation that reaches the same barrier meets <i>x</i> alone. With one radiation type this is the "
+                "calculated thickness minus <i>x</i><sub>pre</sub>. Use it only for primary barriers behind the "
+                "image receptor.")]
     story += H2("CT rooms")
     story += [P("NCRP 147 finds the secondary air kerma of CT from the dose-length product (DLP). Per scan, at 1 m "
                 "from the isocenter:")]
@@ -432,9 +466,10 @@ def method():
     story += [bullets(["<b>Each one alone</b>: the thickness of each material as if it were the only one in the "
                        "barrier, e.g. lead <i>or</i> concrete. These are alternatives.",
                        "<b>Layers of one barrier</b>: one barrier made of all the materials, e.g. concrete <i>and</i> "
-                       "lead. Each material gives its share (%) of the attenuation ln(1/<i>B</i>), from the room "
-                       "side outwards. Each layer starts at the equivalent thickness of everything in front of it "
-                       "(the preshielding included), so the order counts: the first layers harden the beam."])]
+                       "lead. From the room side outwards, each material gives its share (%) of the attenuation of "
+                       "the air kerma, from what the preshielding lets through down to <i>P</i>. For every radiation "
+                       "type, each layer starts at the equivalent thickness of everything in front of it (its "
+                       "preshielding included), so the order counts: the first layers harden the beam."])]
     story += H2("Checking a planned thickness")
     story += [P("When you tick <b>Check the dose beyond the barrier with a planned thickness</b> and type the "
                 "thicknesses you intend to install, the program calculates the weekly air kerma beyond the "
@@ -523,9 +558,8 @@ def xray_room():
                      "list shows the NCRP 147 distributions first and, below a line, those of the literature, whose "
                      "names end with their source (table in section 4.8). With kVp you must write the unshielded air "
                      "kerma yourself; for a primary beam you also choose the transmission data, NCRP 147 or modern "
-                     "digital radiography (section 4.9).",
-                     "<b>Set for the calculation</b>: tick it on the distribution whose transmission data (α, β, γ) "
-                     "are used. Only one per barrier.",
+                     "digital radiography (section 4.9). Every radiation type needs it: it goes through the barrier "
+                     "with these transmission data (section 2.2).",
                      "Primary radiation: <b>Use Factor</b> <i>U</i> (NCRP 147: floor 0.89, cross-table wall 0.09, "
                      "wall No. 3 0.02, chest bucky 1; Kirby et al. 2023: 1, section 4.10), the <b>Primary Unshielded "
                      "Air Kerma</b> <i>K</i><super>1</super><sub>P</sub> (filled in when the distribution has one) "
@@ -1029,23 +1063,26 @@ def worked_examples():
     K2 = d2["N"] * d2["U"] * d2["T"] * d2["K1"] / d2["d"] ** 2
     K = K1 + K2
     close(K, b4["K_total"])
-    B = b4["P"] / K
-    conc, lead = b4["params"]["Concrete"], b4["params"]["Lead"]
-    pre = b4["preshielding"]
-    start = archer_transmission(lead, pre["Lead"])
-    total = math.log(start / B)
-    after = start * math.exp(-0.5 * total)
-    xc = archer_thickness(conc, after) - archer_thickness(conc, start)
-    xl = archer_thickness(lead, B) - archer_thickness(lead, after)
+    P4 = b4["P"]
+    c1, c2 = b4["components"]  # each with its own transmission data and preshielding
+    p1, p2 = c1["params"], c2["params"]
+    pre = c1["pre"]["Lead"]
+    s1 = archer_transmission(p1["Lead"], pre)  # the bucky, for the primary beam only
+    after_pre = K1 * s1 + K2
+    total = math.log(after_pre / P4)
+    goal = after_pre * math.exp(-0.5 * total)
+    xc = solve(lambda v: K1 * through(p1, [("Concrete", v)], s1) + K2 * through(p2, [("Concrete", v)]), goal)
+    xl = solve(lambda v: K1 * through(p1, [("Concrete", xc), ("Lead", v)], s1)
+               + K2 * through(p2, [("Concrete", xc), ("Lead", v)]), P4)
     close(xc, dict(b4["thickness"])["Concrete"])
     close(xl, dict(b4["thickness"])["Lead"])
-    Tp = archer_transmission(conc, archer_thickness(conc, start) + 100)
-    Tp = archer_transmission(lead, archer_thickness(lead, Tp) + 1)
-    close(K * Tp, b4["check"]["dose"])
+    planned = [("Concrete", 100), ("Lead", 1)]
+    t1, t2 = through(p1, planned, s1), through(p2, planned)
+    close(K1 * t1 + K2 * t2, b4["check"]["dose"])
     story += H2("Two radiation types and layers: X-ray room, Barrier 4 (chest bucky wall)")
     story += [P(f"The wall behind the chest bucky receives the primary beam of the chest bucky distribution and the "
                 f"secondary radiation of the whole room. Beyond it are offices (<i>T</i> = {b4['T']:g}, <i>P</i> = "
-                f"{b4['P']:g} mGy/week); the source is {d1['d'] - b4['beyond']:.2f} m away, so <i>d</i> = "
+                f"{P4:g} mGy/week); the source is {d1['d'] - b4['beyond']:.2f} m away, so <i>d</i> = "
                 f"{d1['d'] - b4['beyond']:.2f} + {b4['beyond']:g} = {d1['d']:.2f} m.")]
     story += table([["Radiation type", "N", "U", "K<super>1</super> (mGy/patient)", "K (mGy/week)"],
                     [f"#1 Primary, {d1['distribution']}, bucky", f"{d1['N']:g}", f"{d1['U']:g}", f"{d1['K1']:g}",
@@ -1053,17 +1090,21 @@ def worked_examples():
                     [f"#2 Secondary, {d2['distribution']}", f"{d2['N']:g}", f"{d2['U']:g}", f"{d2['K1']:g}",
                      fmt(K2)],
                     ["<b>Total</b>", "", "", "", f"<b>{fmt(K)}</b>"]], [72, 16, 14, 34, 34])
-    story += [P(f"<i>B</i> = {b4['P']:g} / {fmt(K)} = <b>{fmt(B)}</b>, with the transmission data of the primary "
-                f"(ticked <b>Set for the calculation</b>). The wall is one barrier of concrete on the room side and "
+    story += [P(f"Each goes through the wall with its own data: #1 with the primary transmission of the chest bucky "
+                f"distribution, behind the wall bucky ({pre:g} mm lead), #2 with the secondary transmission of the "
+                f"whole room, which the bucky does not stop. The wall is one barrier of concrete on the room side and "
                 f"lead outside, half of the shielding each:")]
-    story += [bullets([f"The bucky (0.85 mm lead) already lets through {fmt(start)}. The rest of the attenuation is "
-                       f"ln({fmt(start)} / {fmt(B)}) = {total:.3f}, so each layer takes {total / 2:.3f}.",
-                       f"After the concrete the transmission must be {fmt(start)} × e<super>−{total / 2:.3f}</super> "
-                       f"= {fmt(after)}: concrete from {archer_thickness(conc, start):.1f} to "
-                       f"{archer_thickness(conc, after):.1f} mm of equivalent thickness, i.e. <b>{xc:.2f} mm</b>.",
-                       f"The lead takes it from {fmt(after)} to {fmt(B)}: <b>{xl:.2f} mm</b>."])]
-    story += [P(f"Planned: 100 mm concrete + 1 mm lead. Layer after layer the transmission becomes {fmt(Tp)} and the "
-                f"dose beyond {fmt(K * Tp)} mGy/week, {MET}.")]
+    story += [bullets([f"The bucky lets through {fmt(s1)} of #1, so {fmt(K1)} × {fmt(s1)} + {fmt(K2)} = "
+                       f"{fmt(after_pre)} mGy/week reach the wall. Down to <i>P</i> = {P4:g} the attenuation is "
+                       f"ln({fmt(after_pre)} / {P4:g}) = {total:.3f}, so each layer takes {total / 2:.3f}.",
+                       f"After the concrete {fmt(after_pre)} × e<super>−{total / 2:.3f}</super> = {fmt(goal)} mGy/week "
+                       f"may remain: the concrete <i>x</i> for which {fmt(K1)} · <i>B</i><sub>1</sub>(0.85 mm lead + "
+                       f"<i>x</i>) + {fmt(K2)} · <i>B</i><sub>2</sub>(<i>x</i>) = {fmt(goal)}, i.e. <b>{xc:.2f} mm</b>.",
+                       f"The lead then brings the sum down to {P4:g} mGy/week: <b>{xl:.2f} mm</b>."])]
+    story += [P(f"Each thickness is found by trying thicknesses until the sum is right (it cannot be solved in closed "
+                f"form). Planned: 100 mm concrete + 1 mm lead. Through all the layers #1 keeps {fmt(t1)} and #2 "
+                f"{fmt(t2)}: the dose beyond is {fmt(K1)} × {fmt(t1)} + {fmt(K2)} × {fmt(t2)} = "
+                f"{fmt(K1 * t1 + K2 * t2)} mGy/week, {MET}.")]
 
     # ---------- CT ----------
     flc = ct["Floor"]
@@ -1200,7 +1241,7 @@ def worked_examples():
                 "X-ray and CT rooms and a corridor below. Its 2D / 3D view shows every barrier, and the radiation "
                 "of each room crossing the walls of the others.")]
     story += figure("viewer_department.png", "The example department in the 2D / 3D view.",
-                    width=145 * mm, crop=(0, 140, 1130, 1000))
+                    width=120 * mm, crop=(0, 140, 1130, 1000))
     return story
 
 
@@ -1218,24 +1259,26 @@ def ncrp_examples():
     table_rows = [["Section", "Example", "Barrier", "NCRP 147", "Program"]]
     for row in rows:
         unit = row["material"].lower()
-        ncrp = "no shielding" if row["ncrp"] == 0 else f"{row['ncrp']:g} mm {unit}"
+        ncrp = "no shielding" if row["ncrp"] == 0 else \
+            f"{'less than ' if row['below'] else ''}{row['ncrp']:g} mm {unit}"
         program = "no shielding" if row["program"] == 0 else f"{row['program']:.2f} mm"
-        if not row["same"]:
-            program = f"<font color='{BAD}'>{program}</font>"
         table_rows.append([row["section"], row["example"].replace("&", "&amp;"), row["barrier"], ncrp, program])
-    story += table(table_rows, [16, 66, 22, 38, 28])
-    story += [P("Most results agree to the second digit. Where they differ a little, NCRP 147 read the thickness "
-                "from a figure (e.g. 0.53 against 0.51 mm lead for the darkroom, 62 against 65 mm concrete for the "
-                "R&amp;F floor, where the report's own Figure 4.8c gives 65 mm), or rounded before subtracting the "
+    story += table(table_rows, [16, 62, 22, 42, 28])
+    rf = next(r for r in rows if r["section"] == "5.4" and r["barrier"] == "Floor")
+    cross = next(r for r in rows if r["section"] == "5.3" and r["barrier"] == "Barrier 4")
+    story += [P("The results agree. Where they differ a little, NCRP 147 read the thickness from a figure (e.g. "
+                "0.53 against 0.51 mm lead for the darkroom; 62 mm concrete for the R&amp;F floor away from the "
+                "table, where the report's own Figure 4.8c gives 65 mm), or rounded before subtracting the "
                 "preshielding (1.4 against 1.31 mm for the chest unit)."),
-              P(f"Two results are <font color='{BAD}'>lower</font> than NCRP 147: the cross-table wall of the "
-                "radiographic room (0.61 against 0.78 mm lead) and the floor under the table of the R&amp;F room "
-                "(62 against 69 mm concrete). In both, a primary beam behind the image receptor (with preshielding) "
-                "and secondary radiation that does not pass through it reach the same barrier. The program finds "
-                "one thickness for the sum of the air kerma, with the transmission of the radiation type set for "
-                "the calculation, and takes the preshielding off the whole of it. NCRP 147 follows each part through "
-                "its own thickness. For such barriers, check the result as NCRP 147 does (Sections 5.3.5 and 5.4.2), "
-                "or calculate the barrier without the preshielding, which is on the safe side.")]
+              P("Two barriers receive a primary beam behind the image receptor and secondary radiation that does not "
+                "pass through it. NCRP 147 follows each through its own thickness, and so does the program (section "
+                f"2.2). For the R&amp;F floor under the table it finds {rf['program']:.1f} mm concrete, against "
+                f"the 69 mm of NCRP 147; with the 72 mm that the report tries it lets {rf['planned_dose']:.3f} "
+                "mGy/week through, as the report's 0.017. For the cross-table wall the report tries 0.8 mm lead, "
+                "which lets 0.014 mGy/week through, below 0.02, so less is enough: the program finds "
+                f"{cross['program']:.2f} mm, and {cross['planned_dose']:.3f} mGy/week with 0.8 mm (the report reads its "
+                "transmissions from figures). The 0.78 mm that the report then quotes comes from a calculation with "
+                "all the sources of the room, which the example does not give.")]
     return story
 
 
