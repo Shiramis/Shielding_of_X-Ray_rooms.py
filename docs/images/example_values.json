@@ -20,7 +20,7 @@
      "d": 2.3,
      "K": 104.98298676748584,
      "D": 1.0,
-     "symbol": "dP"
+     "symbol": "d_{P}"
     }
    ],
    "beyond": 1.3,
@@ -40,15 +40,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.03994,
-     0.1448,
-     0.4231
-    ],
     "Lead": [
      2.651,
      16.56,
      0.4585
+    ],
+    "Concrete": [
+     0.03994,
+     0.1448,
+     0.4231
     ]
    },
    "components": [
@@ -127,7 +127,7 @@
      "d": 2.5,
      "K": 0.18816000000000002,
      "D": 2.0,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.5,
@@ -147,15 +147,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.0361,
-     0.1433,
-     0.56
-    ],
     "Lead": [
      2.298,
      17.38,
      0.6193
+    ],
+    "Concrete": [
+     0.0361,
+     0.1433,
+     0.56
     ]
    },
    "components": [
@@ -226,7 +226,7 @@
      "d": 3.77,
      "K": 0.03588289511640833,
      "D": 3.47,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -316,7 +316,7 @@
      "d": 2.8,
      "K": 0.17908163265306123,
      "D": 2.5,
-     "symbol": "dP"
+     "symbol": "d_{P}"
     },
     {
      "no": 2,
@@ -331,7 +331,7 @@
      "d": 2.8,
      "K": 0.013010204081632656,
      "D": 2.5,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -474,7 +474,7 @@
      "d": 4.3,
      "K": 0.22065981611681992,
      "D": 4.0,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -573,7 +573,7 @@
      "d": 2.8,
      "K": 0.10408163265306125,
      "D": 2.5,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -672,7 +672,7 @@
      "d": 2.3,
      "K": 52.17391304347827,
      "D": 2.0,
-     "symbol": "dP"
+     "symbol": "d_{P}"
     },
     {
      "no": 2,
@@ -687,7 +687,7 @@
      "d": 2.3,
      "K": 0.7712665406427223,
      "D": 2.0,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -716,15 +716,15 @@
     ]
    ],
    "params": {
-    "Concrete": [
-     0.03552,
-     0.1177,
-     0.6007
-    ],
     "Lead": [
      2.264,
      13.08,
      0.56
+    ],
+    "Concrete": [
+     0.03552,
+     0.1177,
+     0.6007
     ]
    },
    "components": [
@@ -834,9 +834,6 @@
    "Lead (mm)",
    "Concrete (mm)",
    "Gypsum Wallboard (mm)",
-   "Steel (mm)",
-   "Plate Glass (mm)",
-   "Wood (mm)",
    "Dose beyond (mGy/week)",
    "Goal P",
    "Materials",
@@ -856,9 +853,6 @@
     0.8471912911474037,
     57.29618591136796,
     null,
-    null,
-    null,
-    null,
     0.003239738601513447,
     "met (planned Concrete 100 mm)",
     "Each material alone",
@@ -877,9 +871,6 @@
     0.2115135626421399,
     20.21587689463103,
     null,
-    null,
-    null,
-    null,
     0.02,
     "met (required thickness)",
     "Each material alone",
@@ -896,9 +887,6 @@
     0.03588289511640833,
     0.5573686274509804,
     0.0349113733121264,
-    null,
-    null,
-    null,
     null,
     null,
     0.02,
@@ -919,9 +907,6 @@
     0.002992288213630391,
     0,
     null,
-    null,
-    null,
-    null,
     0.02,
     "met (required thickness)",
     "Each material alone",
@@ -940,9 +925,6 @@
     0.05007817465094018,
     null,
     14.36486444837539,
-    null,
-    null,
-    null,
     0.005461941162214547,
     "met (planned Lead 0.5 mm)",
     "Each material alone",
@@ -961,9 +943,6 @@
     0.1325241604505748,
     null,
     38.63943374915429,
-    null,
-    null,
-    null,
     0.04412696163562304,
     "EXCEEDED (planned Gypsum Wallboard 15.9 mm)",
     "Each material alone",
@@ -981,9 +960,6 @@
     0.0003777492145101399,
     0.7675836460965411,
     32.92845835224327,
-    null,
-    null,
-    null,
     null,
     0.001115875102286194,
     "met (planned Concrete 100 mm + Lead 1 mm)",
@@ -1489,7 +1465,7 @@
      "d": 2.3,
      "K": 0.7410207939508507,
      "D": 1.0,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 1.3,
@@ -1509,15 +1485,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.2539,
-     1.8411,
-     0.3924
-    ],
     "Lead": [
      29.91,
      184.4,
      0.355
+    ],
+    "Concrete": [
+     0.2539,
+     1.8411,
+     0.3924
     ]
    },
    "components": [
@@ -1588,7 +1564,7 @@
      "d": 2.5,
      "K": 0.12544,
      "D": 2.0,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.5,
@@ -1608,15 +1584,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Concrete": [
-     0.2539,
-     1.8411,
-     0.3924
-    ],
     "Lead": [
      29.91,
      184.4,
      0.355
+    ],
+    "Concrete": [
+     0.2539,
+     1.8411,
+     0.3924
     ]
    },
    "components": [
@@ -1687,7 +1663,7 @@
      "d": 3.82,
      "K": 0.007538170554535237,
      "D": 3.52,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -1786,7 +1762,7 @@
      "d": 1.8,
      "K": 0.013580246913580245,
      "D": 1.5,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -1885,7 +1861,7 @@
      "d": 2.3,
      "K": 0.166351606805293,
      "D": 2.0,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -1984,7 +1960,7 @@
      "d": 3.8,
      "K": 0.01218836565096953,
      "D": 3.5,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -2083,7 +2059,7 @@
      "d": 2.3,
      "K": 0.166351606805293,
      "D": 2.0,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -2184,7 +2160,7 @@
      "d": 2.0,
      "K": 2.6205,
      "D": 1.7,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,
@@ -2482,7 +2458,7 @@
      "d": 2.0,
      "K": 6.629331609505208,
      "D": 1.7,
-     "symbol": "dsec"
+     "symbol": "d_{sec}"
     }
    ],
    "beyond": 0.3,

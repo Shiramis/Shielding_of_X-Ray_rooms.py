@@ -34,9 +34,9 @@ CHEST_BUCKY, FLUORO, RAD_TUBE = "Rad Room (chest bucky)", "Fluoroscopy Tube (R&F
 METHOD = ("Method: every radiation type goes through the barrier with the transmission of its own workload "
           "distribution and its own preshielding, and the thickness is the one at which the air kerma beyond adds up "
           "to P (NCRP 147 Sections 5.3.5 and 5.4.2).")
-DISTANCES = ("Distances: as NCRP 147 gives them, from the source to the person beyond the barrier (dP primary, dL "
-             "leakage, dS scatter, dsec leakage and scatter): 'Enter the whole distance' is ticked, so nothing is "
-             "added beyond the barrier.")
+DISTANCES = ("Distances: as NCRP 147 gives them, from the source to the person beyond the barrier (d_{P} primary, "
+             "d_{L} leakage, d_{S} scatter, d_{sec} leakage and scatter): 'Enter the whole distance' is ticked, so "
+             "nothing is added beyond the barrier.")
 
 
 def number(value):
@@ -123,8 +123,8 @@ example("5.1 Cardiac angiography", "NCRP 147 §5.1: Cardiac angiography",
                          location=OFFICE)}, patients=25),
         "25 patients per week, Cardiac Angiography workload distribution. Only secondary radiation: the image "
         "intensifier stops the primary beam.",
-        [("Barrier 1", "Lead", "a wall to a fully occupied uncontrolled area (T = 1, P = 0.02 mGy/week), d = 4 m "
-          "from the isocenter; leakage + forward/backscatter, K¹sec = 3.8 mGy/patient at 1 m (Table 4.7)",
+        [("Barrier 1", "Lead", "a wall to a fully occupied uncontrolled area (T = 1, P = 0.02 mGy/week), d_{sec} = 4 m "
+          "from the isocenter; leakage + forward/backscatter, K¹_{sec} = 3.8 mGy/patient at 1 m (Table 4.7)",
           1.3, "K = 5.9 mGy/week, B = 3.4×10⁻³: 1.3 mm lead (Equation 4.10, Figure C.2)", 0.05)])
 
 example("5.2 Dedicated chest unit", "NCRP 147 §5.2: Dedicated chest unit",
@@ -134,11 +134,11 @@ example("5.2 Dedicated chest unit", "NCRP 147 §5.2: Dedicated chest unit",
              patients=300),
         "300 patients per week, Chest Room workload distribution; the beam always points at the wall-mounted chest "
         "bucky (1535 cm² at 1.83 m).",
-        [("Barrier 1", "Lead", "the wall behind the image receptor, primary, U = 1, K¹P = 1.2 mGy/patient, an office "
-          "(T = 1, P = 0.02) at d = 3 m, wall bucky preshielding 0.85 mm lead (Table 4.6)",
+        [("Barrier 1", "Lead", "the wall behind the image receptor, primary, U = 1, K¹_{P} = 1.2 mGy/patient, an office "
+          "(T = 1, P = 0.02) at d_{P} = 3 m, wall bucky preshielding 0.85 mm lead (Table 4.6)",
           1.4, "B = 5×10⁻⁴: 2.2 mm lead in all, minus 0.85 mm = 1.4 mm (the total rounded to 2.2 mm first)", 0.1),
          ("Barrier 2", "Lead", "the adjacent wall, secondary, leakage + side-scatter 2.7×10⁻³ mGy/patient, an office "
-          "at d = 2.1 m", 0.42, "K = 0.18 mGy/week, B = 0.11: 0.42 mm lead", 0.02)])
+          "at d_{sec} = 2.1 m", 0.42, "K = 0.18 mGy/week, B = 0.11: 0.42 mm lead", 0.02)])
 
 example("5.3 Radiographic room", "NCRP 147 §5.3: Radiographic room (Figures 5.1 and 5.2)",
         room("X-Ray room", "§5.3 Radiographic room", {
@@ -164,35 +164,36 @@ example("5.3 Radiographic room", "NCRP 147 §5.3: Radiographic room (Figures 5.1
         "125 patients per week in the room of Figures 5.1 and 5.2. Each barrier is one calculation of Section 5.3; "
         "the Door is not part of the example.",
         [("Floor", "Concrete", "5.3.1.1, under the table: primary Rad Room (floor), U = 1 (instead of 0.89, to be "
-          "safe), K¹P = 5.2, d = 4.1 m, table bucky (72 mm concrete); an office below",
+          "safe), K¹_{P} = 5.2, d_{P} = 4.1 m, table bucky (72 mm concrete); an office below",
           35, "K = 39 mGy/week, B = 5.1×10⁻⁴: 107 mm concrete in all, minus 72 mm = 35 mm", 1.0),
-         ("Ceiling", "Concrete", "5.3.2: secondary Rad Room (all barriers), leakage + forward/backscatter, d = 2.7 m",
+         ("Ceiling", "Concrete", "5.3.2: secondary Rad Room (all barriers), leakage + forward/backscatter, d_{sec} = 2.7 m",
           44, "K = 0.84 mGy/week, B = 2.4×10⁻²: 44 mm concrete", 1.0),
          ("Barrier 1", "Lead", "5.3.3.1, chest bucky wall behind the image receptor: primary Rad Room (chest bucky), "
-          "U = 1, K¹P = 2.3, d = 2.5 m, wall bucky; a staff rest room (T = 1/5)",
+          "U = 1, K¹_{P} = 2.3, d_{P} = 2.5 m, wall bucky; a staff rest room (T = 1/5)",
           0.45, "B = 2.2×10⁻³: 1.3 mm lead in all (Figure B.2), minus 0.85 mm = 0.45 mm", 0.05),
          ("Barrier 2", "Lead", "5.3.3.2, the same wall outside the beam: the over-table tube (Rad Room floor, leakage "
-          "+ side-scatter, 4.5 m), side-scatter of the chest patient (0.8 m) and leakage of the chest tube (2.5 m)",
+          "+ side-scatter, d_{sec} = 4.5 m), side-scatter of the chest patient (d_{S} = 0.8 m) and leakage of the "
+          "chest tube (d_{L} = 2.5 m)",
           0.35, "K = 0.14 + 0.96 + 0.008 = 1.1 mGy/week, B = 9.1×10⁻² (P/T = 0.1); with the chest bucky "
           "transmission for all of them, to be simple and safe, 0.35 mm lead (with each source's own workload "
           "distribution and place, and 30° scatter from the chest patient: 0.3 mm)", 0.02),
-         ("Barrier 3", "Lead", "5.3.4, darkroom wall: secondary, d = 2 m, T = 1, P = 0.025 mGy/week for the "
+         ("Barrier 3", "Lead", "5.3.4, darkroom wall: secondary, d_{sec} = 2 m, T = 1, P = 0.025 mGy/week for the "
           "stored film", 0.53, "K = 1.1 mGy/week, B = 2.3×10⁻²: 0.53 mm lead (Figure C.2)", 0.03),
-         ("Barrier 4", "Lead", "5.3.5, cross-table wall: primary Rad Room (floor), U = 0.09, d = 2.8 m, behind grid "
-          "and cassette (0.3 mm lead), and secondary at 2 m, which does not pass through them; an office. 0.8 mm "
-          "planned, as NCRP 147 tries",
+         ("Barrier 4", "Lead", "5.3.5, cross-table wall: primary Rad Room (floor), U = 0.09, d_{P} = 2.8 m, behind "
+          "grid and cassette (0.3 mm lead), and secondary at d_{sec} = 2 m, which does not pass through them; an "
+          "office. 0.8 mm planned, as NCRP 147 tries",
           0.78, "the primary alone 0.9 − 0.3 = 0.6 mm. With the secondary radiation, each through its own thickness, "
-          "0.8 mm lets 0.72 B_sec(0.8) + 7.5 B_P(0.8 + 0.3) = 0.014 mGy/week through, below 0.02, so less is "
+          "0.8 mm lets 0.72 B_{sec}(0.8) + 7.5 B_{P}(0.8 + 0.3) = 0.014 mGy/week through, below 0.02, so less is "
           "enough; with all the sources of the room (also the chest bucky exposures, not given in the example) "
           "0.78 mm", ("below", 0.8)),
-         ("Barrier 5", "Lead", "5.3.6, control wall: secondary, d = 1.8 m, controlled area (P = 0.1)",
+         ("Barrier 5", "Lead", "5.3.6, control wall: secondary, d_{sec} = 1.8 m, controlled area (P = 0.1)",
           0.27, "K = 1.3 mGy/week, B = 7.7×10⁻²: 0.27 mm lead", 0.02),
-         ("Barrier 6", "Concrete", "5.3.1.2, the floor away from the table: secondary, d = 3 m", 33, "K = 0.47 mGy/week, B = 4.3×10⁻²: 33 mm concrete", 1.0),
+         ("Barrier 6", "Concrete", "5.3.1.2, the floor away from the table: secondary, d_{sec} = 3 m", 33, "K = 0.47 mGy/week, B = 4.3×10⁻²: 33 mm concrete", 1.0),
          ("Barrier 7", "Lead", "5.3.4, the film passbox: 25 patients in one day (Different Workload), "
-          "P = 5×10⁻⁴ mGy for loaded cassettes, d = 2 m",
+          "P = 5×10⁻⁴ mGy for loaded cassettes, d_{sec} = 2 m",
           1.3, "K = 0.21 mGy in a day, B = 2.3×10⁻³: 1.3 mm lead (Figure C.2)", 0.1),
          ("Barrier 8", "Lead", "5.3.6, loaded cassettes behind the control wall: 25 patients in one day, "
-          "P = 5×10⁻⁴ mGy, d = 1.8 m", 1.3, "K = 0.26 mGy in a day, B = 1.9×10⁻³: 1.3 mm lead", 0.05)])
+          "P = 5×10⁻⁴ mGy, d_{sec} = 1.8 m", 1.3, "K = 0.26 mGy in a day, B = 1.9×10⁻³: 1.3 mm lead", 0.05)])
 
 example("5.4 Radiographic and fluoroscopic room", "NCRP 147 §5.4: Radiographic and fluoroscopic (R&F) room",
         room("Fluoroscopy Room", "§5.4 R&F room", {
@@ -212,15 +213,15 @@ example("5.4 Radiographic and fluoroscopic room", "NCRP 147 §5.4: Radiographic 
         "The room of Figures 5.1 and 5.2 as an R&F room: 20 fluoroscopy and 60 radiographic-only patients per week, "
         "the fluoroscopy tube under the table, an office below. The room workload is the 20 fluoroscopy patients; "
         "the radiation types of the 60 radiographic patients have their own (Different Workload).",
-        [("Floor", "Concrete", "5.4.2, under the table: leakage (d = 2.4 m) and forward/backscatter (3 m) of the "
+        [("Floor", "Concrete", "5.4.2, under the table: leakage (d_{L} = 2.4 m) and forward/backscatter (d_{S} = 3 m) of the "
           "fluoroscopy tube, which do not pass through the table bucky, and the primary beam of the over-table tube, "
-          "U = 1, d = 4.1 m, behind the table bucky: Rad Room (floor) for the 60 patients and Rad Tube (R&F room) for "
+          "U = 1, d_{P} = 4.1 m, behind the table bucky: Rad Room (floor) for the 60 patients and Rad Tube (R&F room) for "
           "the 20. 72 mm planned, as NCRP 147 tries",
           69, "1 + 18.6 + 7 mGy/week, each through its own thickness: 72 mm lets 0.011 + 0.002 + 0.004 = "
           "0.017 mGy/week through; a minimum of 69 mm concrete", 1.0),
          ("Barrier 1", "Concrete", "5.4.1, the floor away from the table: leakage "
-          "and scatter of the fluoroscopy tube (2.4 and 3 m) and of the radiographic tube, for the 60 radiographic "
-          "(Rad Room all barriers) and the 20 fluoroscopy patients (Rad Tube R&F room) (4.1 and 3 m)",
+          "and scatter of the fluoroscopy tube (d_{L} = 2.4 and d_{S} = 3 m) and of the radiographic tube, for the 60 radiographic "
+          "(Rad Room all barriers) and the 20 fluoroscopy patients (Rad Tube R&F room) (d_{L} = 4.1 and d_{S} = 3 m)",
           62, "K = 1 + 0.23 + 0.063 = 1.3 mGy/week, B = 1.5×10⁻²: 62 mm concrete from Figure C.3 (65 mm from "
           "Figure 4.8c)", 4.0)])
 
@@ -233,9 +234,9 @@ example("5.5 Mammography", "NCRP 147 §5.5: Mammography",
         }, patients=150),
         "150 patients per week. NCRP 147 takes 3.6×10⁻² mGy per patient at 1 m from the isocenter of the unit in "
         "every direction (Section 5.5); it is written as the unshielded secondary air kerma.",
-        [("Barrier 1", "Gypsum Wallboard", "an adjacent wall to an office (T = 1, P = 0.02), d = 2.1 m",
+        [("Barrier 1", "Gypsum Wallboard", "an adjacent wall to an office (T = 1, P = 0.02), d_{sec} = 2.1 m",
           9.8, "K = 1.2 mGy/week, B = 1.7×10⁻²: 9.8 mm gypsum wallboard (Figure C.4)", 0.3),
-         ("Door", "Wood", "the door to a corridor (corridor door, T = 1/8), d = 2.1 m",
+         ("Door", "Wood", "the door to a corridor (corridor door, T = 1/8), d_{sec} = 2.1 m",
           41, "B = 0.13: 41 mm wood (Figure C.7); a 43 mm solid-core door is enough", 1.0)])
 
 # CTDI method: K¹sec = κ (L/p) mAs nCTDI100; the program works with the DLP, K¹sec = 1.2 κbody DLP or κhead DLP
@@ -248,12 +249,12 @@ example("5.6 CT, CTDI method", "NCRP 147 §5.6: Computed tomography, CTDI method
                  "dlph_var": number(CTDI_HEAD / 9e-5), "kvp_var": "120",
                  "phases": {"body": ["100"], "head": ["100"]}}),
         "A multi-slice scanner at 120 kVp, 100 patients per week: 60 with one body scan (L = 50 cm, pitch 1.35, "
-        "250 mAs, nCTDI100 = 0.138 mGy/mAs) and 40 with one head scan (L = 20 cm, pitch 1, 300 mAs, "
-        f"0.223 mGy/mAs). NCRP 147: K¹sec = κ (L/p) mAs nCTDI100 = {CTDI_BODY:.3f} mGy per body and "
+        "250 mAs, nCTDI_{100} = 0.138 mGy/mAs) and 40 with one head scan (L = 20 cm, pitch 1, 300 mAs, "
+        f"0.223 mGy/mAs). NCRP 147: K¹_{{sec}} = κ (L/p) mAs nCTDI_{{100}} = {CTDI_BODY:.3f} mGy per body and "
         f"{CTDI_HEAD:.3f} mGy per head scan. The program works with the DLP: the DLP entered gives the same values, "
         f"body {CTDI_BODY / (1.2 * 3e-4):.0f} mGy·cm (× 1.2 × 3×10⁻⁴), head {CTDI_HEAD / 9e-5:.0f} mGy·cm "
         "(× 9×10⁻⁵), one scan per procedure (100 %).",
-        [("Barrier 1", "Lead", "a wall to an office (T = 1, P = 0.02), 3 m from the isocenter",
+        [("Barrier 1", "Lead", "a wall to an office (T = 1, P = 0.02), d_{sec} = 3 m from the isocenter",
           1.3, "K = 3.1 mGy/week, B = 6.5×10⁻³: 1.3 mm lead (Figure A.2)", 0.05)])
 
 example("5.6.1 CT, DLP method", "NCRP 147 §5.6.1: Computed tomography, dose-length product method",
@@ -263,8 +264,8 @@ example("5.6.1 CT, DLP method", "NCRP 147 §5.6.1: Computed tomography, dose-len
                  "phases": {"body": ["100", "40"], "head": ["100", "40"]}}),
         "150 body and 30 head procedures per week, 40 % of them repeated with contrast (100 % + 40 % = 1.4 scans per "
         "procedure), the DLP of Table 5.2 (body average 550, head 1200 mGy·cm), 120 kVp.",
-        [("Barrier 1", "Lead", "an adjoining wall to a fully occupied office (T = 1, P = 0.02), 3 m from the "
-          "isocenter", 1.5, "K¹sec 0.28 (body) and 0.15 (head) mGy per procedure, K = 5.2 mGy/week, "
+        [("Barrier 1", "Lead", "an adjoining wall to a fully occupied office (T = 1, P = 0.02), d_{sec} = 3 m "
+          "from the isocenter", 1.5, "K¹_{sec} 0.28 (body) and 0.15 (head) mGy per procedure, K = 5.2 mGy/week, "
           "B = 3.9×10⁻³: 1.5 mm lead (Figure A.2)", 0.05)])
 
 DXA = 0.04 * 30 / 3600  # 0.04 mGy/h at 1 m, a spine and a hip scan of 15 s each
@@ -277,7 +278,7 @@ example("5.7 Bone mineral density unit", "NCRP 147 §5.7: Bone mineral density (
         f"air kerma, 0.04 mGy/h × 30 s = {DXA:.2e} mGy per patient (just below it, as NCRP 147 says 'below'). There "
         "are no transmission data for these heavily filtered beams; as NCRP 147 suggests, those of the highest kVp "
         "are used (Give kVp: 150).",
-        [("Barrier 1", "Lead", "an office (T = 1, P = 0.02) 1 m away", 0.0,
+        [("Barrier 1", "Lead", "an office (T = 1, P = 0.02), d_{sec} = 1 m", 0.0,
           "below 0.02 mGy/week at 1 m: no structural shielding is needed, even in the smallest room", 0.0)])
 
 
@@ -358,7 +359,7 @@ def barrier_distances(app, item, nr, names):
         common = {"section": section, "example": item["title"].split(": ", 1)[1], "barrier": barrier_name,
                   "whole": rec["whole"], "beyond": rec["beyond"]}
         if rec["kind"] == "ct":
-            rows.append(dict(common, radiation="Secondary (CT)", symbol="dsec (isocenter)", ncrp=spec["ncrp_ct"],
+            rows.append(dict(common, radiation="Secondary (CT)", symbol="d_{sec} (isocenter)", ncrp=spec["ncrp_ct"],
                              entered=rec["D"], d=rec["d"]))
             continue
         for k, (dist, given) in enumerate(zip(rec["distributions"], spec["radiation"]), start=1):
@@ -379,8 +380,11 @@ def write_comparison(rows, distances):
     then recalculated with Excel when it is installed, so that the file shows the values in any viewer."""
     from datetime import date
     from openpyxl import Workbook
+    from openpyxl.cell.rich_text import CellRichText, TextBlock
+    from openpyxl.cell.text import InlineFont
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
     from openpyxl.utils import get_column_letter
+    from theme import SUBSCRIPT, rich_parts
 
     font = lambda **kw: Font(name="Arial", size=kw.pop("size", 10), **kw)
     value_font, formula_font = font(color="0000FF"), font(color="000000")
@@ -404,8 +408,16 @@ def write_comparison(rows, distances):
         ws.sheet_properties.pageSetUpPr.fitToPage = True
         ws.print_title_rows = "4:4"
 
+    def rich(value, color="000000"):
+        """A text with subscripts (written d_{P}) as rich text of the cell; other values as they are."""
+        if not isinstance(value, str) or not SUBSCRIPT.search(value):
+            return value
+        return CellRichText([TextBlock(InlineFont(rFont="Arial", sz=10, color=color,
+                                                  vertAlign="subscript" if sub else None), part)
+                             for part, sub in rich_parts(value)])
+
     def put(ws, row, col, value, number_format=None, cell_font=None):
-        cell = ws.cell(row=row, column=col, value=value)
+        cell = ws.cell(row=row, column=col, value=rich(value))
         cell.font, cell.border, cell.alignment = cell_font or font(), border, top_wrap
         if number_format:
             cell.number_format = number_format
@@ -413,7 +425,7 @@ def write_comparison(rows, distances):
 
     def notes(ws, row, lines):
         for k, line in enumerate(lines):
-            ws.cell(row=row + k, column=1, value=line).font = font(color="4B5866")
+            ws.cell(row=row + k, column=1, value=rich(line, "4B5866")).font = font(color="4B5866")
 
     made = (f"Program: Shielding of X-ray Rooms, the project files of this folder (Examples\\NCRP 147), calculated by "
             f"tools/ncrp147_examples.py on {date.today():%d/%m/%Y}. Difference = Program − NCRP 147.")
@@ -486,8 +498,9 @@ def write_comparison(rows, distances):
         put(ws, r, 11, "the whole distance (nothing added)" if row["whole"] else
             f"to the barrier, + {row['beyond']:g} m beyond it")
     notes(ws, 5 + len(distances) + 1, [
-        "NCRP 147 gives every distance from the source to the person beyond the barrier: dP primary, dL leakage, dS "
-        "scatter (from the patient), dsec leakage and scatter (dS = dL); CT from the isocenter.",
+        "NCRP 147 gives every distance from the source to the person beyond the barrier: d_{P} primary, d_{L} "
+        "leakage, d_{S} scatter (from the patient), d_{sec} leakage and scatter (d_{S} = d_{L}); CT from the "
+        "isocenter.",
         "The program asks for the distance from the source to the barrier and adds the distance from the barrier to "
         "the person beyond it, shown next to it and editable (NCRP 147 §4.1.2: walls 0.3 m, ceiling 0.5 m, floor "
         "1.3 m).",

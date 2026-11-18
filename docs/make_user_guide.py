@@ -423,11 +423,11 @@ def method():
                 "<i>d</i><sub>P</sub> for primary radiation, <i>d</i><sub>L</sub> for leakage, <i>d</i><sub>S</sub> "
                 "for scatter (from the patient) and <i>d</i><sub>sec</sub> for leakage and scatter together, when "
                 "<i>d</i><sub>S</sub> = <i>d</i><sub>L</sub>. Each radiation type of a barrier has its own distance, "
-                "under its radiation choices, and its label shows which one it is (dP, dL, dS or dsec; CT: dsec from "
+                "under its radiation choices, and its label shows which one it is (<i>d</i><sub>P</sub>, <i>d</i><sub>L</sub>, <i>d</i><sub>S</sub> or <i>d</i><sub>sec</sub>; CT: <i>d</i><sub>sec</sub> from "
                 "the isocenter).")]
     story += [P("You enter the <b>Distance from the Source to the Barrier</b> (focal spot; CT: the isocenter). "
                 "Next to it, <b>+ to the person beyond it</b> is the distance from the barrier to that person, which "
-                "the program adds, and then the sum, e.g. <b>dP = 2.30 m</b>. The distance beyond is one value per "
+                "the program adds, and then the sum, e.g. <b><i>d</i><sub>P</sub> = 2.30 m</b>. The distance beyond is one value per "
                 "barrier, shown next to every distance of the barrier; change it there. NCRP 147 (section 4.1.2) "
                 "places the person:")]
     story += table([["Barrier", "Where the person is (NCRP 147 4.1.2)", "Distance beyond the barrier"],
@@ -554,7 +554,7 @@ def xray_room():
     story += [P("Each barrier tab starts with the radiation that reaches it. " + fig("xray_floor.png") + " shows the floor "
                 "of the example: "
                 "a primary barrier.")]
-    story += figure("xray_floor.png", "A primary barrier (the floor) with bucky preshielding: its distance dP, "
+    story += figure("xray_floor.png", "A primary barrier (the floor) with bucky preshielding: its distance <i>d</i><sub>P</sub>, "
                                       "1.00 m to the floor plus 1.3 m beyond it, and two materials.")
     story += [steps(["<b>Select the number of types of radiation on the barrier</b>: how many workload "
                      "distributions irradiate it; each gets its own block (#1, #2, ...).",
@@ -573,14 +573,14 @@ def xray_room():
                      "and, behind an image receptor, <b>Preshielding</b>: <b>Bucky</b> or <b>Cross-table</b>. "
                      "Secondary radiation: the unshielded air kerma, below.",
                      "<b>Distance from the Source to the Barrier</b> (m), after the radiation choices; its label "
-                     "names it, <b>dP</b> for primary radiation (section 2.4). Next to it <b>+ to the person beyond "
+                     "names it, <b><i>d</i><sub>P</sub></b> for primary radiation (section 2.4). Next to it <b>+ to the person beyond "
                      "it</b> (walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m), which you can change, and the "
-                     "distance the program calculates with, e.g. <b>dP = 2.30 m</b>. Under the first distance, "
+                     "distance the program calculates with, e.g. <b><i>d</i><sub>P</sub> = 2.30 m</b>. Under the first distance, "
                      "<b>Enter the whole distance, to the person beyond the barrier (nothing added)</b> lets you "
                      "type the whole distance instead."])]
     story += [P(f"For secondary radiation ({fig('xray_secondary.png')}) choose where the unshielded air kerma comes from:")]
     story += figure("xray_secondary.png", "A secondary barrier: the unshielded secondary air kerma suggested by NCRP "
-                                          "147, leakage and side-scatter, so the distance is dsec.",
+                                          "147, leakage and side-scatter, so the distance is <i>d</i><sub>sec</sub>.",
                     crop=(0, 0, 1175, 732))
     story += [bullets(["<b>Select Unshielded Secondary Air Kerma — Suggested</b>: the value of the workload "
                        "distribution; the label names its source (NCRP 147, or the article of a distribution of the "
@@ -590,8 +590,8 @@ def xray_room():
                        "Leakage</b>; or <b>Side-Scatter</b> or <b>Forward/Backscatter</b> alone.",
                        "<b>Write Unshielded Secondary Air Kerma</b>: your own <i>K</i><super>1</super><sub>sec</sub> "
                        "in mGy per patient at 1 m.",
-                       "The distance then follows, named after the choice: <b>dL</b> for only leakage, <b>dS</b> for "
-                       "side-scatter or forward/backscatter alone, <b>dsec</b> for leakage and scatter together "
+                       "The distance then follows, named after the choice: <b><i>d</i><sub>L</sub></b> for only leakage, <b><i>d</i><sub>S</sub></b> for "
+                       "side-scatter or forward/backscatter alone, <b><i>d</i><sub>sec</sub></b> for leakage and scatter together "
                        "(and for an air kerma you write).",
                        "<b>Different Workload</b>: this distribution has its own workload instead of the room's."])]
     story += H2("Materials")
@@ -806,7 +806,7 @@ def ct_and_mammography():
                     ["DLP per body / head scan (mGy·cm)", "Dose-length product of one scan (phase).",
                      "550 / 1200 mGy·cm"],
                     ["Tube voltage (kVp)", "The transmission data exist for 120 and 140 kVp.", "120 kVp"],
-                    ["Distance from the CT Isocenter to the Barrier, dsec (m)",
+                    ["Distance from the CT Isocenter to the Barrier, <i>d</i><sub>sec</sub> (m)",
                      "To the barrier itself. Below it, <b>+ to the person beyond it</b> (walls 0.3 m, ceiling 0.5 m, "
                      "floor 1.3 m; you can change it) and the sum, or tick <b>Enter the whole distance</b> "
                      "(section 2.4).", "–"],
@@ -948,22 +948,27 @@ def report_and_projects():
     story = H1("Report, projects and examples")
     story += H2("Excel report")
     story += [P("<b>Export to Excel</b> (in a room, or on the Rooms tab of a department) saves a workbook with "
-                "three sheets. It uses the last calculation of every barrier, so press Calculate first.")]
+                "three sheets. It uses the last calculation of every barrier, so press Calculate first. It shows "
+                "only what the rooms use: a column that would be empty in every row (a material not chosen, the "
+                "preshielding when there is none, the CT data of X-ray rooms) is left out, and so is a note on "
+                "something the rooms do not have. The columns are wide enough for their headings and values.")]
     story += table([["Sheet", "Contents"],
                     ["Summary", "One row per barrier: room, barrier, area, location (source of T), T, P, ΣK, B, the "
-                                "thickness of each material, the dose beyond, the goal P, the materials and the "
-                                "status (OK, met, EXCEEDED or what is missing)."],
+                                "thickness of each material chosen, the dose beyond, the goal P, the materials and "
+                                "the status (OK, met, EXCEEDED or what is missing). Notes on the method follow."],
                     ["Details", "One row per radiation type: workload distribution, source of K¹, preshielding, N, "
-                                "U, T, K¹, the distance (dP, dL, dS or dsec): from the source to the barrier, what "
-                                "is added to the person beyond it, and d, which the program calculates with (with "
-                                "<b>Enter the whole distance</b> the typed distance is d and nothing is added); "
-                                "then K."],
-                    ["Rooms", "Room type and workload (CT: procedures, scans per procedure, DLP and kVp)."]],
+                                "U, T, K¹, the distance (<i>d</i><sub>P</sub>, <i>d</i><sub>L</sub>, "
+                                "<i>d</i><sub>S</sub> or <i>d</i><sub>sec</sub>, with their subscripts): from the "
+                                "source to the barrier, what is added to the person beyond it, and <i>d</i>, which "
+                                "the program calculates with (with <b>Enter the whole distance</b> the typed distance "
+                                "is <i>d</i> and nothing is added); then K."],
+                    ["Rooms", "Room type and workload; for CT rooms the procedures, scans per procedure, DLP and "
+                              "kVp; the number of barriers and how many are calculated."]],
                    [25, 145])
     rep = VALUES["xray_report"]
     head = rep["header"]
     pick = ["Barrier", "T", "P (mGy/week)", "ΣK (mGy/week)", "B", "Lead (mm)", "Concrete (mm)",
-            "Gypsum Wallboard (mm)", "Dose beyond (mGy/week)"]
+            "Gypsum Wallboard (mm)", "Dose beyond (mGy/week)"]  # the report has all of them for this room
     index = [head.index(name) for name in pick]
     rows = [["Barrier", "T", "P", "ΣK", "B", "Lead", "Concrete", "Gypsum", "Dose beyond"]]
     for row in rep["rows"]:

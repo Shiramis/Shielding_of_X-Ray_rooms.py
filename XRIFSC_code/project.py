@@ -379,9 +379,9 @@ class ProjectFile:
         box.pack(fill=BOTH, expand=1, padx=14, pady=(0, 8))
         note = Text(box, wrap=WORD, width=96, height=5, background="#fffdf0", relief=SOLID, borderwidth=1,
                     font=theme.BASE, padx=10, pady=8, spacing1=1, spacing3=2)
-        note.insert("1.0", text)
+        theme.insert_rich(note, text)  # its subscripts written d_{P}
         note.configure(state=DISABLED)
-        lines = sum(max(1, -(-len(line) // 92)) for line in text.split("\n"))
+        lines = sum(max(1, -(-len(line) // 92)) for line in theme.plain(text).split("\n"))
         note.configure(height=min(30, max(4, lines)))
         if lines > 30:
             scroll = ttk.Scrollbar(box, orient="vertical", command=note.yview)

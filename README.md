@@ -25,7 +25,7 @@ the thickness you plan to install.
   beyond each wall. The program measures the distances and suggests *T* and *P*.
 - **2D / 3D view**: every wall in the colours of its materials, the dose beyond each barrier and a radiation map.
   Point at a wall to see its materials and thicknesses.
-- **Excel report** (summary, details, rooms), **project files** (`.shield`) and **built-in examples**.
+- **Excel report** (summary, details, rooms; only the columns the rooms use), **project files** (`.shield`) and **built-in examples**.
 - **The worked examples of NCRP 147** (Section 5: cardiac angiography, chest unit, radiographic room, R&F room,
   mammography, CT, bone densitometry), one file each in `Examples/NCRP 147` (**File › Examples › NCRP 147
   examples**). Each opens with a note that gives the result of NCRP 147 next to that of the program; the User Guide
@@ -43,7 +43,7 @@ each material comes from the Archer equation *x* = (1/αγ)·ln[(*B*^−γ + β/
 With several, each goes through the barrier with the transmission data of its own workload distribution and its own
 preshielding, and the thickness is the one at which Σ *K*·*B*(*x* + *x*pre) = *P* (as in NCRP 147 §5.3.5 and §5.4.2).
 
-- Every radiation type has its own distance, named as in NCRP 147: *d*P primary, *d*L leakage, *d*S scatter, *d*sec
+- Every radiation type has its own distance, named as in NCRP 147: *d*<sub>P</sub> primary, *d*<sub>L</sub> leakage, *d*<sub>S</sub> scatter, *d*<sub>sec</sub>
   leakage and scatter. You enter it from the source to the barrier; next to it the program shows what it adds to reach
   the person beyond the barrier (NCRP 147 §4.1.2: 0.3 m for walls and doors, 0.5 m for the ceiling, 1.3 m for the
   floor, where the person is 1.7 m above the floor below with a 3 m storey), which you can change, and the sum. Or tick

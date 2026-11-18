@@ -1,5 +1,7 @@
 """Look of the program: one colour palette, fonts and ttk styles, and the application icon."""
 import math
+import re
+from tkinter import Canvas
 from tkinter import font as tkfont
 from tkinter import ttk
 
@@ -55,6 +57,86 @@ def make_dpi_aware():
 def pick_font(root, *names):
     families = set(tkfont.families(root))
     return next((name for name in names if name in families), "TkDefaultFont")
+
+
+# ===================== subscripts: a text writes them d_{P} =====================
+SUBSCRIPT = re.compile(r"_\{([^}]*)\}")
+
+
+def rich_parts(text):
+    """'d_{P} = 2 m' -> [('d', False), ('P', True), (' = 2 m', False)]."""
+    parts, last = [], 0
+    for match in SUBSCRIPT.finditer(text):
+        if match.start() > last:
+            parts.append((text[last:match.start()], False))
+        parts.append((match.group(1), True))
+        last = match.end()
+    if last < len(text) or not parts:
+        parts.append((text[last:], False))
+    return parts
+
+
+def plain(text):
+    """The text without the marks of its subscripts: d_{P} -> dP."""
+    return SUBSCRIPT.sub(r"\1", text)
+
+
+def subscript_font(font):
+    small = tkfont.Font(font=font)
+    small.configure(size=max(7, round(abs(small.actual("size")) * 0.72)))
+    return small
+
+
+def insert_rich(text, string, tags=()):
+    """Add to the end of a Text widget a string whose subscripts are written d_{P}."""
+    if "subscript" not in text.tag_names():
+        text.tag_configure("subscript", offset=-px(3), font=subscript_font(text.cget("font")))
+    for part, sub in rich_parts(string):
+        text.insert("end", part, tuple(tags) + (("subscript",) if sub else ()))
+
+
+class RichLabel(Canvas):
+    """A label whose text can have subscripts, written d_{P}. Like a label, its text is set with
+    configure(text=...) and read with cget('text')."""
+
+    def __init__(self, master, text="", foreground=None, background=None, font=None):
+        super().__init__(master, width=1, height=1, highlightthickness=0, borderwidth=0,
+                         background=background or SURFACE)
+        self.font = tkfont.Font(font=font or BASE)
+        self.small = subscript_font(self.font)
+        self.foreground = foreground or TEXT
+        self.text = None
+        self.configure(text=text)
+
+    def configure(self, cnf=None, **kw):
+        if "text" in kw:
+            self.draw(kw.pop("text"))
+        if cnf or kw:
+            return super().configure(cnf, **kw)
+
+    config = configure
+
+    def cget(self, key):
+        return self.text if key == "text" else super().cget(key)
+
+    def draw(self, text):
+        if text == self.text:
+            return
+        self.text = text
+        self.delete("all")
+        line = self.font.metrics("linespace")
+        # the subscript's baseline a little under the line's
+        drop = self.font.metrics("ascent") - self.small.metrics("ascent") + px(3)
+        width = 0
+        for row, content in enumerate(text.split("\n")):
+            x = 0
+            for part, sub in rich_parts(content):
+                font = self.small if sub else self.font
+                self.create_text(x, row * line + (drop if sub else 0), text=part, anchor="nw", font=font,
+                                 fill=self.foreground)
+                x += font.measure(part)
+            width = max(width, x)
+        super().configure(width=max(width, 1), height=(text.count("\n") + 1) * line + px(3))
 
 
 def apply_theme(root):

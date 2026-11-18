@@ -239,7 +239,7 @@ MISSING_HELP = {
                                "'Different Workload' on this radiation type).",
     "Occupancy Factor (T)": "under 'Shielding Area' choose 'Write occupancy factor (T)' and type it, "
                             "or 'select Location' and pick what is beyond the barrier.",
-    "Distance from the Source to the Barrier (m)": "type the distance (dP, dL, dS or dsec) from the X-ray source "
+    "Distance from the Source to the Barrier (m)": "type the distance (d_{P}, d_{L}, d_{S} or d_{sec}) from the X-ray source "
                                                    "to the barrier in metres; the distance to the person beyond it "
                                                    "is added (or tick 'Enter the whole distance' and type all of it).",
     "Distance beyond the barrier (m)": "next to the distance, type how far beyond the barrier the person to "
@@ -355,7 +355,7 @@ class departprimsec():
                 prefix, _, label = item.rpartition(": ") if item.startswith("Radiation Type #") else ("", "", item)
                 text.insert(END, "  • " + (prefix + ": " if prefix else ""))
                 text.insert(END, label, "what")
-                text.insert(END, " — " + MISSING_HELP.get(label, "") + "\n" if label in MISSING_HELP else "\n")
+                theme.insert_rich(text, " — " + MISSING_HELP.get(label, "") + "\n" if label in MISSING_HELP else "\n")
         text.configure(state=DISABLED)
         text.pack(side=LEFT, fill=BOTH, expand=1)
         # As tall as its wrapped text (up to 26 lines, then it scrolls)

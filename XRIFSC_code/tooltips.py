@@ -1,4 +1,5 @@
-from tkinter import Toplevel, Label, LEFT, SOLID
+from tkinter import Toplevel, Label, Frame, Text, LEFT, SOLID, WORD, DISABLED
+from tkinter import font as tkfont
 from tkinter import ttk
 import theme
 
@@ -60,10 +61,10 @@ TIPS = {
                             "NCRP 147 assumes the image receptor intercepts the primary beam, "
                             "so only scatter and leakage are shielded.",
     "distance": "Distance (m) to the barrier, named as in NCRP 147:\n"
-                "  dP: primary, from the focal spot\n"
-                "  dL: leakage, from the focal spot\n"
-                "  dS: scatter, from the patient\n"
-                "  dsec: leakage and scatter, taken the same (dS = dL)\n"
+                "  d_{P}: primary, from the focal spot\n"
+                "  d_{L}: leakage, from the focal spot\n"
+                "  d_{S}: scatter, from the patient\n"
+                "  d_{sec}: leakage and scatter, taken the same (d_{S} = d_{L})\n"
                 "The distance from the barrier to the person beyond it is added (next to it: walls and door 0.3 m, "
                 "ceiling 0.5 m, floor 1.3 m), and the sum is shown. Or tick 'Enter the whole distance' and type the "
                 "distance all the way to the person.",
@@ -208,7 +209,7 @@ TIPS = {
                  "that have it. Their sum / 100 is the mean number of scans per procedure.\n"
                  "NCRP 147: every procedure scanned once and 40 % again with contrast: 100 % + 40 % = 1.4.",
     "ct_kvp": "Tube voltage. CT transmission data (NCRP 147) are available for 120 and 140 kVp.",
-    "ct_distance": "Distance (m) from the CT isocenter to the barrier. The distance from the barrier to the "
+    "ct_distance": "Distance (m) from the CT isocenter to the barrier, d_{sec}. The distance from the barrier to the "
                    "person beyond it is added (next to it: walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m), and "
                    "the sum is shown. Or tick 'Enter the whole distance' and type the distance all the way to the "
                    "person.",
@@ -280,8 +281,11 @@ class ToolTip:
             return
         self.tip = Toplevel(self.widget)
         self.tip.wm_overrideredirect(True)
-        Label(self.tip, text=self.text, justify=LEFT, background="#fff8d6", foreground="#171719",
-              relief=SOLID, borderwidth=1, wraplength=theme.px(420), font=theme.BASE, padx=8, pady=6).pack()
+        if theme.SUBSCRIPT.search(self.text):
+            self.rich_note()
+        else:
+            Label(self.tip, text=self.text, justify=LEFT, background="#fff8d6", foreground="#171719",
+                  relief=SOLID, borderwidth=1, wraplength=theme.px(420), font=theme.BASE, padx=8, pady=6).pack()
         # Place next to the pointer, kept inside the screen
         self.tip.update_idletasks()
         width, height = self.tip.winfo_reqwidth(), self.tip.winfo_reqheight()
@@ -290,6 +294,24 @@ class ToolTip:
         if y + height > self.widget.winfo_screenheight():
             y -= height + 28
         self.tip.wm_geometry(f"+{x}+{y}")
+
+    def rich_note(self):
+        """The note with subscripts (d_{P}): a Text as wide as the label would be, and as tall as its text."""
+        font = tkfont.Font(font=theme.BASE)
+        widest = max(font.measure(theme.plain(line)) for line in self.text.split("\n"))
+        holder = Frame(self.tip)
+        note = Text(holder, wrap=WORD, background="#fff8d6", foreground="#171719", relief=SOLID, borderwidth=1,
+                    highlightthickness=0, font=theme.BASE, padx=8, pady=6, cursor="arrow", height=1,
+                    width=-(-min(widest, theme.px(420)) // font.measure("0")) + 1)
+        theme.insert_rich(note, self.text)
+        note.configure(state=DISABLED)
+        note.pack(fill="both", expand=True)
+        holder.pack()
+        self.tip.update_idletasks()
+        pixels = note.count("1.0", "end", "update", "ypixels")
+        pixels = pixels[0] if isinstance(pixels, tuple) else pixels
+        holder.pack_propagate(False)
+        holder.configure(width=note.winfo_reqwidth(), height=pixels + 2 * (6 + 1))
 
     def hide(self, event=None):
         self.cancel()
@@ -301,6 +323,6 @@ class ToolTip:
 def tip(widget, key):
     """Attach the guidance note TIPS[key] to a widget. Labels get a '?' pointer as a hint."""
     ToolTip(widget, TIPS[key])
-    if isinstance(widget, (ttk.Label, Label)):
+    if isinstance(widget, (ttk.Label, Label, theme.RichLabel)):
         widget.configure(cursor="question_arrow")
     return widget

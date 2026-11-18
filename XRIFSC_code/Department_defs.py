@@ -828,7 +828,7 @@ class dep_defs():
     # ===================== distances =====================
     def distance_symbol(self, e, nr, i):
         """The NCRP 147 name of the distance of radiation type i: dP (primary), dL (leakage), dS (scatter), dsec
-        (leakage and scatter, dS = dL)."""
+        (leakage and scatter, dS = dL), with its subscript written d_{P}."""
         def value(name):
             variable = self.d.get(f"{name} {e}{nr}{i}")
             try:
@@ -836,22 +836,22 @@ class dep_defs():
             except TclError:
                 return None
         if value("radiob_w") == 1:
-            return "dP"
+            return "d_{P}"
         if value("radiob_w") != 2:
             return "d"
         if value("unairkerv") == 1 and value("vsexroom") != DBT:
             if value("airkerv") == 1:
-                return "dL" if value("radiob_leak") == 0 else "dsec"
+                return "d_{L}" if value("radiob_leak") == 0 else "d_{sec}"
             if value("airkerv") in (2, 3):
-                return "dS"
-        return "dsec"
+                return "d_{S}"
+        return "d_{sec}"
 
     def distance_widgets(self, e, nr, i, row, ct=False):
         """The distance of one radiation type (or of a CT barrier) from the source to the barrier, the distance from
         the barrier to the person beyond it (one value per barrier, shown with every distance) and their sum."""
         frame = self.d[f"barrierf {e}{nr}"]
         key = lambda name: f"ct{name} {e}{nr}" if ct else f"{name} {e}{nr}{i}"
-        label = ttk.Label(frame, style="AL.TLabel")  # its text: refresh_distance
+        label = theme.RichLabel(frame)  # its text, with the subscript of d: refresh_distance
         label.grid(row=row, column=0, pady=6.5, padx=5, sticky="w")
         if ct:  # the CT entry keeps its variable 'dist_var' (and the key 'dist_entry')
             variable = self.d[f"dist_var {e}{nr}"] = StringVar()
@@ -867,7 +867,7 @@ class dep_defs():
         plus.grid(row=place[0], column=place[1], pady=6.5, padx=5, sticky="w")
         beyond = ttk.Entry(frame, textvariable=self.d[f"beyond {e}{nr}"], width=6)
         beyond.grid(row=place[0], column=place[1] + 1, pady=6.5, padx=5, sticky="w")
-        total = ttk.Label(frame, style="Muted.TLabel")
+        total = theme.RichLabel(frame, foreground=theme.MUTED)
         total.grid(row=place[0], column=place[1] + 2, pady=6.5, padx=5, sticky="w")
         self.d[key("lad")], self.d[key("labbeyond")], self.d[key("beyondentry")], self.d[key("dtotal")] = \
             label, plus, beyond, total
@@ -890,7 +890,7 @@ class dep_defs():
         whole = self.d.get(f"whole {e}{nr}") is not None and self.d[f"whole {e}{nr}"].get() == 1
         beyond = self.beyond_distance(e, nr)
         if self.d.get(f"ctlad {e}{nr}") is not None:  # a CT barrier
-            rows = [(lambda name: f"ct{name} {e}{nr}", f"dist_var {e}{nr}", "dsec", "CT Isocenter")]
+            rows = [(lambda name: f"ct{name} {e}{nr}", f"dist_var {e}{nr}", "d_{sec}", "CT Isocenter")]
         else:
             count = self.d[f"num_barriers_var {e}{nr}"].get() if f"num_barriers_var {e}{nr}" in self.d else 0
             rows = [(lambda name, i=i: f"{name} {e}{nr}{i}", f"entryd {e}{nr}{i}", self.distance_symbol(e, nr, i),
