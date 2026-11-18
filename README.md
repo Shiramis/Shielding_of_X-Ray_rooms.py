@@ -29,7 +29,7 @@ the thickness you plan to install.
 - **The worked examples of NCRP 147** (Section 5: cardiac angiography, chest unit, radiographic room, R&F room,
   mammography, CT, bone densitometry), one file each in `Examples/NCRP 147` (**File › Examples › NCRP 147
   examples**). Each opens with a note that gives the result of NCRP 147 next to that of the program; the User Guide
-  (section 11.9) compares them all.
+  (section 11.9) and `Examples/NCRP 147/NCRP 147 examples - comparison.xlsx` compare them all, with the difference.
 - A **note on every field** says what to enter, with the NCRP 147 typical values.
 
 ![2D view with the radiation map](docs/images/viewer_goal.png)

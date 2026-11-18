@@ -3,7 +3,8 @@ Examples/NCRP 147. Each file opens with a note giving the data of the example, w
 of NCRP 147 next to that of the program.
 
 Run from the project folder:  python tools/ncrp147_examples.py
-It builds every example, calculates it with the program, checks the results against NCRP 147, writes the files and
+It builds every example, calculates it with the program, checks the results against NCRP 147, writes the files,
+'NCRP 147 examples - comparison.xlsx' in the same folder (NCRP 147, the program and their difference) and
 docs/images/ncrp147_examples.json (the comparison, for the user guide).
 
 NCRP 147 gives the distance d from the source to the occupied point. The program asks for the distance to the barrier
@@ -19,6 +20,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CODE = os.path.join(ROOT, "XRIFSC_code")
 FOLDER = os.path.join(ROOT, "Examples", "NCRP 147")
 RESULTS = os.path.join(ROOT, "docs", "images", "ncrp147_examples.json")
+COMPARISON = "NCRP 147 examples - comparison.xlsx"
+# The thickness NCRP 147 tries, and the air kerma it finds beyond it (mGy/week): (section, barrier) -> (mm, dose)
+TRIALS = {("5.3", "Barrier 4"): (0.8, 0.014), ("5.4", "Floor"): (72, 0.017)}
 
 UNCONTROLLED, CONTROLLED = "Uncontrolled Area", "Controlled Area"
 GOAL = {UNCONTROLLED: 0.02, CONTROLLED: 0.1}
@@ -178,9 +182,10 @@ example("5.3 Radiographic room", "NCRP 147 §5.3: Radiographic room (Figures 5.1
          ("Barrier 4", "Lead", "5.3.5, cross-table wall: primary Rad Room (floor), U = 0.09, d = 2.8 m, behind grid "
           "and cassette (0.3 mm lead), and secondary at 2 m, which does not pass through them; an office. 0.8 mm "
           "planned, as NCRP 147 tries",
-          0.8, "the primary alone 0.9 − 0.3 = 0.6 mm. With the secondary radiation, each through its own thickness, "
+          0.78, "the primary alone 0.9 − 0.3 = 0.6 mm. With the secondary radiation, each through its own thickness, "
           "0.8 mm lets 0.72 B_sec(0.8) + 7.5 B_P(0.8 + 0.3) = 0.014 mGy/week through, below 0.02, so less is "
-          "enough; with all the sources of the room (also the chest bucky exposures) 0.78 mm", "below"),
+          "enough; with all the sources of the room (also the chest bucky exposures, not given in the example) "
+          "0.78 mm", ("below", 0.8)),
          ("Barrier 5", "Lead", "5.3.6, control wall: secondary, d = 1.8 m, controlled area (P = 0.1)",
           0.27, "K = 1.3 mGy/week, B = 7.7×10⁻²: 0.27 mm lead", 0.02),
          ("Barrier 6", "Concrete", "5.3.1.2, the floor away from the table: secondary, d = 3 m (distance beyond "
@@ -302,23 +307,29 @@ def main():
             rec = app.calc[(nr, names[barrier_name])]
             assert not rec["missing"], (item["file"], barrier_name, rec["missing"])
             value = dict(rec["thickness"])[material]
-            # "below": NCRP 147 shows that this thickness is enough
-            ok = value < ncrp if tolerance == "below" else abs(value - ncrp) <= tolerance
-            if not ok:
-                failed.append((item["file"], barrier_name, material, ncrp, value))
+            # ("below", x): NCRP 147 shows that x is enough for the sources of the example
+            bound = tolerance[1] if isinstance(tolerance, tuple) else None
+            ok = value < bound if bound is not None else abs(value - ncrp) <= tolerance
             shown = "no shielding needed" if value == 0 else f"{value:.2f} mm {material.lower()}"
             check = app.dose_check(nr, names[barrier_name])
-            if check and check["basis"].startswith("planned"):
-                shown += f"; the {check['basis']} lets {check['dose']:.3f} mGy/week through"
+            planned = check if check and check["basis"].startswith("planned") else None
+            section = item["file"].split()[0]
+            trial = TRIALS.get((section, barrier_name))
+            if planned:
+                shown += f"; the {planned['basis']} lets {planned['dose']:.3f} mGy/week through"
+                ok = ok and abs(planned["dose"] - trial[1]) <= 0.003
+            if not ok:
+                failed.append((item["file"], barrier_name, material, ncrp, value))
             lines.append(f"• {barrier_name}: {setup}.\n   NCRP 147: {said}. Program: {shown}.")
-            rows.append({"section": item["file"].split()[0], "example": item["title"].split(": ", 1)[1],
+            rows.append({"section": section, "example": item["title"].split(": ", 1)[1],
                          "barrier": barrier_name, "material": material, "setup": setup, "ncrp_text": said,
-                         "ncrp": ncrp, "below": tolerance == "below", "program": value,
-                         "planned_dose": check["dose"] if check and check["basis"].startswith("planned") else None,
+                         "ncrp": ncrp, "bound": bound, "program": value,
+                         "planned": planned["basis"][len("planned "):] if planned else None,
+                         "planned_dose": planned["dose"] if planned else None,
+                         "ncrp_planned_dose": trial[1] if planned else None,
                          "K": rec["K_total"], "B": rec["B"]})
-            print(f"{item['file']:42s} {barrier_name:10s} {material:17s} NCRP {'<' if tolerance == 'below' else ' '}"
-                  f"{ncrp:6.2f}  program {value:7.2f}" + (f"  planned: {check['dose']:.4f} mGy/week"
-                                                         if check and check["basis"].startswith("planned") else ""))
+            print(f"{item['file']:42s} {barrier_name:10s} {material:17s} NCRP {ncrp:6.2f}  program {value:7.2f}"
+                  + (f"  planned: {planned['dose']:.4f} mGy/week (NCRP {trial[1]})" if planned else ""))
         project, _ = app.collect_project()
         project.update(title=item["title"], description="\n\n".join(
             [item["about"], "\n".join(lines), METHOD, DISTANCES]))
@@ -328,8 +339,119 @@ def main():
     with open(RESULTS, "w", encoding="utf-8") as file:
         json.dump(rows, file, indent=1, ensure_ascii=False)
     root.destroy()
+    write_comparison(rows)
     print("written:", FOLDER)
     assert not failed, failed
+
+
+# ===================== the comparison as an Excel workbook =====================
+def write_comparison(rows):
+    """Examples/NCRP 147/NCRP 147 examples - comparison.xlsx: NCRP 147, the program, and their difference (formulas),
+    then recalculated with Excel when it is installed, so that the file shows the values in any viewer."""
+    from datetime import date
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.utils import get_column_letter
+
+    font = lambda **kw: Font(name="Arial", size=kw.pop("size", 10), **kw)
+    value_font, formula_font = font(color="0000FF"), font(color="000000")
+    head_font, head_fill = font(bold=True, color="FFFFFF"), PatternFill("solid", fgColor="14212E")
+    edge = Side(style="thin", color="C9D3DE")
+    border = Border(left=edge, right=edge, top=edge, bottom=edge)
+    top_wrap = Alignment(vertical="top", wrap_text=True)
+
+    def sheet(ws, title, subtitle, columns):
+        ws["A1"], ws["A2"] = title, subtitle
+        ws["A1"].font, ws["A2"].font = font(bold=True, size=13), font(italic=True, color="4B5866")
+        for col, (heading, width) in enumerate(columns, start=1):
+            cell = ws.cell(row=4, column=col, value=heading)
+            cell.font, cell.fill, cell.border = head_font, head_fill, border
+            cell.alignment = Alignment(vertical="center", wrap_text=True)
+            ws.column_dimensions[get_column_letter(col)].width = width
+        ws.row_dimensions[4].height = 30
+        ws.freeze_panes = "A5"
+        ws.page_setup.orientation, ws.page_setup.paperSize = "landscape", ws.PAPERSIZE_A4
+        ws.page_setup.fitToWidth, ws.page_setup.fitToHeight = 1, 0  # one page wide
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+        ws.print_title_rows = "4:4"
+
+    def put(ws, row, col, value, number_format=None, cell_font=None):
+        cell = ws.cell(row=row, column=col, value=value)
+        cell.font, cell.border, cell.alignment = cell_font or font(), border, top_wrap
+        if number_format:
+            cell.number_format = number_format
+        return cell
+
+    def notes(ws, row, lines):
+        for k, line in enumerate(lines):
+            ws.cell(row=row + k, column=1, value=line).font = font(color="4B5866")
+
+    made = (f"Program: Shielding of X-ray Rooms, the project files of this folder (Examples\\NCRP 147), calculated by "
+            f"tools/ncrp147_examples.py on {date.today():%d/%m/%Y}. Difference = Program − NCRP 147.")
+    book = Workbook()
+    ws = book.active
+    ws.title = "Thickness"
+    sheet(ws, "Worked examples of NCRP Report No. 147 (Section 5): required thickness", made,
+          [("Section", 8), ("Example", 30), ("Barrier", 10), ("Material", 15), ("What is calculated", 60),
+           ("NCRP 147 (mm)", 11), ("Program (mm)", 11), ("Difference (mm)", 12), ("Difference (%)", 11),
+           ("How NCRP 147 finds it", 60)])
+    for r, row in enumerate(rows, start=5):
+        values = [row["section"], row["example"], row["barrier"], row["material"], row["setup"]]
+        for col, value in enumerate(values, start=1):
+            put(ws, r, col, value)
+        put(ws, r, 6, row["ncrp"], "0.00", value_font)
+        put(ws, r, 7, round(row["program"], 4), "0.00", value_font)
+        put(ws, r, 8, f"=G{r}-F{r}", "+0.00;-0.00;0.00", formula_font)
+        put(ws, r, 9, f'=IF(F{r}=0,"",H{r}/F{r})', "+0.0%;-0.0%;0.0%", formula_font)
+        text = row["ncrp_text"][0].upper() + row["ncrp_text"][1:]
+        put(ws, r, 10, text + (f" (Program: {row['program']:.2f} mm, below the {row['bound']:g} mm that NCRP 147 "
+                               f"shows is enough for the sources of the example.)" if row["bound"] else "."))
+    last = 4 + len(rows)
+    notes(ws, last + 2, [
+        "Blue: values (NCRP 147: the thickness the report gives; Program: the result of the program). Black: "
+        "formulas.",
+        "Small differences: NCRP 147 read most thicknesses from its figures (B.2, B.3, C.2–C.4, C.7, A.2), or rounded "
+        "before subtracting the preshielding (§5.2: 2.2 − 0.85 = 1.4 mm; the equation gives 2.16 − 0.85 = 1.31 mm).",
+        "§5.3 Barrier 4 (cross-table wall): 0.78 mm is the report's result with all the sources of the room, which "
+        "the example does not give; with its two sources the report shows that 0.8 mm is enough (sheet "
+        "'Trial thickness').",
+        "Every radiation type goes through the barrier with its own transmission data and preshielding (NCRP 147 "
+        "§5.3.5, §5.4.2).",
+        "Distances: NCRP 147 gives the distance to the occupied point; the program adds the distance beyond the "
+        "barrier (walls 0.3 m, ceiling 0.5 m, floor 1.3 m) to the distance entered."])
+
+    ws = book.create_sheet("Trial thickness")
+    sheet(ws, "Dose beyond the barrier with the thickness that NCRP 147 tries", made,
+          [("Section", 8), ("Example", 30), ("Barrier", 10), ("Thickness tried", 18),
+           ("NCRP 147 (mGy/week)", 13), ("Program (mGy/week)", 13), ("Difference (mGy/week)", 14),
+           ("Difference (%)", 11)])
+    trials = [row for row in rows if row["planned"]]
+    for r, row in enumerate(trials, start=5):
+        for col, value in enumerate([row["section"], row["example"], row["barrier"], row["planned"]], start=1):
+            put(ws, r, col, value)
+        put(ws, r, 5, row["ncrp_planned_dose"], "0.000", value_font)
+        put(ws, r, 6, round(row["planned_dose"], 6), "0.0000", value_font)
+        put(ws, r, 7, f"=F{r}-E{r}", "+0.0000;-0.0000;0.0000", formula_font)
+        put(ws, r, 8, f'=IF(E{r}=0,"",G{r}/E{r})', "+0.0%;-0.0%;0.0%", formula_font)
+    notes(ws, 5 + len(trials) + 1, [
+        "The air kerma beyond the barrier (mGy/week, with T) for the thickness NCRP 147 tries in §5.3.5 and §5.4.2: "
+        "the sum of all its radiation types, each through its own thickness. The goal is P = 0.02 mGy/week.",
+        "NCRP 147 reads the transmissions from its figures B.2, B.3, C.2 and C.3."])
+
+    path = os.path.join(FOLDER, COMPARISON)
+    book.save(path)
+    recalculate(path)
+
+
+def recalculate(path):
+    """Let Excel (when installed) calculate the formulas and save their values in the file."""
+    import subprocess
+    script = (f"$excel = New-Object -ComObject Excel.Application; $excel.Visible = $false; "
+              f"$excel.DisplayAlerts = $false; $book = $excel.Workbooks.Open('{path}'); $excel.CalculateFull(); "
+              f"$book.Save(); $book.Close(); $excel.Quit()")
+    result = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True)
+    print("recalculated with Excel" if result.returncode == 0 else
+          f"not recalculated (open it in Excel): {result.stderr.strip()[:200]}")
 
 
 if __name__ == "__main__":

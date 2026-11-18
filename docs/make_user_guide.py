@@ -1241,7 +1241,7 @@ def worked_examples():
                 "X-ray and CT rooms and a corridor below. Its 2D / 3D view shows every barrier, and the radiation "
                 "of each room crossing the walls of the others.")]
     story += figure("viewer_department.png", "The example department in the 2D / 3D view.",
-                    width=120 * mm, crop=(0, 140, 1130, 1000))
+                    width=104 * mm, crop=(0, 300, 1130, 985))
     return story
 
 
@@ -1256,14 +1256,20 @@ def ncrp_examples():
                 "calculates one wall or floor twice (e.g. behind the chest bucky and outside the beam), the second "
                 "calculation is another barrier. NCRP 147 gives the distance to the occupied point; the distance "
                 "entered is that minus the distance beyond the barrier (section 2.4).")]
-    table_rows = [["Section", "Example", "Barrier", "NCRP 147", "Program"]]
+    table_rows = [["§", "Example", "Barrier", "NCRP 147", "Program", "Difference"]]
     for row in rows:
         unit = row["material"].lower()
         ncrp = "no shielding" if row["ncrp"] == 0 else \
-            f"{'less than ' if row['below'] else ''}{row['ncrp']:g} mm {unit}"
+            f"{row['ncrp']:g} mm {unit}{'*' if row['bound'] else ''}"
         program = "no shielding" if row["program"] == 0 else f"{row['program']:.2f} mm"
-        table_rows.append([row["section"], row["example"].replace("&", "&amp;"), row["barrier"], ncrp, program])
-    story += table(table_rows, [16, 62, 22, 42, 28])
+        difference = "–" if row["ncrp"] == 0 else f"{row['program'] - row['ncrp']:+.2f} mm".replace("-", "−")
+        example = row["example"].replace(" (Figures 5.1 and 5.2)", "").replace("&", "&amp;")
+        table_rows.append([row["section"], example, row["barrier"], ncrp, program, difference])
+    story += table(table_rows, [12, 56, 19, 38, 22, 23])
+    story += [P("* With all the sources of the room; for the two sources of the example the report shows that "
+                "0.8 mm is enough (below). The same comparison, with the difference in % and the dose with the "
+                "thicknesses the report tries, is the Excel file <b>NCRP 147 examples - comparison.xlsx</b> in "
+                "<b>Examples\\NCRP 147</b>.", "small"), Spacer(1, 4)]
     rf = next(r for r in rows if r["section"] == "5.4" and r["barrier"] == "Floor")
     cross = next(r for r in rows if r["section"] == "5.3" and r["barrier"] == "Barrier 4")
     story += [P("The results agree. Where they differ a little, NCRP 147 read the thickness from a figure (e.g. "
