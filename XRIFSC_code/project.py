@@ -63,7 +63,7 @@ class ProjectFile:
             count = int(self.read_input(f"vnumbmat {e}{nr}") or 1)
             barrier = {name: self.read_input(f"{name} {e}{nr}")
                        for name in ("area", "vraoccup", "occupentry", "vselocation", "dikeent", "dist_var",
-                                    "beyond")}
+                                    "beyond", "whole")}
             barrier.update(materials=[self.read_input(f"vmater {e}{o}{nr}") for o in range(1, count + 1)],
                            matmode=self.read_input(f"matmode {e}{nr}"),
                            shares=[self.read_input(f"share {e}{o}{nr}") for o in range(1, count + 1)],
@@ -163,6 +163,7 @@ class ProjectFile:
                 self.write_input(f"vselocation {e}{nr}", barrier.get("vselocation"))
             self.write_input(f"dikeent {e}{nr}", barrier.get("dikeent"))
             self.write_input(f"beyond {e}{nr}", barrier.get("beyond"))  # older files: the NCRP 147 default
+            self.write_input(f"whole {e}{nr}", barrier.get("whole"))  # the whole distance typed, nothing added
             self.write_input(f"vnumbmat {e}{nr}", str(len(barrier["materials"])))
             self.numbmater(e, nr, t)
             for o, material in enumerate(barrier["materials"], start=1):

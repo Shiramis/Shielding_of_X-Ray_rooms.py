@@ -239,11 +239,13 @@ MISSING_HELP = {
                                "'Different Workload' on this radiation type).",
     "Occupancy Factor (T)": "under 'Shielding Area' choose 'Write occupancy factor (T)' and type it, "
                             "or 'select Location' and pick what is beyond the barrier.",
-    "Distance from the Source to the Barrier (m)": "type the distance from the X-ray source to the barrier "
-                                                   "in metres.",
-    "Distance beyond the barrier (m)": "under 'Shielding Area' type how far beyond the barrier the person to "
+    "Distance from the Source to the Barrier (m)": "type the distance (dP, dL, dS or dsec) from the X-ray source "
+                                                   "to the barrier in metres; the distance to the person beyond it "
+                                                   "is added (or tick 'Enter the whole distance' and type all of it).",
+    "Distance beyond the barrier (m)": "next to the distance, type how far beyond the barrier the person to "
                                        "protect is (NCRP 147 4.1.2): walls and door 0.3 m, ceiling 0.5 m, floor "
-                                       "the floor-to-floor height minus 1.7 m (1.3 m for 3 m).",
+                                       "the floor-to-floor height minus 1.7 m (1.3 m for 3 m); or tick 'Enter the "
+                                       "whole distance'.",
     "Scans per procedure (%)": "at the top of the CT room, under 'Scans (phases) per procedure', give for each "
                                "scan the % of the procedures that have it, from 0 to 100 (the first is "
                                "normally 100 %).",
@@ -252,7 +254,8 @@ MISSING_HELP = {
     "Select Material": "choose the material(s) under 'Select Materials'.",
     "Material shares (must total 100 %)": "under 'Layers', give each material its share of the shielding; "
                                           "the shares must add up to 100 %.",
-    "Distance": "type the distance from the CT isocenter to the barrier in metres.",
+    "Distance": "type the distance from the CT isocenter to the barrier in metres (or the whole distance to the "
+                "person beyond it, with 'Enter the whole distance' ticked).",
     "Procedures and DLP (body or head)": "at the top of the CT room type the weekly body and/or head "
                                          "procedures and their DLP.",
 }
@@ -302,7 +305,7 @@ class departprimsec():
             self.material_thicknesses(e, nr, components, P)
             self.record_barrier(e, nr, kind="xray", P=P, T=self.occupancy_factor(e, nr),
                                 K_total=Ktotal if not missing else None, B=self.B, distributions=distributions,
-                                beyond=self.beyond_distance(e, nr))
+                                beyond=self.beyond_distance(e, nr), whole=self.whole_distance(e, nr))
             self.show_barrier_result(e, nr, t)
         self.highlight_missing(e, nr, self.need_fields if self.calc[(nr, e)]["missing"] else [])
         if notify and self.calc[(nr, e)]["missing"]:
@@ -618,7 +621,8 @@ class departprimsec():
         self.need, self.need_fields = need, fields
         # ========== Calculate Kerma (None if there are missing variables) ==========
         K = n * Us * T * K1 / (d ** 2) if None not in (n, Us, T, K1, d) and d > 0 else None
-        self.last_distribution = dict(self.describe_distribution(e, nr, i), N=n, U=Us, T=T, K1=K1, d=d, K=K)
+        self.last_distribution = dict(self.describe_distribution(e, nr, i), N=n, U=Us, T=T, K1=K1, d=d, K=K,
+                                      D=D, symbol=self.distance_symbol(e, nr, i))
         return K
 
     def kvp_data(self, e, nr, i):
@@ -628,8 +632,16 @@ class departprimsec():
             return "NCRP 147"
         return var.get() if var.get() in KVP_DATA else "NCRP 147"
 
+    def whole_distance(self, e, nr):
+        """True when the distances of barrier e are typed all the way to the person beyond it (nothing added)."""
+        whole = self.d.get(f"whole {e}{nr}")
+        return whole is not None and whole.get() == 1
+
     def beyond_distance(self, e, nr):
-        """Distance (m) from the barrier to the occupied point beyond it, or None if it is not a number >= 0."""
+        """Distance (m) from the barrier to the occupied point beyond it, added to the distance from the source: 0 when
+        the whole distance is typed. None if it is not a number >= 0."""
+        if self.whole_distance(e, nr):
+            return 0.0
         value = self.entry_number(f"beyond {e}{nr}")
         return value if value is not None and value >= 0 else None
 
@@ -675,7 +687,7 @@ class departprimsec():
             return self.entry_number(key) or 0.0
         # NCRP 147 CT method: K1sec per scan = kappa * DLP (x1.2 for body); each procedure has on average 'scans'
         # scans (NCRP 147: 1.4, repeats with contrast); K = T * sum(N * scans * K1sec) / d^2
-        d = number(f"dist_var {e}{nr}")  # isocenter to the barrier
+        d = D = number(f"dist_var {e}{nr}")  # isocenter to the barrier
         beyond = self.beyond_distance(e, nr)  # barrier to the occupied point
         P = number(f"dikeent {e}{nr}")
         T = self.occupancy_factor(e, nr)
@@ -720,7 +732,8 @@ class departprimsec():
                      "Concrete": (0.0383, 0.0142, 0.658) if kvp_120 else (0.0336, 0.0122, 0.519)}
         self.material_thicknesses(e, nr, [{"K": K, "params": ct_params, "pre": {}}] if K else [], P)
         self.record_barrier(e, nr, kind="ct", P=P or None, T=T, K_total=K, B=B, d=d if K else None,
-                            kvp=int(number(f"kvp_var {t}")) or None, beyond=beyond, scans=scans)
+                            kvp=int(number(f"kvp_var {t}")) or None, beyond=beyond, scans=scans,
+                            whole=self.whole_distance(e, nr), D=D if K else None)
         self.show_barrier_result(e, nr, t)
 
     # ===================== material thicknesses: each alone, or layers =====================

@@ -1598,9 +1598,12 @@ class PlanViews:
         widget = self.d.get(f"dist_var {e}{nr}") if self.d[f"vselroom {t}"].get() == "CT Room" \
             else self.d.get(f"entryd {e}{nr}0")
         try:
-            return float(widget.get())
+            distance = float(widget.get())
         except (AttributeError, ValueError, TclError):
             return None
+        if self.whole_distance(e, nr):  # typed to the person beyond the barrier: the wall is that much closer
+            distance -= self.entry_number(f"beyond {e}{nr}") or 0.0
+        return distance if distance > 0 else None
 
     def apply_barrier_inputs(self, t, e, distance=None, location="", area="", primary=False, beyond=None):
         """Fill a barrier of room t with values from the floor plan (distance: from the source to the barrier;
@@ -1612,6 +1615,8 @@ class PlanViews:
             self.barriers(t)
         if beyond is not None:
             self.d[f"beyond {e}{nr}"].set(f"{beyond:.2f}")
+        if distance is not None or beyond is not None:  # the plan gives the distance to the barrier, and beyond it
+            self.d[f"whole {e}{nr}"].set(0)
         if room_type == "CT Room":
             if distance is not None:
                 self.d[f"dist_var {e}{nr}"].set(f"{distance:.2f}")

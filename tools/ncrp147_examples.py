@@ -7,9 +7,9 @@ It builds every example, calculates it with the program, checks the results agai
 'NCRP 147 examples - comparison.xlsx' in the same folder (NCRP 147, the program and their difference) and
 docs/images/ncrp147_examples.json (the comparison, for the user guide).
 
-NCRP 147 gives the distance d from the source to the occupied point. The program asks for the distance to the barrier
-and adds the distance beyond it (walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m), so the distance entered is
-d minus that.
+NCRP 147 gives the distance d from the source to the person beyond the barrier. The files tick 'Enter the whole
+distance', so the distance entered is that d and nothing is added beyond the barrier (sheet 'Distances' of the
+comparison).
 """
 import json
 import os
@@ -34,9 +34,9 @@ CHEST_BUCKY, FLUORO, RAD_TUBE = "Rad Room (chest bucky)", "Fluoroscopy Tube (R&F
 METHOD = ("Method: every radiation type goes through the barrier with the transmission of its own workload "
           "distribution and its own preshielding, and the thickness is the one at which the air kerma beyond adds up "
           "to P (NCRP 147 Sections 5.3.5 and 5.4.2).")
-DISTANCES = ("Distances: NCRP 147 gives the distance d from the source to the occupied point; the program adds the "
-             "distance beyond the barrier (walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m) to the distance to the "
-             "barrier, so each distance entered is d minus that.")
+DISTANCES = ("Distances: as NCRP 147 gives them, from the source to the person beyond the barrier (dP primary, dL "
+             "leakage, dS scatter, dsec leakage and scatter): 'Enter the whole distance' is ticked, so nothing is "
+             "added beyond the barrier.")
 
 
 def number(value):
@@ -78,18 +78,18 @@ def default_beyond(e):
     return {1: 1.3, 2: 0.5}.get(e, 0.3)
 
 
-def barrier(e, materials, items=(), *, location=None, T=None, area=UNCONTROLLED, P=None, beyond=None, ct=None,
-            planned=None):
+def barrier(e, materials, items=(), *, location=None, T=None, area=UNCONTROLLED, P=None, ct=None, planned=None):
     """Barrier e (1 floor, 2 ceiling, 3 door, 4... walls). location: NCRP 147 Table 4.1 (gives T), or T written.
     ct: NCRP 147 distance from the CT isocenter to the occupied point. planned: the thickness of each material that
-    NCRP 147 tries, to check the dose beyond it."""
-    beyond = default_beyond(e) if beyond is None else beyond
+    NCRP 147 tries, to check the dose beyond it. The distances are the whole distances to the person, as NCRP 147
+    gives them ('Enter the whole distance')."""
     items = [dict(item) for item in items]
     for item in items:
-        item["entryd"] = number(item.pop("d") - beyond)
+        item["entryd"] = number(item["d"])
     return {"area": area, "vraoccup": "2" if location else "1", "occupentry": None if location else number(T),
             "vselocation": location, "dikeent": number(P if P is not None else GOAL[area]),
-            "dist_var": number(ct - beyond) if ct is not None else None, "beyond": number(beyond),
+            "dist_var": number(ct) if ct is not None else None, "beyond": number(default_beyond(e)), "whole": "1",
+            "ncrp_ct": ct,
             "materials": list(materials), "matmode": "separate", "shares": [None] * len(materials),
             "planned": [number(x) for x in planned] if planned else [""] * len(materials),
             "checkplan": "1" if planned else "0", "calculated": True, "radiation": items}
@@ -155,8 +155,7 @@ example("5.3 Radiographic room", "NCRP 147 §5.3: Radiographic room (Figures 5.1
                        planned=[0.8]),
             8: barrier(8, ["Lead"], [secondary(RAD_ALL, 1.8, "leakage + side-scatter")],
                        location="X-ray control rooms", area=CONTROLLED),
-            9: barrier(9, ["Concrete"], [secondary(RAD_ALL, 3.0, "leakage + side-scatter")], location=OFFICE,
-                       beyond=1.3),
+            9: barrier(9, ["Concrete"], [secondary(RAD_ALL, 3.0, "leakage + side-scatter")], location=OFFICE),
             10: barrier(10, ["Lead"], [secondary(RAD_ALL, 2.0, "leakage + side-scatter", patients=25)], T=1,
                         P=5e-4),
             11: barrier(11, ["Lead"], [secondary(RAD_ALL, 1.8, "leakage + side-scatter", patients=25)], T=1,
@@ -188,8 +187,7 @@ example("5.3 Radiographic room", "NCRP 147 §5.3: Radiographic room (Figures 5.1
           "0.78 mm", ("below", 0.8)),
          ("Barrier 5", "Lead", "5.3.6, control wall: secondary, d = 1.8 m, controlled area (P = 0.1)",
           0.27, "K = 1.3 mGy/week, B = 7.7×10⁻²: 0.27 mm lead", 0.02),
-         ("Barrier 6", "Concrete", "5.3.1.2, the floor away from the table: secondary, d = 3 m (distance beyond "
-          "1.3 m, as a floor)", 33, "K = 0.47 mGy/week, B = 4.3×10⁻²: 33 mm concrete", 1.0),
+         ("Barrier 6", "Concrete", "5.3.1.2, the floor away from the table: secondary, d = 3 m", 33, "K = 0.47 mGy/week, B = 4.3×10⁻²: 33 mm concrete", 1.0),
          ("Barrier 7", "Lead", "5.3.4, the film passbox: 25 patients in one day (Different Workload), "
           "P = 5×10⁻⁴ mGy for loaded cassettes, d = 2 m",
           1.3, "K = 0.21 mGy in a day, B = 2.3×10⁻³: 1.3 mm lead (Figure C.2)", 0.1),
@@ -209,7 +207,7 @@ example("5.4 Radiographic and fluoroscopic room", "NCRP 147 §5.4: Radiographic 
                                          secondary(RAD_ALL, 3.0, "side-scatter", patients=60),
                                          secondary(RAD_TUBE, 4.1, "leakage"),
                                          secondary(RAD_TUBE, 3.0, "side-scatter")],
-                       location=OFFICE, beyond=1.3),
+                       location=OFFICE),
         }, patients=20),
         "The room of Figures 5.1 and 5.2 as an R&F room: 20 fluoroscopy and 60 radiographic-only patients per week, "
         "the fluoroscopy tube under the table, an office below. The room workload is the 20 fluoroscopy patients; "
@@ -220,7 +218,7 @@ example("5.4 Radiographic and fluoroscopic room", "NCRP 147 §5.4: Radiographic 
           "the 20. 72 mm planned, as NCRP 147 tries",
           69, "1 + 18.6 + 7 mGy/week, each through its own thickness: 72 mm lets 0.011 + 0.002 + 0.004 = "
           "0.017 mGy/week through; a minimum of 69 mm concrete", 1.0),
-         ("Barrier 1", "Concrete", "5.4.1, the floor away from the table (distance beyond 1.3 m, as a floor): leakage "
+         ("Barrier 1", "Concrete", "5.4.1, the floor away from the table: leakage "
           "and scatter of the fluoroscopy tube (2.4 and 3 m) and of the radiographic tube, for the 60 radiographic "
           "(Rad Room all barriers) and the 20 fluoroscopy patients (Rad Tube R&F room) (4.1 and 3 m)",
           62, "K = 1 + 0.23 + 0.063 = 1.3 mGy/week, B = 1.5×10⁻²: 62 mm concrete from Figure C.3 (65 mm from "
@@ -296,7 +294,7 @@ def main():
     from project import FORMAT, VERSION
 
     os.makedirs(FOLDER, exist_ok=True)
-    rows, failed = [], []
+    rows, failed, distances = [], [], []
     for item in EXAMPLES:
         app.build_project({"format": FORMAT, "version": VERSION, "saved": "", "workspaces": [item["workspace"]]})
         t = next(iter(app.standalone))
@@ -330,6 +328,7 @@ def main():
                          "K": rec["K_total"], "B": rec["B"]})
             print(f"{item['file']:42s} {barrier_name:10s} {material:17s} NCRP {ncrp:6.2f}  program {value:7.2f}"
                   + (f"  planned: {planned['dose']:.4f} mGy/week (NCRP {trial[1]})" if planned else ""))
+        distances += barrier_distances(app, item, nr, names)
         project, _ = app.collect_project()
         project.update(title=item["title"], description="\n\n".join(
             [item["about"], "\n".join(lines), METHOD, DISTANCES]))
@@ -339,13 +338,43 @@ def main():
     with open(RESULTS, "w", encoding="utf-8") as file:
         json.dump(rows, file, indent=1, ensure_ascii=False)
     root.destroy()
-    write_comparison(rows)
+    write_comparison(rows, distances)
     print("written:", FOLDER)
     assert not failed, failed
+    wrong = [row for row in distances if abs(row["d"] - row["ncrp"]) > 1e-9]
+    assert not wrong, wrong
+
+
+KINDS = {codes: name for name, codes in SCATTER.items()}
+
+
+def barrier_distances(app, item, nr, names):
+    """The distance of every radiation type of the barriers checked: NCRP 147, what is entered, what the program adds
+    beyond the barrier, and the distance it calculates with."""
+    rows, section = [], item["file"].split()[0]
+    for barrier_name in dict.fromkeys(check[0] for check in item["checks"]):
+        e = names[barrier_name]
+        rec, spec = app.calc[(nr, e)], item["workspace"]["data"]["barrier_data"][e - 1]
+        common = {"section": section, "example": item["title"].split(": ", 1)[1], "barrier": barrier_name,
+                  "whole": rec["whole"], "beyond": rec["beyond"]}
+        if rec["kind"] == "ct":
+            rows.append(dict(common, radiation="Secondary (CT)", symbol="dsec (isocenter)", ncrp=spec["ncrp_ct"],
+                             entered=rec["D"], d=rec["d"]))
+            continue
+        for k, (dist, given) in enumerate(zip(rec["distributions"], spec["radiation"]), start=1):
+            if given["radiob_w"] == "1":
+                kind = "Primary"
+            elif given["unairkerv"] == "2":
+                kind = "Secondary (K¹ written)"
+            else:
+                kind = KINDS[(given["airkerv"], given["radiob_leak"])].capitalize()
+            rows.append(dict(common, radiation=f"#{k} {kind}", symbol=dist["symbol"], ncrp=given["d"],
+                             entered=dist["D"], d=dist["d"]))
+    return rows
 
 
 # ===================== the comparison as an Excel workbook =====================
-def write_comparison(rows):
+def write_comparison(rows, distances):
     """Examples/NCRP 147/NCRP 147 examples - comparison.xlsx: NCRP 147, the program, and their difference (formulas),
     then recalculated with Excel when it is installed, so that the file shows the values in any viewer."""
     from datetime import date
@@ -417,8 +446,8 @@ def write_comparison(rows):
         "'Trial thickness').",
         "Every radiation type goes through the barrier with its own transmission data and preshielding (NCRP 147 "
         "§5.3.5, §5.4.2).",
-        "Distances: NCRP 147 gives the distance to the occupied point; the program adds the distance beyond the "
-        "barrier (walls 0.3 m, ceiling 0.5 m, floor 1.3 m) to the distance entered."])
+        "Distances: the files enter the whole distances of NCRP 147, from the source to the person beyond the "
+        "barrier (sheet 'Distances')."])
 
     ws = book.create_sheet("Trial thickness")
     sheet(ws, "Dose beyond the barrier with the thickness that NCRP 147 tries", made,
@@ -437,6 +466,33 @@ def write_comparison(rows):
         "The air kerma beyond the barrier (mGy/week, with T) for the thickness NCRP 147 tries in §5.3.5 and §5.4.2: "
         "the sum of all its radiation types, each through its own thickness. The goal is P = 0.02 mGy/week.",
         "NCRP 147 reads the transmissions from its figures B.2, B.3, C.2 and C.3."])
+
+    ws = book.create_sheet("Distances")
+    sheet(ws, "Distance from the source to the person beyond the barrier, per radiation type", made,
+          [("Section", 8), ("Example", 30), ("Barrier", 10), ("Radiation type", 30), ("Symbol", 14),
+           ("NCRP 147 (m)", 11), ("Source to the barrier, entered (m)", 15),
+           ("+ to the person beyond it (m)", 14), ("Program d (m)", 11), ("Difference (m)", 12),
+           ("How the distance is entered", 34)])
+    ws.row_dimensions[4].height = 44  # three-line headings
+    for r, row in enumerate(distances, start=5):
+        values = [row["section"], row["example"], row["barrier"], row["radiation"], row["symbol"]]
+        for col, value in enumerate(values, start=1):
+            put(ws, r, col, value)
+        put(ws, r, 6, row["ncrp"], "0.00", value_font)
+        put(ws, r, 7, round(row["entered"], 4), "0.00", value_font)
+        put(ws, r, 8, 0 if row["whole"] else round(row["beyond"], 4), "0.00", value_font)
+        put(ws, r, 9, f"=G{r}+H{r}", "0.00", formula_font)
+        put(ws, r, 10, f"=I{r}-F{r}", "+0.00;-0.00;0.00", formula_font)
+        put(ws, r, 11, "the whole distance (nothing added)" if row["whole"] else
+            f"to the barrier, + {row['beyond']:g} m beyond it")
+    notes(ws, 5 + len(distances) + 1, [
+        "NCRP 147 gives every distance from the source to the person beyond the barrier: dP primary, dL leakage, dS "
+        "scatter (from the patient), dsec leakage and scatter (dS = dL); CT from the isocenter.",
+        "The program asks for the distance from the source to the barrier and adds the distance from the barrier to "
+        "the person beyond it, shown next to it and editable (NCRP 147 §4.1.2: walls 0.3 m, ceiling 0.5 m, floor "
+        "1.3 m).",
+        "These files tick 'Enter the whole distance': the distance entered is the whole d of NCRP 147, and nothing is "
+        "added. Program d = entered + added."])
 
     path = os.path.join(FOLDER, COMPARISON)
     book.save(path)

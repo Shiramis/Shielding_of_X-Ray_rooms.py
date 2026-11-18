@@ -16,9 +16,10 @@ NOTES = [
     "Thickness: every radiation type goes through the barrier with its own α, β, γ (of its workload distribution, "
     "primary or secondary) and its own preshielding, so that Σ K · B(x + x_pre) = P (NCRP 147 5.3.5, 5.4.2). With "
     "one radiation type: x = (1/αγ) · ln[(B^−γ + β/α) / (1 + β/α)] − x_pre.",
-    "d goes from the source to the occupied point: the distance to the barrier plus the distance beyond it "
-    "(NCRP 147 4.1.2: 0.3 m beyond walls and door, 0.5 m above the floor of the room above, 1.7 m above the floor "
-    "below), shown per barrier in the Details sheet.",
+    "d goes from the source to the occupied point (dP primary, dL leakage, dS scatter, dsec leakage and scatter): "
+    "the distance to the barrier plus the distance beyond it (NCRP 147 4.1.2: 0.3 m beyond walls and door, 0.5 m "
+    "above the floor of the room above, 1.7 m above the floor below), or the whole distance when it is typed so; "
+    "shown for each radiation type in the Details sheet.",
     "CT rooms: K¹sec per scan = κ · DLP (κ head 9×10⁻⁵ cm⁻¹, κ body 1.2 × 3×10⁻⁴ cm⁻¹); "
     "K = T · Σ N · s · K¹sec / d², with s the scans per procedure (NCRP 147: 1.4) and d from the isocenter.",
     "A thickness of 0 mm means no additional shielding is required (B ≥ 1).",
@@ -121,7 +122,8 @@ def write_report(path, title, rooms):
     ws = sheet("Details", "Inputs of each radiation type",
                [("Room", 18), ("Barrier", 11), ("Radiation type", 9), ("Primary / secondary", 11),
                 ("Workload distribution", 26), ("K¹ source", 26), ("Preshielding", 11), ("N (patients/week)", 11),
-                ("U", 7), ("T", 7), ("K¹ (mGy/patient at 1 m)", 12), ("d (m)", 8), ("of it beyond the barrier (m)", 10),
+                ("U", 7), ("T", 7), ("K¹ (mGy/patient at 1 m)", 12), ("Distance", 8),
+                ("Source to the barrier (m)", 10), ("+ to the person beyond it (m)", 11), ("d (m)", 8),
                 ("K (mGy/week)", 11)])
     row = 4
     for room in rooms:
@@ -130,20 +132,23 @@ def write_report(path, title, rooms):
             rec = barrier["record"]
             if rec is None:
                 continue
+            # from the source to the barrier and beyond it, or the whole distance typed to the person
+            parts = lambda typed: ([None, "– (the whole distance is typed)"] if rec.get("whole")
+                                   else [typed, rec.get("beyond")])
             if rec["kind"] == "ct":
                 values = [room["name"], barrier["name"], "#1", "Secondary (CT)",
                           f"{rec.get('kvp')} kVp" if rec.get("kvp") else "", "DLP (NCRP 147)", "",
                           f"{ct.get('body') or 0} body + {ct.get('head') or 0} head", None, rec.get("T"), None,
-                          rec.get("d"), rec.get("beyond"), rec.get("K_total")]
+                          "dsec (isocenter)", *parts(rec.get("D")), rec.get("d"), rec.get("K_total")]
                 rows = [values]
             else:
                 rows = [[room["name"], barrier["name"], f"#{dist['no']}", dist["radiation"], dist["distribution"],
                          dist["k1_source"], dist["preshielding"], dist["N"], dist["U"], dist["T"], dist["K1"],
-                         dist["d"], rec.get("beyond"), dist["K"]]
+                         dist.get("symbol"), *parts(dist.get("D")), dist["d"], dist["K"]]
                         for dist in rec["distributions"]]
             for values in rows:
                 for col, value in enumerate(values):
-                    fmt = f_bold if col == 0 else f_sci if col in (10, 13) else f_num
+                    fmt = f_bold if col == 0 else f_sci if col in (10, 15) else f_num
                     cell(ws, row, col, value, fmt)
                 row += 1
 

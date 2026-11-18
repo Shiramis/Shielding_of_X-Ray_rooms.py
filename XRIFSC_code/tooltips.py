@@ -59,11 +59,19 @@ TIPS = {
     "radiation_type_mammo": "Mammography: every barrier is secondary.\n"
                             "NCRP 147 assumes the image receptor intercepts the primary beam, "
                             "so only scatter and leakage are shielded.",
-    "distance": "Distance (m) from the X-ray source (focal spot) to the barrier.\n"
-                "The distance from the barrier to the person beyond it is added: set it under 'Shielding Area' "
-                "(walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m).",
+    "distance": "Distance (m) to the barrier, named as in NCRP 147:\n"
+                "  dP: primary, from the focal spot\n"
+                "  dL: leakage, from the focal spot\n"
+                "  dS: scatter, from the patient\n"
+                "  dsec: leakage and scatter, taken the same (dS = dL)\n"
+                "The distance from the barrier to the person beyond it is added (next to it: walls and door 0.3 m, "
+                "ceiling 0.5 m, floor 1.3 m), and the sum is shown. Or tick 'Enter the whole distance' and type the "
+                "distance all the way to the person.",
+    "whole_distance": "Ticked: every distance of this barrier is typed all the way to the person beyond it, as "
+                      "NCRP 147 gives it; nothing is added.\n"
+                      "Not ticked: the distance is typed to the barrier and the distance beyond it is added.",
     "beyond": "Distance (m) from the barrier to the person to protect beyond it (NCRP 147 4.1.2); it is added to "
-              "the distance from the source.\n"
+              "the distance from the source. One value per barrier, shown with every distance.\n"
               "  Walls and door: 0.3 m.\n"
               "  Ceiling: 0.5 m above the floor of the room above (add the space above a suspended ceiling).\n"
               "  Floor: the person below is 1.7 m above the lower floor, i.e. floor-to-floor height − 1.7 m below "
@@ -201,8 +209,9 @@ TIPS = {
                  "NCRP 147: every procedure scanned once and 40 % again with contrast: 100 % + 40 % = 1.4.",
     "ct_kvp": "Tube voltage. CT transmission data (NCRP 147) are available for 120 and 140 kVp.",
     "ct_distance": "Distance (m) from the CT isocenter to the barrier. The distance from the barrier to the "
-                   "person beyond it is added: set it under 'Shielding Area' (walls and door 0.3 m, ceiling "
-                   "0.5 m, floor 1.3 m).",
+                   "person beyond it is added (next to it: walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m), and "
+                   "the sum is shown. Or tick 'Enter the whole distance' and type the distance all the way to the "
+                   "person.",
     "ct_materials": "CT transmission data (NCRP 147) are available for lead and concrete.",
 
     # ===== Floor plan and 2D / 3D view =====
