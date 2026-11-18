@@ -97,14 +97,16 @@ def insert_rich(text, string, tags=()):
 
 class RichLabel(Canvas):
     """A label whose text can have subscripts, written d_{P}. Like a label, its text is set with
-    configure(text=...) and read with cget('text')."""
+    configure(text=...) and read with cget('text'); with wraplength (pixels) its lines wrap between words. Its size
+    comes from the font alone, so it is right before the window is shown."""
 
-    def __init__(self, master, text="", foreground=None, background=None, font=None):
+    def __init__(self, master, text="", foreground=None, background=None, font=None, wraplength=0):
         super().__init__(master, width=1, height=1, highlightthickness=0, borderwidth=0,
                          background=background or SURFACE)
         self.font = tkfont.Font(font=font or BASE)
         self.small = subscript_font(self.font)
         self.foreground = foreground or TEXT
+        self.wraplength = wraplength
         self.text = None
         self.configure(text=text)
 
@@ -127,16 +129,34 @@ class RichLabel(Canvas):
         line = self.font.metrics("linespace")
         # the subscript's baseline a little under the line's
         drop = self.font.metrics("ascent") - self.small.metrics("ascent") + px(3)
-        width = 0
-        for row, content in enumerate(text.split("\n")):
+        width, row = 0, 0
+        for content in text.split("\n"):
             x = 0
-            for part, sub in rich_parts(content):
-                font = self.small if sub else self.font
-                self.create_text(x, row * line + (drop if sub else 0), text=part, anchor="nw", font=font,
-                                 fill=self.foreground)
-                x += font.measure(part)
-            width = max(width, x)
-        super().configure(width=max(width, 1), height=(text.count("\n") + 1) * line + px(3))
+            for word in self.words(content):
+                size = sum((self.small if sub else self.font).measure(piece) for piece, sub in word)
+                trailing = self.font.measure(" ") if word[-1][0].endswith(" ") else 0
+                if self.wraplength and x and x + size - trailing > self.wraplength:  # on the next line
+                    row, x = row + 1, 0
+                for piece, sub in word:
+                    font = self.small if sub else self.font
+                    self.create_text(x, row * line + (drop if sub else 0), text=piece, anchor="nw", font=font,
+                                     fill=self.foreground)
+                    x += font.measure(piece)
+                width = max(width, x - trailing)
+            row += 1
+        super().configure(width=max(width, 1), height=row * line + px(3))
+
+    @staticmethod
+    def words(content):
+        """The words of a line, each [(piece, subscript)] with its space at the end: d_{sec} is one word."""
+        words, word = [], []
+        for part, sub in rich_parts(content):
+            for piece in re.findall(r"[^ ]+ *| +", part):
+                word.append((piece, sub))
+                if piece.endswith(" "):
+                    words.append(word)
+                    word = []
+        return words + ([word] if word else []) or [[("", False)]]
 
 
 def apply_theme(root):

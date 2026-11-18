@@ -1,5 +1,4 @@
-from tkinter import Toplevel, Label, Frame, Text, LEFT, SOLID, WORD, DISABLED
-from tkinter import font as tkfont
+from tkinter import Toplevel, Label, Frame, LEFT, SOLID
 from tkinter import ttk
 import theme
 
@@ -296,22 +295,12 @@ class ToolTip:
         self.tip.wm_geometry(f"+{x}+{y}")
 
     def rich_note(self):
-        """The note with subscripts (d_{P}): a Text as wide as the label would be, and as tall as its text."""
-        font = tkfont.Font(font=theme.BASE)
-        widest = max(font.measure(theme.plain(line)) for line in self.text.split("\n"))
-        holder = Frame(self.tip)
-        note = Text(holder, wrap=WORD, background="#fff8d6", foreground="#171719", relief=SOLID, borderwidth=1,
-                    highlightthickness=0, font=theme.BASE, padx=8, pady=6, cursor="arrow", height=1,
-                    width=-(-min(widest, theme.px(420)) // font.measure("0")) + 1)
-        theme.insert_rich(note, self.text)
-        note.configure(state=DISABLED)
-        note.pack(fill="both", expand=True)
-        holder.pack()
-        self.tip.update_idletasks()
-        pixels = note.count("1.0", "end", "update", "ypixels")
-        pixels = pixels[0] if isinstance(pixels, tuple) else pixels
-        holder.pack_propagate(False)
-        holder.configure(width=note.winfo_reqwidth(), height=pixels + 2 * (6 + 1))
+        """The note with subscripts (d_{P}), wrapped like the label of the other notes. Its size comes from the font,
+        not from the window (a Text would measure its lines before the window has its width)."""
+        box = Frame(self.tip, background="#fff8d6", highlightthickness=1, highlightbackground="#171719")
+        theme.RichLabel(box, text=self.text, foreground="#171719", background="#fff8d6",
+                        wraplength=theme.px(420)).pack(padx=8, pady=6)
+        box.pack()
 
     def hide(self, event=None):
         self.cancel()
