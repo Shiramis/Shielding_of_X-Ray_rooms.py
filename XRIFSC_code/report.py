@@ -23,7 +23,7 @@ NOTES = [
              "5.3.5, 5.4.2). With one radiation type: x = (1/αγ) · ln[(B^−γ + β/α) / (1 + β/α)] − x_pre."),
     ("xray", "d goes from the source to the occupied point (d_{P} primary, d_{L} leakage, d_{S} scatter, d_{sec} "
              "leakage and scatter): the distance to the barrier plus the distance beyond it (NCRP 147 4.1.2: 0.3 m "
-             "beyond walls and door, 0.5 m above the floor of the room above, 1.7 m above the floor below), or the "
+             "beyond walls and doors, 0.5 m above the floor of the room above, 1.7 m above the floor below), or the "
              "whole distance when it is typed so; shown for each radiation type in the Details sheet."),
     ("ct", "CT rooms: K¹_{sec} per scan = κ · DLP (κ head 9×10⁻⁵ cm⁻¹, κ body 1.2 × 3×10⁻⁴ cm⁻¹); "
            "K = T · Σ N · s · K¹_{sec} / d_{sec}², with s the scans per procedure (NCRP 147: 1.4) and d_{sec} from "

@@ -319,7 +319,7 @@ def introduction():
     story = H1("Introduction")
     story += H2("What the program does")
     story += [P("The program calculates the thickness of the protective barriers of a room with medical X-ray "
-                "equipment: its walls, floor, ceiling and door. For every barrier it finds the thickness of each "
+                "equipment: its walls, doors, floor and ceiling. For every barrier it finds the thickness of each "
                 "material you choose (lead, concrete, gypsum wallboard, steel, plate glass or wood) that keeps the "
                 "weekly air kerma beyond the barrier below the shielding design goal <i>P</i>. It can also check a "
                 "thickness you plan to install, show the rooms in 2D and 3D with the radiation around them, and "
@@ -431,7 +431,7 @@ def method():
                 "barrier, shown next to every distance of the barrier; change it there. NCRP 147 (section 4.1.2) "
                 "places the person:")]
     story += table([["Barrier", "Where the person is (NCRP 147 4.1.2)", "Distance beyond the barrier"],
-                    ["Walls and door", "0.3 m beyond the wall", "0.3 m"],
+                    ["Walls and doors", "0.3 m beyond the wall or door", "0.3 m"],
                     ["Ceiling", "0.5 m above the floor of the room above", "0.5 m, plus any space above a "
                                                                           "suspended ceiling"],
                     ["Floor", "not more than 1.7 m above the floor below",
@@ -542,14 +542,35 @@ def xray_room():
                 "results.")]
     story += figure("xray_overview.png", "An X-ray room: room data at the top, one tab per barrier, results on the "
                                          "right.")
-    story += H2("Room data")
-    story += [bullets(["<b>Number of Barriers</b>: at least 7. The first three are always <b>Floor</b>, <b>Ceiling"
-                       "</b> and <b>Door</b>; the others are the walls <b>Barrier 1, 2, ...</b>",
+    story += H2("Room data, walls and doors")
+    story += [bullets(["<b>Number of Barriers</b>: at least 7, one tab each: <b>Floor</b>, <b>Ceiling</b>, then the "
+                       "walls and doors, at first <b>Door 1</b> and <b>Wall 1</b> to <b>Wall 4</b> (below).",
                        "<b>Workload</b>: either <b>Write total Workload</b> <i>W</i><sub>tot</sub> (mA·min/week) or "
                        "<b>The Number of Patients per week</b> <i>N</i> (NCRP 147 average for a radiographic room: "
                        "120). It applies to every barrier, unless a barrier ticks <b>Different Workload</b>.",
                        "<b>Floor Plan</b> (section 8), <b>2D / 3D View</b> (section 9), <b>Calculate all barriers"
                        "</b> and <b>Export to Excel</b> (section 10)."])]
+    story += [P("Every barrier other than the floor and the ceiling is a <b>wall</b> or a <b>door</b>, with a name:")]
+    story += [bullets(["<b>Add a wall or a door</b>: the arrow up of <b>Number of Barriers</b> opens <b>Add a barrier"
+                       "</b> (" + fig("barrier_dialog.png") + "). Choose <b>Wall</b> or <b>Door</b> and type its "
+                       "name, or leave the name empty for the next one (<b>Wall 5</b>, <b>Door 2</b>, ...). Its tab "
+                       "is added at the end. The arrow down removes the last barrier.",
+                       "<b>Rename</b>: double-click the tab of a wall or door (or right-click it). The same window "
+                       "renames it and makes a wall a door, or a door a wall. The <b>Floor</b> and the <b>Ceiling"
+                       "</b> keep their names.",
+                       "<b>Every barrier of a room has its own name</b>, whatever the capitals: a name already used "
+                       "is shown in red and cannot be given. The names are those of the results, the floor plan, "
+                       "the 2D / 3D view and the Excel report, and they are saved with the project.",
+                       "<b>A new door</b> starts as a secondary barrier (X-ray and fluoroscopy rooms) of lead, a "
+                       "lead-lined door (NCRP 147 2.3.3.1); in a mammography room of wood, a solid-core door "
+                       "(NCRP 147 5.5). Change them as you need; a wall that becomes a door gets them only where "
+                       "nothing is entered. A new wall starts empty. Walls and doors both take 0.3 m to the person "
+                       "beyond them (section 2.4).",
+                       "On the <b>floor plan</b> the walls traced are the walls of the room in the order of their "
+                       "tabs, and the doors traced its doors (section 8). In the <b>2D / 3D view</b> a door lies on "
+                       "a wall, 2.1 m high, and the radiation that crosses it goes through the door (section 9)."])]
+    story += figure("barrier_dialog.png", "Adding a barrier: a wall or a door, and its name (empty: the next default "
+                                          "name).", width=80 * mm)
     story += H2("Radiation on a barrier")
     story += [P("Each barrier tab starts with the radiation that reaches it. " + fig("xray_floor.png") + " shows the floor "
                 "of the example: "
@@ -574,7 +595,7 @@ def xray_room():
                      "Secondary radiation: the unshielded air kerma, below.",
                      "<b>Distance from the Source to the Barrier</b> (m), after the radiation choices; its label "
                      "names it, <b><i>d</i><sub>P</sub></b> for primary radiation (section 2.4). Next to it <b>+ to the person beyond "
-                     "it</b> (walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m), which you can change, and the "
+                     "it</b> (walls and doors 0.3 m, ceiling 0.5 m, floor 1.3 m), which you can change, and the "
                      "distance the program calculates with, e.g. <b><i>d</i><sub>P</sub> = 2.30 m</b>. Under the first distance, "
                      "<b>Enter the whole distance, to the person beyond the barrier (nothing added)</b> lets you "
                      "type the whole distance instead."])]
@@ -602,7 +623,7 @@ def xray_room():
     story += [P(f"With layers ({fig('xray_layers.png')}), #1 is on the room side and the last material outside. Give each material "
                 "its <b>% of the shielding</b>; the shares start equal and must add up to 100 %. <b>Reverse order"
                 "</b> swaps inside and outside.")]
-    story += figure("xray_layers.png", "Barrier 4 of the example: concrete on the room side and lead outside, half "
+    story += figure("xray_layers.png", "Wall 4 of the example: concrete on the room side and lead outside, half "
                                        "of the shielding each, with the planned thicknesses.",
                     width=150 * mm, crop=(0, 372, 1175, 682))
     story += H2("Checking a planned thickness")
@@ -874,7 +895,7 @@ def floor_plan():
     story += [P("<b>Floor Plan</b> opens the drawing of the room or department. Trace the walls on it, place the "
                 "source and say what lies beyond each wall: the program measures the distances, suggests <i>T</i> "
                 "and <i>P</i> and fills in the barriers.")]
-    story += figure("plan_editor.png", "The floor plan of the example department, Barrier 4 of the X-ray room "
+    story += figure("plan_editor.png", "The floor plan of the example department, Wall 4 of the X-ray room "
                                        "selected.")
     story += [steps(["<b>Load drawing (PDF / PNG / JPG)</b>: the architect's drawing (for a PDF, choose the page). "
                      "Without a drawing you work on a 1 m grid.",
@@ -886,16 +907,21 @@ def floor_plan():
                      "floor below and 0.5 m above the floor above (section 2.4).",
                      "<b>Draw walls</b>: click the corners in order; click the first corner or press Enter to close. "
                      "<b>Straight walls (90°)</b> keeps them square; Backspace removes the last corner, Esc cancels. "
-                     "The first wall becomes Barrier 1, the next Barrier 2, and so on.",
+                     "The walls traced are the walls of the room, in the order of their tabs: the first is "
+                     "<b>Wall 1</b> (or the name you gave it), the next <b>Wall 2</b>, and so on.",
                      "<b>Place source</b>: the X-ray tube (CT: the isocenter; mammography: the unit).",
-                     "<b>Add door</b>: click its two edges on a wall.",
-                     "<b>Select wall / door</b>: click a wall and choose what is <b>Beyond it</b> (sets <i>T</i>), "
+                     "<b>Add door</b>: click its two edges on a wall. Every door traced is one more door of the "
+                     "room, in order: <b>Door 1</b>, then <b>Door 2</b>, ... <b>Remove door</b> (or Delete) removes "
+                     "the selected door from the plan.",
+                     "<b>Select a wall / door</b>: click a wall or a door and choose what is <b>Beyond it</b> (sets "
+                     "<i>T</i>), "
                      "its <b>Area</b> (sets <i>P</i>) and whether the <b>Primary beam</b> is aimed at it. The yellow "
                      "note shows the distance and the suggested values; <b>Apply to this barrier</b> writes them in "
                      "(the distance to the barrier and the distance beyond it, so <b>Enter the whole distance</b> "
                      "is unticked).",
                      "<b>Floor and ceiling</b>: what is below and above, and whether the primary beam hits the floor.",
-                     "<b>Apply everything to the room</b> fills in every barrier at once."])]
+                     "<b>Apply everything to the room</b> fills in every barrier at once. When the plan has more "
+                     "walls or doors than the room tab, they are added to the room."])]
     story += note("Mouse wheel: zoom. Right-drag: move the drawing. Walls of neighbouring rooms that touch are "
                   "recognised, so 'Adjacent x-ray rooms' is suggested for them.")
     return story
@@ -905,7 +931,8 @@ def viewer():
     story = H1("2D / 3D view")
     story += [P("<b>2D / 3D View</b> shows the room, or the whole department, with the materials of every barrier, "
                 "the dose beyond it and, if you wish, the radiation around the source. Without a floor plan the "
-                "room is drawn schematically, each wall at its entered distance from the source.")]
+                "room is drawn schematically, each wall at its entered distance from the source and each door on "
+                "the wall whose distance is closest to its own (side by side when they share a wall).")]
     story += figure("viewer_materials.png", "The 2D plan of the example X-ray room, walls shown by their "
                                             "materials, and the list of barriers.")
     story += H2("Walls and materials")
@@ -925,7 +952,7 @@ def viewer():
     story += [P("Rest the pointer on a wall or door, in 2D or 3D, to see its materials, their thicknesses and the "
                 "dose beyond it (" + fig("viewer_note.png") + "). Inside a room the note gives the floor and ceiling; with the radiation "
                 "map on, it also gives the air kerma at that point.")]
-    story += figure("viewer_note.png", "The note of Barrier 3: one planned gypsum board is not enough.",
+    story += figure("viewer_note.png", "The note of Wall 3: one planned gypsum board is not enough.",
                     crop=(500, 300, 1500, 960), width=130 * mm)
     story += H2("Radiation map")
     story += [P("<b>Radiation map</b> colours the weekly air kerma (mGy/week, logarithmic scale, without occupancy) "
@@ -1008,7 +1035,7 @@ def worked_examples():
                 "rounding here.")]
 
     # ---------- secondary barrier ----------
-    b3 = x["Barrier 3"]
+    b3 = x["Wall 3"]
     dist = b3["distributions"][0]
     K = dist["N"] * dist["U"] * dist["T"] * dist["K1"] / dist["d"] ** 2
     close(K, b3["K_total"])
@@ -1022,7 +1049,7 @@ def worked_examples():
     close(dose, b3["check"]["dose"])
     two = K * archer_transmission(gyp, 31.8)
     three = K * archer_transmission(gyp, 47.7)
-    story += H2("Secondary barrier: X-ray room, Barrier 3 (corridor)")
+    story += H2("Secondary barrier: X-ray room, Wall 3 (corridor)")
     story += table([["Input", "Value", "Where it comes from"],
                     ["N", f"{dist['N']:g} patients/week", "Room workload (NCRP 147 average for a Rad Room)"],
                     ["Workload distribution", dist["distribution"], "Secondary radiation from the whole room"],
@@ -1083,7 +1110,7 @@ def worked_examples():
                 f"<b>{fmt(K * T100)} mGy/week</b>, {MET}.")]
 
     # ---------- two radiation types and layers ----------
-    b4 = x["Barrier 4"]
+    b4 = x["Wall 4"]
     d1, d2 = b4["distributions"]
     K1 = d1["N"] * d1["U"] * d1["T"] * d1["K1"] / d1["d"] ** 2
     K2 = d2["N"] * d2["U"] * d2["T"] * d2["K1"] / d2["d"] ** 2
@@ -1105,7 +1132,7 @@ def worked_examples():
     planned = [("Concrete", 100), ("Lead", 1)]
     t1, t2 = through(p1, planned, s1), through(p2, planned)
     close(K1 * t1 + K2 * t2, b4["check"]["dose"])
-    story += H2("Two radiation types and layers: X-ray room, Barrier 4 (chest bucky wall)")
+    story += H2("Two radiation types and layers: X-ray room, Wall 4 (chest bucky wall)")
     story += [P(f"The wall behind the chest bucky receives the primary beam of the chest bucky distribution and the "
                 f"secondary radiation of the whole room. Beyond it are offices (<i>T</i> = {b4['T']:g}, <i>P</i> = "
                 f"{P4:g} mGy/week); the source is {d1['d'] - b4['beyond']:.2f} m away, so <i>d</i> = "
@@ -1161,14 +1188,14 @@ def worked_examples():
                 f"</b>.")]
 
     # ---------- mammography ----------
-    m2 = mammo["Barrier 2"]
+    m2 = mammo["Wall 2"]
     dist = m2["distributions"][0]
     K = dist["N"] * dist["U"] * dist["T"] * dist["K1"] / dist["d"] ** 2
     close(K, m2["K_total"])
     B = m2["P"] / K
     gyp, lead = m2["params"]["Gypsum Wallboard"], m2["params"]["Lead"]
     close(archer_thickness(gyp, B), dict(m2["thickness"])["Gypsum Wallboard"])
-    story += H2("Mammography room, Barrier 2 (offices)")
+    story += H2("Mammography room, Wall 2 (offices)")
     story += [P(f"Total workload 536 mA·min/week with <i>W</i><sub>norm</sub> = 6.7 mA·min/patient gives <i>N</i> = "
                 f"{dist['N']:g} patients/week. The wall is secondary (leakage and side-scatter, "
                 f"<i>K</i><super>1</super><sub>sec</sub> = {dist['K1']:g} mGy/patient), offices beyond (<i>T</i> = 1), "
@@ -1180,7 +1207,7 @@ def worked_examples():
                 f"<b>{archer_thickness(lead, B):.3f} mm lead</b>. One standard gypsum board is more than enough.")]
 
     # ---------- DBT (Yang et al. 2017) ----------
-    dbt = VALUES["dbt"]["Barrier 1"]
+    dbt = VALUES["dbt"]["Wall 1"]
     dist = dbt["distributions"][0]
     views = 200 * (6.07e-3 + 7.85e-3) + 100 * (4.83e-2 + 1.43e-2 + 6.49e-3 + 7.89e-3)
     K = views / dist["d"] ** 2
@@ -1206,7 +1233,7 @@ def worked_examples():
     story += H2("Digital radiography: NCRP 147 and Kirby et al. 2023")
     story += [P("A DR room with 120 patients per week (the NCRP 147 average). The floor: the source 1 m above it and "
                 "an office below (<i>T</i> = 1, <i>P</i> = 0.02 mGy/week), <i>d</i> = 1 + 1.3 = 2.3 m. The chest "
-                "bucky wall (Barrier 1): 1.8 m from the source, an office beyond, <i>d</i> = 1.8 + 0.3 = 2.1 m. No "
+                "bucky wall (Wall 1): 1.8 m from the source, an office beyond, <i>d</i> = 1.8 + 0.3 = 2.1 m. No "
                 "preshielding. Each barrier is calculated with the NCRP 147 distribution and with that of Kirby et "
                 "al.:")]
     rows = [["Barrier", "Workload distribution", "U", "K<super>1</super><sub>P</sub>", "K (mGy/week)", "Lead (mm)",
@@ -1224,7 +1251,7 @@ def worked_examples():
     floor = kirby["Kirby 2023"]["Floor"]
     lead_of = lambda source, barrier: dict(kirby[source][barrier]["thickness"])["Lead"]
     assert 0.6 < lead_of("Kirby 2023", "Floor") / lead_of("NCRP 147", "Floor") < 0.75  # "about a third less"
-    assert lead_of("Kirby 2023", "Barrier 1") > lead_of("NCRP 147", "Barrier 1")  # "but more"
+    assert lead_of("Kirby 2023", "Wall 1") > lead_of("NCRP 147", "Wall 1")  # "but more"
     K = 120 * floor["K1"] / floor["d"] ** 2
     story += formula(f"Floor, Kirby: <i>K</i> = 120 × 1 × 1 × {floor['K1']:g} / {floor['d']:.1f}<super>2</super> = "
                      f"<b>{fmt(K)}</b> mGy/week, <i>B</i> = 0.02 / {fmt(K)} = <b>{fmt(0.02 / K)}</b>")
@@ -1233,7 +1260,7 @@ def worked_examples():
                 f"less lead under the table, but more behind the chest bucky.")]
 
     # ---------- interventional room (Biondi et al. 2024) ----------
-    bio = VALUES["biondi"]["Barrier 1"]
+    bio = VALUES["biondi"]["Wall 1"]
     dist = bio["distributions"][0]
     k1 = 7155.262 / 60 / 64 * 0.95
     close(k1, dist["K1"])
@@ -1292,14 +1319,14 @@ def ncrp_examples():
         difference = "–" if row["ncrp"] == 0 else f"{row['program'] - row['ncrp']:+.2f} mm".replace("-", "−")
         example = row["example"].replace(" (Figures 5.1 and 5.2)", "").replace("&", "&amp;")
         table_rows.append([row["section"], example, row["barrier"], ncrp, program, difference])
-    story += table(table_rows, [12, 56, 19, 38, 22, 23])
+    story += table(table_rows, [12, 46, 29, 38, 22, 23])
     story += [P("* With all the sources of the room; for the two sources of the example the report shows that "
                 "0.8 mm is enough (below). The same comparison, with the difference in %, the dose with the "
                 "thicknesses the report tries and, in the sheet <i>Distances</i>, the distance of every radiation "
                 "type (NCRP 147, entered, added beyond the barrier, d), is the Excel file <b>NCRP 147 examples - "
                 "comparison.xlsx</b> in <b>Examples\\NCRP 147</b>.", "small"), Spacer(1, 4)]
     rf = next(r for r in rows if r["section"] == "5.4" and r["barrier"] == "Floor")
-    cross = next(r for r in rows if r["section"] == "5.3" and r["barrier"] == "Barrier 4")
+    cross = next(r for r in rows if r["section"] == "5.3" and r["barrier"] == "Wall 4")
     story += [P("The results agree. Where they differ a little, NCRP 147 read the thickness from a figure (e.g. "
                 "0.53 against 0.51 mm lead for the darkroom; 62 mm concrete for the R&amp;F floor away from the "
                 "table, where the report's own Figure 4.8c gives 65 mm), or rounded before subtracting the "
@@ -1369,7 +1396,7 @@ def reference():
     story += H2("Other values")
     story += table([["Quantity", "Value"],
                     ["Design goal P", "Controlled 0.1 mGy/week; uncontrolled 0.02 mGy/week"],
-                    ["Occupied point beyond the barrier (4.1.2)", "Walls and door 0.3 m; ceiling 0.5 m above the "
+                    ["Occupied point beyond the barrier (4.1.2)", "Walls and doors 0.3 m; ceiling 0.5 m above the "
                                                                   "floor of the room above; floor: 1.7 m above the "
                                                                   "floor below (1.3 m under a floor with a 3 m storey)"],
                     ["CT secondary air kerma per mGy·cm of DLP at 1 m, per scan", "Body 1.2 × 3×10<super>−4</super> "

@@ -28,8 +28,14 @@ TIPS = {
               "The report uses the last calculation of each barrier (press Calculate first).",
 
     # ===== Room =====
-    "num_barriers": "Number of barriers in the room.\n"
-                    "The first three are always Floor, Ceiling and Door; the rest are walls (Barrier 1, 2, ...).",
+    "num_barriers": "Number of barriers in the room: the Floor, the Ceiling, then the walls and doors (at first Door 1 "
+                    "and Wall 1 to Wall 4).\n"
+                    "The arrow up adds a barrier: you choose a wall or a door and may name it. The arrow down removes "
+                    "the last barrier.",
+    "barrier_tabs": "Double-click a tab (or right-click it) to rename the wall or door, or to make a wall a door and "
+                    "a door a wall. Every barrier of the room needs its own name; the Floor and the Ceiling keep "
+                    "theirs.\n"
+                    "A new door starts as a secondary barrier of lead (mammography: of wood).",
     "workload": "Weekly workload of the room. It applies to every barrier unless a barrier has "
                 "'Different Workload' ticked.",
     "workload_total": "Total workload Wtot (mA·min/week).\n"
@@ -64,7 +70,7 @@ TIPS = {
                 "  d_{L}: leakage, from the focal spot\n"
                 "  d_{S}: scatter, from the patient\n"
                 "  d_{sec}: leakage and scatter, taken the same (d_{S} = d_{L})\n"
-                "The distance from the barrier to the person beyond it is added (next to it: walls and door 0.3 m, "
+                "The distance from the barrier to the person beyond it is added (next to it: walls and doors 0.3 m, "
                 "ceiling 0.5 m, floor 1.3 m), and the sum is shown. Or tick 'Enter the whole distance' and type the "
                 "distance all the way to the person.",
     "whole_distance": "Ticked: every distance of this barrier is typed all the way to the person beyond it, as "
@@ -72,7 +78,7 @@ TIPS = {
                       "Not ticked: the distance is typed to the barrier and the distance beyond it is added.",
     "beyond": "Distance (m) from the barrier to the person to protect beyond it (NCRP 147 4.1.2); it is added to "
               "the distance from the source. One value per barrier, shown with every distance.\n"
-              "  Walls and door: 0.3 m.\n"
+              "  Walls and doors: 0.3 m.\n"
               "  Ceiling: 0.5 m above the floor of the room above (add the space above a suspended ceiling).\n"
               "  Floor: the person below is 1.7 m above the lower floor, i.e. floor-to-floor height − 1.7 m below "
               "this floor: 1.3 m for 3 m, 2.6 m for 4.3 m.\n"
@@ -209,7 +215,7 @@ TIPS = {
                  "NCRP 147: every procedure scanned once and 40 % again with contrast: 100 % + 40 % = 1.4.",
     "ct_kvp": "Tube voltage. CT transmission data (NCRP 147) are available for 120 and 140 kVp.",
     "ct_distance": "Distance (m) from the CT isocenter to the barrier, d_{sec}. The distance from the barrier to the "
-                   "person beyond it is added (next to it: walls and door 0.3 m, ceiling 0.5 m, floor 1.3 m), and "
+                   "person beyond it is added (next to it: walls and doors 0.3 m, ceiling 0.5 m, floor 1.3 m), and "
                    "the sum is shown. Or tick 'Enter the whole distance' and type the distance all the way to the "
                    "person.",
     "ct_materials": "CT transmission data (NCRP 147) are available for lead and concrete.",
@@ -232,31 +238,36 @@ TIPS = {
                            "above.",
     "plan_source_height": "Height of the source (CT: isocenter) above the floor.\n"
                           "Floor distance = this height; ceiling distance = room height − this height.",
-    "plan_select": "Click a wall or the door to choose what is beyond it and see the suggested values.",
+    "plan_select": "Click a wall or a door to choose what is beyond it and see the suggested values.",
     "plan_outline": "Click the corners of the room in order; click the first corner or press Enter to close.\n"
-                    "Each wall becomes a barrier: the first wall is Barrier 1, the next Barrier 2, ...",
+                    "The walls traced are the walls of the room, in order: the first is Wall 1 of the room tab, "
+                    "the next Wall 2, ...",
     "plan_source": "Click the position of the X-ray source (CT: isocenter, mammography: the unit).\n"
                    "Distances to every wall are measured from here.",
-    "plan_door": "Click the two edges of the door on a wall. The door is the 'Door' barrier of the room.",
+    "plan_door": "Click the two edges of a door on a wall. The doors traced are the doors of the room, in order: "
+                 "the first is Door 1 of the room tab, the next Door 2, ...\n"
+                 "To remove a door, select it and press 'Remove door' (or Delete).",
+    "plan_remove_door": "Removes the selected door from the floor plan (the door of the room tab stays).",
     "plan_scale": "Click two points whose real distance you know (e.g. a dimension line) and type it in metres.\n"
                   "Without a drawing, the grid is 1 m.",
-    "plan_clear": "Removes the traced walls and door of this room.",
+    "plan_clear": "Removes the traced walls and doors of this room.",
     "plan_beyond": "What is on the other side (NCRP 147 Table 4.1). It sets the occupancy factor T and a "
                    "suggested area classification (P). Only X-ray control rooms are suggested as controlled.",
     "plan_primary": "Tick if the useful beam is aimed at this wall (e.g. the chest bucky wall). "
                     "Otherwise the wall is secondary.",
     "plan_apply": "Writes the distance, location (T) and area (P) into this barrier of the room tab.",
-    "plan_apply_all": "Writes every wall, the door, the floor and the ceiling into the room tab.\n"
-                      "Barriers are added to the room if the plan has more walls.",
+    "plan_apply_all": "Writes every wall and door, the floor and the ceiling into the room tab.\n"
+                      "Walls and doors are added to the room if the plan has more of them.",
 }
 
 
 class ToolTip:
     """Small note window that appears while the pointer rests on a widget."""
 
-    def __init__(self, widget, text, delay=400):
+    def __init__(self, widget, text, delay=400, where=None):
         self.widget = widget
         self.text = text
+        self.where = where  # shown only where this says (e.g. on the tabs of a notebook, not on what they show)
         self.delay = delay
         self.tip = None
         self.after_id = None
@@ -276,7 +287,7 @@ class ToolTip:
 
     def show(self):
         self.after_id = None
-        if self.tip is not None or not self.widget.winfo_exists():
+        if self.tip is not None or not self.widget.winfo_exists() or (self.where is not None and not self.where()):
             return
         self.tip = Toplevel(self.widget)
         self.tip.wm_overrideredirect(True)
@@ -309,9 +320,10 @@ class ToolTip:
             self.tip = None
 
 
-def tip(widget, key):
-    """Attach the guidance note TIPS[key] to a widget. Labels get a '?' pointer as a hint."""
-    ToolTip(widget, TIPS[key])
+def tip(widget, key, where=None):
+    """Attach the guidance note TIPS[key] to a widget (where: shown only where this says). Labels get a '?' pointer
+    as a hint."""
+    ToolTip(widget, TIPS[key], where=where)
     if isinstance(widget, (ttk.Label, Label, theme.RichLabel)):
         widget.configure(cursor="question_arrow")
     return widget

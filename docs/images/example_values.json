@@ -40,15 +40,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.651,
-     16.56,
-     0.4585
-    ],
     "Concrete": [
      0.03994,
      0.1448,
      0.4231
+    ],
+    "Lead": [
+     2.651,
+     16.56,
+     0.4585
     ]
    },
    "components": [
@@ -147,15 +147,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.298,
-     17.38,
-     0.6193
-    ],
     "Concrete": [
      0.0361,
      0.1433,
      0.56
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
     ]
    },
    "components": [
@@ -206,7 +206,7 @@
     "transmission": 0.10629251700680271
    }
   },
-  "Door": {
+  "Door 1": {
    "kind": "xray",
    "P": 0.02,
    "T": 0.125,
@@ -296,7 +296,7 @@
     "transmission": 0.5573686274509804
    }
   },
-  "Barrier 1": {
+  "Wall 1": {
    "kind": "xray",
    "P": 0.02,
    "T": 0.025,
@@ -351,15 +351,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.651,
-     16.56,
-     0.4585
-    ],
     "Concrete": [
      0.03994,
      0.1448,
      0.4231
+    ],
+    "Lead": [
+     2.651,
+     16.56,
+     0.4585
     ]
    },
    "components": [
@@ -454,7 +454,7 @@
     "transmission": 0.10411686586985391
    }
   },
-  "Barrier 2": {
+  "Wall 2": {
    "kind": "xray",
    "P": 0.1,
    "T": 1.0,
@@ -494,15 +494,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.298,
-     17.38,
-     0.6193
-    ],
     "Gypsum Wallboard": [
      0.0138,
      0.057,
      0.7937
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
     ]
    },
    "components": [
@@ -553,7 +553,7 @@
     "transmission": 0.02475276766895759
    }
   },
-  "Barrier 3": {
+  "Wall 3": {
    "kind": "xray",
    "P": 0.02,
    "T": 0.2,
@@ -593,15 +593,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.298,
-     17.38,
-     0.6193
-    ],
     "Gypsum Wallboard": [
      0.0138,
      0.057,
      0.7937
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
     ]
    },
    "components": [
@@ -652,7 +652,7 @@
     "transmission": 0.42396492551873105
    }
   },
-  "Barrier 4": {
+  "Wall 4": {
    "kind": "xray",
    "P": 0.02,
    "T": 1.0,
@@ -716,15 +716,15 @@
     ]
    ],
    "params": {
-    "Lead": [
-     2.264,
-     13.08,
-     0.56
-    ],
     "Concrete": [
      0.03552,
      0.1177,
      0.6007
+    ],
+    "Lead": [
+     2.264,
+     13.08,
+     0.56
     ]
    },
    "components": [
@@ -879,7 +879,7 @@
    [
     "Example Rad Room",
     "X-Ray room",
-    "Door",
+    "Door 1",
     "Uncontrolled Area",
     "Corridor doors",
     0.125,
@@ -897,7 +897,7 @@
    [
     "Example Rad Room",
     "X-Ray room",
-    "Barrier 1",
+    "Wall 1",
     "Uncontrolled Area",
     "Outdoor areas with only transient pedestrian or vehicular traffic",
     0.025,
@@ -915,7 +915,7 @@
    [
     "Example Rad Room",
     "X-Ray room",
-    "Barrier 2",
+    "Wall 2",
     "Controlled Area",
     "X-ray control rooms",
     1,
@@ -933,7 +933,7 @@
    [
     "Example Rad Room",
     "X-Ray room",
-    "Barrier 3",
+    "Wall 3",
     "Uncontrolled Area",
     "Corridors",
     0.2,
@@ -951,7 +951,7 @@
    [
     "Example Rad Room",
     "X-Ray room",
-    "Barrier 4",
+    "Wall 4",
     "Uncontrolled Area",
     "Administrative or clerical offices",
     1,
@@ -999,15 +999,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.246,
-     5.73,
-     0.547
-    ],
     "Concrete": [
      0.0383,
      0.0142,
      0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
     ]
    },
    "components": [
@@ -1068,15 +1068,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.246,
-     5.73,
-     0.547
-    ],
     "Concrete": [
      0.0383,
      0.0142,
      0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
     ]
    },
    "components": [
@@ -1107,7 +1107,7 @@
     "transmission": 0.017715419501133783
    }
   },
-  "Door": {
+  "Door 1": {
    "kind": "ct",
    "P": 0.02,
    "T": 0.125,
@@ -1167,7 +1167,7 @@
     "transmission": 0.04163673469387755
    }
   },
-  "Barrier 1": {
+  "Wall 1": {
    "kind": "ct",
    "P": 0.02,
    "T": 0.025,
@@ -1197,15 +1197,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.246,
-     5.73,
-     0.547
-    ],
     "Concrete": [
      0.0383,
      0.0142,
      0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
     ]
    },
    "components": [
@@ -1236,7 +1236,7 @@
     "transmission": 0.17777777777777773
    }
   },
-  "Barrier 2": {
+  "Wall 2": {
    "kind": "ct",
    "P": 0.02,
    "T": 1.0,
@@ -1266,15 +1266,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.246,
-     5.73,
-     0.547
-    ],
     "Concrete": [
      0.0383,
      0.0142,
      0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
     ]
    },
    "components": [
@@ -1305,7 +1305,7 @@
     "transmission": 0.0081859410430839
    }
   },
-  "Barrier 3": {
+  "Wall 3": {
    "kind": "ct",
    "P": 0.02,
    "T": 0.2,
@@ -1335,15 +1335,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.246,
-     5.73,
-     0.547
-    ],
     "Concrete": [
      0.0383,
      0.0142,
      0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
     ]
    },
    "components": [
@@ -1374,7 +1374,7 @@
     "transmission": 0.022222222222222216
    }
   },
-  "Barrier 4": {
+  "Wall 4": {
    "kind": "ct",
    "P": 0.1,
    "T": 1.0,
@@ -1404,15 +1404,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.246,
-     5.73,
-     0.547
-    ],
     "Concrete": [
      0.0383,
      0.0142,
      0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
     ]
    },
    "components": [
@@ -1485,15 +1485,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Concrete": [
      0.2539,
      1.8411,
      0.3924
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "components": [
@@ -1584,15 +1584,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Concrete": [
      0.2539,
      1.8411,
      0.3924
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "components": [
@@ -1643,7 +1643,7 @@
     "transmission": 0.15943877551020408
    }
   },
-  "Door": {
+  "Door 1": {
    "kind": "xray",
    "P": 0.02,
    "T": 0.125,
@@ -1683,15 +1683,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Wood": [
      0.01888,
      0.04172,
      0.2903
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "components": [
@@ -1742,7 +1742,7 @@
     "transmission": 1.0
    }
   },
-  "Barrier 1": {
+  "Wall 1": {
    "kind": "xray",
    "P": 0.02,
    "T": 0.05,
@@ -1782,15 +1782,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Gypsum Wallboard": [
      0.0883,
      0.7526,
      0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "components": [
@@ -1841,7 +1841,7 @@
     "transmission": 1.0
    }
   },
-  "Barrier 2": {
+  "Wall 2": {
    "kind": "xray",
    "P": 0.02,
    "T": 1.0,
@@ -1881,15 +1881,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Gypsum Wallboard": [
      0.0883,
      0.7526,
      0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "components": [
@@ -1940,7 +1940,7 @@
     "transmission": 0.12022727272727272
    }
   },
-  "Barrier 3": {
+  "Wall 3": {
    "kind": "xray",
    "P": 0.02,
    "T": 0.2,
@@ -1980,15 +1980,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Gypsum Wallboard": [
      0.0883,
      0.7526,
      0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "components": [
@@ -2039,7 +2039,7 @@
     "transmission": 1.0
    }
   },
-  "Barrier 4": {
+  "Wall 4": {
    "kind": "xray",
    "P": 0.02,
    "T": 1.0,
@@ -2079,15 +2079,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     29.91,
-     184.4,
-     0.355
-    ],
     "Gypsum Wallboard": [
      0.0883,
      0.7526,
      0.3786
+    ],
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
     ]
    },
    "components": [
@@ -2140,7 +2140,7 @@
   }
  },
  "dbt": {
-  "Barrier 1": {
+  "Wall 1": {
    "kind": "xray",
    "P": 0.02,
    "T": 1.0,
@@ -2245,15 +2245,15 @@
     ]
    ],
    "params": {
-    "Lead": [
-     4.04,
-     21.69,
-     0.7187
-    ],
     "Concrete": [
      0.04583,
      0.1549,
      0.4926
+    ],
+    "Lead": [
+     4.04,
+     21.69,
+     0.7187
     ]
    },
    "d": 2.3
@@ -2271,15 +2271,15 @@
     ]
    ],
    "params": {
-    "Lead": [
-     3.202,
-     16.12,
-     0.5649
-    ],
     "Concrete": [
      0.04815,
      0.06696,
      0.6831
+    ],
+    "Lead": [
+     3.202,
+     16.12,
+     0.5649
     ]
    },
    "d": 2.3
@@ -2297,15 +2297,15 @@
     ]
    ],
    "params": {
-    "Lead": [
-     3.144,
-     8.461,
-     0.4943
-    ],
     "Concrete": [
      0.04731,
      0.01904,
      0.4446
+    ],
+    "Lead": [
+     3.144,
+     8.461,
+     0.4943
     ]
    },
    "d": 2.3
@@ -2331,19 +2331,19 @@
      ]
     ],
     "params": {
-     "Lead": [
-      2.651,
-      16.56,
-      0.4585
-     ],
      "Concrete": [
       0.03994,
       0.1448,
       0.4231
+     ],
+     "Lead": [
+      2.651,
+      16.56,
+      0.4585
      ]
     }
    },
-   "Barrier 1": {
+   "Wall 1": {
     "distribution": "Rad Room (chest bucky)",
     "U": 1.0,
     "K1": 2.3,
@@ -2361,15 +2361,15 @@
      ]
     ],
     "params": {
-     "Lead": [
-      2.264,
-      13.08,
-      0.56
-     ],
      "Concrete": [
       0.03552,
       0.1177,
       0.6007
+     ],
+     "Lead": [
+      2.264,
+      13.08,
+      0.56
      ]
     }
    }
@@ -2393,19 +2393,19 @@
      ]
     ],
     "params": {
-     "Lead": [
-      2.493,
-      19.42,
-      0.4305
-     ],
      "Concrete": [
       0.03866,
       0.1659,
       0.4011
+     ],
+     "Lead": [
+      2.493,
+      19.42,
+      0.4305
      ]
     }
    },
-   "Barrier 1": {
+   "Wall 1": {
     "distribution": "DR Room (chest bucky) \u2013 Kirby 2023",
     "U": 1.0,
     "K1": 3.05,
@@ -2423,22 +2423,22 @@
      ]
     ],
     "params": {
-     "Lead": [
-      2.274,
-      11.8,
-      0.5545
-     ],
      "Concrete": [
       0.0357,
       0.1057,
       0.5896
+     ],
+     "Lead": [
+      2.274,
+      11.8,
+      0.5545
      ]
     }
    }
   }
  },
  "biondi": {
-  "Barrier 1": {
+  "Wall 1": {
    "kind": "xray",
    "P": 0.01923,
    "T": 1.0,
@@ -2478,15 +2478,15 @@
    "missing": [],
    "layers": null,
    "params": {
-    "Lead": [
-     2.503,
-     14.618,
-     0.904
-    ],
     "Concrete": [
      0.038,
      0.087,
      0.558
+    ],
+    "Lead": [
+     2.503,
+     14.618,
+     0.904
     ]
    },
    "components": [

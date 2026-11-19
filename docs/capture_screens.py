@@ -168,13 +168,21 @@ values["xray_report"] = {"header": [c for c in next(sheet.iter_rows(min_row=4, m
                          "rows": [list(r) for r in sheet.iter_rows(min_row=5, values_only=True) if r and r[2]]}
 os.remove(report_path)
 
-# missing data: clear the distance of Barrier 3 and calculate it
+# missing data: clear the distance of Wall 3 and calculate it
 select_barrier(t, 6)
 d[f"entryd 6{nr}0"].delete(0, "end")
 app.choosetype(6, nr, t)
 dialog = [w for w in root.winfo_children() if w.winfo_class() == "Toplevel"][-1]
 shot("missing_dialog.png", dialog)
 dialog.destroy()
+
+# adding a barrier: the arrow up of 'Number of Barriers' asks for a wall or a door, and its name
+d[f"vnumwall {t}"].set(d[f"x {t}"] + 1)
+app.barrier_count(t)
+window = app.barrier_window
+window.kind.set("door")
+shot("barrier_dialog.png", window)
+window.destroy()
 
 # ---------- CT and mammography rooms ----------
 app.open_example("ct")
@@ -364,7 +372,7 @@ app.open_example("xray")
 t = next(iter(app.standalone))
 viewer = plan_view.RoomViewer(app, ("room", t), "Example Rad Room")
 shot("viewer_materials.png", viewer)
-# the note of Barrier 3, as when the pointer rests on it
+# the note of Wall 3, as when the pointer rests on it
 g = viewer.geometries[0]
 a, b = next((a, b) for e, a, b in g["walls"] if e == 6)
 canvas = viewer.figures["2D plan"][1]

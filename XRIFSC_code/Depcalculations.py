@@ -243,7 +243,7 @@ MISSING_HELP = {
                                                    "to the barrier in metres; the distance to the person beyond it "
                                                    "is added (or tick 'Enter the whole distance' and type all of it).",
     "Distance beyond the barrier (m)": "next to the distance, type how far beyond the barrier the person to "
-                                       "protect is (NCRP 147 4.1.2): walls and door 0.3 m, ceiling 0.5 m, floor "
+                                       "protect is (NCRP 147 4.1.2): walls and doors 0.3 m, ceiling 0.5 m, floor "
                                        "the floor-to-floor height minus 1.7 m (1.3 m for 3 m); or tick 'Enter the "
                                        "whole distance'.",
     "Scans per procedure (%)": "at the top of the CT room, under 'Scans (phases) per procedure', give for each "
@@ -847,8 +847,10 @@ class departprimsec():
         row = ttk.Frame(self.d[f"resultframe {t}{nr}"])
         row.grid(row=e, column=0, sticky="we", padx=6, pady=4)
         self.res[key] = row
-        ttk.Label(row, text=self.barn[f"lab_bar {e}{nr}"].cget("text"), style="BL2.TLabel", width=10).grid(
-            row=0, column=0, sticky="nw")
+        # the name of the barrier, wrapped when it is long
+        self.d[f"resname {e}{nr}"] = ttk.Label(row, text=self.barn[f"lab_bar {e}{nr}"].cget("text"), style="BL2.TLabel",
+                                               width=10, wraplength=theme.px(100))
+        self.d[f"resname {e}{nr}"].grid(row=0, column=0, sticky="nw")
         if self.need:
             ttk.Label(row, text="Missing: " + "; ".join(self.need), style="RL.TLabel", wraplength=theme.px(420),
                       justify=LEFT).grid(row=0, column=1, columnspan=2, sticky="w")

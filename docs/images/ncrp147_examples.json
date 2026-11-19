@@ -2,7 +2,7 @@
  {
   "section": "5.1",
   "example": "Cardiac angiography",
-  "barrier": "Barrier 1",
+  "barrier": "Wall 1",
   "material": "Lead",
   "setup": "a wall to a fully occupied uncontrolled area (T = 1, P = 0.02 mGy/week), d_{sec} = 4 m from the isocenter; leakage + forward/backscatter, K¹_{sec} = 3.8 mGy/patient at 1 m (Table 4.7)",
   "ncrp_text": "K = 5.9 mGy/week, B = 3.4×10⁻³: 1.3 mm lead (Equation 4.10, Figure C.2)",
@@ -18,7 +18,7 @@
  {
   "section": "5.2",
   "example": "Dedicated chest unit",
-  "barrier": "Barrier 1",
+  "barrier": "Wall 1",
   "material": "Lead",
   "setup": "the wall behind the image receptor, primary, U = 1, K¹_{P} = 1.2 mGy/patient, an office (T = 1, P = 0.02) at d_{P} = 3 m, wall bucky preshielding 0.85 mm lead (Table 4.6)",
   "ncrp_text": "B = 5×10⁻⁴: 2.2 mm lead in all, minus 0.85 mm = 1.4 mm (the total rounded to 2.2 mm first)",
@@ -34,7 +34,7 @@
  {
   "section": "5.2",
   "example": "Dedicated chest unit",
-  "barrier": "Barrier 2",
+  "barrier": "Wall 2",
   "material": "Lead",
   "setup": "the adjacent wall, secondary, leakage + side-scatter 2.7×10⁻³ mGy/patient, an office at d_{sec} = 2.1 m",
   "ncrp_text": "K = 0.18 mGy/week, B = 0.11: 0.42 mm lead",
@@ -82,7 +82,7 @@
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
-  "barrier": "Barrier 1",
+  "barrier": "Wall 1",
   "material": "Lead",
   "setup": "5.3.3.1, chest bucky wall behind the image receptor: primary Rad Room (chest bucky), U = 1, K¹_{P} = 2.3, d_{P} = 2.5 m, wall bucky; a staff rest room (T = 1/5)",
   "ncrp_text": "B = 2.2×10⁻³: 1.3 mm lead in all (Figure B.2), minus 0.85 mm = 0.45 mm",
@@ -98,7 +98,7 @@
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
-  "barrier": "Barrier 2",
+  "barrier": "Wall 2",
   "material": "Lead",
   "setup": "5.3.3.2, the same wall outside the beam: the over-table tube (Rad Room floor, leakage + side-scatter, d_{sec} = 4.5 m), side-scatter of the chest patient (d_{S} = 0.8 m) and leakage of the chest tube (d_{L} = 2.5 m)",
   "ncrp_text": "K = 0.14 + 0.96 + 0.008 = 1.1 mGy/week, B = 9.1×10⁻² (P/T = 0.1); with the chest bucky transmission for all of them, to be simple and safe, 0.35 mm lead (with each source's own workload distribution and place, and 30° scatter from the chest patient: 0.3 mm)",
@@ -114,7 +114,7 @@
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
-  "barrier": "Barrier 3",
+  "barrier": "Wall 3",
   "material": "Lead",
   "setup": "5.3.4, darkroom wall: secondary, d_{sec} = 2 m, T = 1, P = 0.025 mGy/week for the stored film",
   "ncrp_text": "K = 1.1 mGy/week, B = 2.3×10⁻²: 0.53 mm lead (Figure C.2)",
@@ -130,7 +130,7 @@
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
-  "barrier": "Barrier 4",
+  "barrier": "Wall 4",
   "material": "Lead",
   "setup": "5.3.5, cross-table wall: primary Rad Room (floor), U = 0.09, d_{P} = 2.8 m, behind grid and cassette (0.3 mm lead), and secondary at d_{sec} = 2 m, which does not pass through them; an office. 0.8 mm planned, as NCRP 147 tries",
   "ncrp_text": "the primary alone 0.9 − 0.3 = 0.6 mm. With the secondary radiation, each through its own thickness, 0.8 mm lets 0.72 B_{sec}(0.8) + 7.5 B_{P}(0.8 + 0.3) = 0.014 mGy/week through, below 0.02, so less is enough; with all the sources of the room (also the chest bucky exposures, not given in the example) 0.78 mm",
@@ -146,7 +146,7 @@
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
-  "barrier": "Barrier 5",
+  "barrier": "Wall 5",
   "material": "Lead",
   "setup": "5.3.6, control wall: secondary, d_{sec} = 1.8 m, controlled area (P = 0.1)",
   "ncrp_text": "K = 1.3 mGy/week, B = 7.7×10⁻²: 0.27 mm lead",
@@ -162,7 +162,7 @@
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
-  "barrier": "Barrier 6",
+  "barrier": "Floor away from the table",
   "material": "Concrete",
   "setup": "5.3.1.2, the floor away from the table: secondary, d_{sec} = 3 m",
   "ncrp_text": "K = 0.47 mGy/week, B = 4.3×10⁻²: 33 mm concrete",
@@ -178,7 +178,7 @@
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
-  "barrier": "Barrier 7",
+  "barrier": "Film passbox",
   "material": "Lead",
   "setup": "5.3.4, the film passbox: 25 patients in one day (Different Workload), P = 5×10⁻⁴ mGy for loaded cassettes, d_{sec} = 2 m",
   "ncrp_text": "K = 0.21 mGy in a day, B = 2.3×10⁻³: 1.3 mm lead (Figure C.2)",
@@ -194,7 +194,7 @@
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
-  "barrier": "Barrier 8",
+  "barrier": "Cassettes behind control wall",
   "material": "Lead",
   "setup": "5.3.6, loaded cassettes behind the control wall: 25 patients in one day, P = 5×10⁻⁴ mGy, d_{sec} = 1.8 m",
   "ncrp_text": "K = 0.26 mGy in a day, B = 1.9×10⁻³: 1.3 mm lead",
@@ -226,7 +226,7 @@
  {
   "section": "5.4",
   "example": "Radiographic and fluoroscopic (R&F) room",
-  "barrier": "Barrier 1",
+  "barrier": "Floor away from the table",
   "material": "Concrete",
   "setup": "5.4.1, the floor away from the table: leakage and scatter of the fluoroscopy tube (d_{L} = 2.4 and d_{S} = 3 m) and of the radiographic tube, for the 60 radiographic (Rad Room all barriers) and the 20 fluoroscopy patients (Rad Tube R&F room) (d_{L} = 4.1 and d_{S} = 3 m)",
   "ncrp_text": "K = 1 + 0.23 + 0.063 = 1.3 mGy/week, B = 1.5×10⁻²: 62 mm concrete from Figure C.3 (65 mm from Figure 4.8c)",
@@ -242,7 +242,7 @@
  {
   "section": "5.5",
   "example": "Mammography",
-  "barrier": "Barrier 1",
+  "barrier": "Wall 1",
   "material": "Gypsum Wallboard",
   "setup": "an adjacent wall to an office (T = 1, P = 0.02), d_{sec} = 2.1 m",
   "ncrp_text": "K = 1.2 mGy/week, B = 1.7×10⁻²: 9.8 mm gypsum wallboard (Figure C.4)",
@@ -258,7 +258,7 @@
  {
   "section": "5.5",
   "example": "Mammography",
-  "barrier": "Door",
+  "barrier": "Door 1",
   "material": "Wood",
   "setup": "the door to a corridor (corridor door, T = 1/8), d_{sec} = 2.1 m",
   "ncrp_text": "B = 0.13: 41 mm wood (Figure C.7); a 43 mm solid-core door is enough",
@@ -274,7 +274,7 @@
  {
   "section": "5.6",
   "example": "Computed tomography, CTDI method",
-  "barrier": "Barrier 1",
+  "barrier": "Wall 1",
   "material": "Lead",
   "setup": "a wall to an office (T = 1, P = 0.02), d_{sec} = 3 m from the isocenter",
   "ncrp_text": "K = 3.1 mGy/week, B = 6.5×10⁻³: 1.3 mm lead (Figure A.2)",
@@ -290,7 +290,7 @@
  {
   "section": "5.6.1",
   "example": "Computed tomography, dose-length product method",
-  "barrier": "Barrier 1",
+  "barrier": "Wall 1",
   "material": "Lead",
   "setup": "an adjoining wall to a fully occupied office (T = 1, P = 0.02), d_{sec} = 3 m from the isocenter",
   "ncrp_text": "K¹_{sec} 0.28 (body) and 0.15 (head) mGy per procedure, K = 5.2 mGy/week, B = 3.9×10⁻³: 1.5 mm lead (Figure A.2)",
@@ -306,7 +306,7 @@
  {
   "section": "5.7",
   "example": "Bone mineral density (DXA) unit",
-  "barrier": "Barrier 1",
+  "barrier": "Wall 1",
   "material": "Lead",
   "setup": "an office (T = 1, P = 0.02), d_{sec} = 1 m",
   "ncrp_text": "below 0.02 mGy/week at 1 m: no structural shielding is needed, even in the smallest room",

@@ -5,12 +5,13 @@ from tkinter import ttk
 import theme
 from tooltips import tip
 from Depcalculations import wb, PRIMARY_KERMA, KVP_DATA, DBT, SOURCES, KIRBY, BIONDI
+from barrier_names import BarrierDialog, default_kind, default_name, door_material
 
 # NCRP 147 shielding design goals P (mGy/week). Supervised areas are treated as uncontrolled.
 DESIGN_GOALS = {"Controlled Area": "0.1", "Uncontrolled Area": "0.02", "Supervised Area": "0.02"}
 # NCRP 147 4.1.2: the person to protect is 0.3 m beyond walls and doors, 0.5 m above the floor of the room above,
 # and not more than 1.7 m above the floor below, i.e. (floor-to-floor height - 1.7 m) below this floor: 1.3 m for
-# 3 m. Barrier 1 is the floor and barrier 2 the ceiling; walls and door take 0.3 m.
+# 3 m. Barrier 1 is the floor and barrier 2 the ceiling; walls and doors take 0.3 m.
 BEYOND_DEFAULT = {1: "1.3", 2: "0.5"}
 # The workload distributions of each kind of room, in groups split by a line in the list: NCRP 147 (Table 4.3),
 # then those of the literature, whose names end with their source
@@ -27,75 +28,25 @@ DISTRIBUTIONS = {
 OCCUPANCY_LOCATIONS = [row[0] for row in wb['Occupancy Factor ( T )'].iter_rows(min_row=2, values_only=True) if row[0]]
 
 class dep_defs():
-    def barriers(self, t):
+    def barriers(self, t, kinds=None, names=None):
+        """As many barriers as 'Number of Barriers': new ones at the end (kinds and names of the new ones, in order;
+        else walls with their default names), or the last ones removed."""
         current_barriers = self.d[f"x {t}"]
         max_barriers = self.d[f"vnumwall {t}"].get()
         room_number = self.d[f"nr {t}"]
-
-        def initialize_barrier(index):
-            """Initialize values and widgets for a barrier."""
-            self.thm[f"xbar {index}{room_number}"] = 0
-            self.xlmat[f"thic {index}{room_number}"] = 0
-
-            # Default barrier settings
-            for var in ["titleresul","use_ent", "radside", "radforward", "leakvar", "existvar", "sellocation", "forw", "side",
-                        "laks", "entk", "leak"]:
-                self.d[f"{var} {index}{room_number}"] = None
-
-            self.d[f"barrierf {index}{room_number}"] = ttk.Frame(self.d[f"noteb {t}{room_number}"], width=190)
-            self.d[f"barrierf {index}{room_number}"].pack()
-
-            if index <= 3:
-                labels = ["Floor", "Ceiling", "Door"]
-                self.barn[f"lab_bar {index}{room_number}"] = Label(text=labels[index - 1])
-            else:
-                self.barn[f"lab_bar {index}{room_number}"] = Label(text=f"Barrier {index - 3}")
-
-            self.d[f"noteb {t}{room_number}"].add(self.d[f"barrierf {index}{room_number}"],
-                                                  text=self.barn[f"lab_bar {index}{room_number}"].cget("text"))
-
-            self.barr[self.barn[f"lab_bar {index}{room_number}"].cget("text")] = 0
-
-            # Where the person beyond the barrier is, added to every distance from the source (NCRP 147 4.1.2),
-            # unless the whole distance to the person is entered
-            self.d[f"beyond {index}{room_number}"] = StringVar(value=BEYOND_DEFAULT.get(index, "0.3"))
-            self.d[f"whole {index}{room_number}"] = IntVar(value=0)
-            for name in ("beyond", "whole"):
-                self.d[f"{name} {index}{room_number}"].trace_add(
-                    "write", lambda *args, e=index, nr=room_number: self.refresh_distance(e, nr))
-
-            # Select Materials label
-            self.matlab = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
-                                    text="Select Materials:")
-            rowm = 8 if self.d[f"vselroom {t}"].get() == "CT Room" else 99
-
-            self.matlab.grid(row=rowm, column=0, padx=5, pady=6.5, sticky="w")
-            materials_tip = "ct_materials" if self.d[f"vselroom {t}"].get() == "CT Room" else "materials"
-            tip(self.matlab, materials_tip)
-
-            # Add spinbox for number of materials
-            self.d[f"vnumbmat {index}{room_number}"] = IntVar(value=1)
-            spinbox_max = 2 if self.d[f"vselroom {t}"].get() == "CT Room" else 6
-            self.d[f"numbmat {index}{room_number}"] = ttk.Spinbox(master=self.d[f"barrierf {index}{room_number}"],
-                from_=1, to=spinbox_max, width=5, textvariable=self.d[f"vnumbmat {index}{room_number}"],
-                command=lambda e=index, nr=room_number: self.numbmater(e, nr, t))
-            self.d[f"numbmat {index}{room_number}"].grid(row=rowm, column=1, padx=5, pady=6.5, sticky="w")
-            tip(self.d[f"numbmat {index}{room_number}"], materials_tip)
-
-            # Add widgets based on room type
-            if self.d[f"vselroom {t}"].get() == "CT Room":
-                self._add_ct_room_widgets(index, room_number, t)
-            else:
-                self._add_xray_room_widgets(index, room_number, t)
-
-            # Call numbmater to initialize the materials based on the spinbox value
-            self.numbmater(index, room_number, t)
-            self._add_material_mode(index, room_number, t)
+        kinds, names = list(kinds or []), list(names or [])
+        notebook = self.d[f"noteb {t}{room_number}"]
+        # a double-click (or right click) on a tab: the name of the barrier, and wall or door
+        notebook.bind("<Double-Button-1>", lambda event: self.on_barrier_tab(t, event))
+        notebook.bind("<Button-3>", lambda event: self.on_barrier_tab(t, event))
+        if f"tabtip {t}" not in self.d:
+            self.d[f"tabtip {t}"] = tip(notebook, "barrier_tabs", where=lambda: self.pointer_on_tab(notebook))
 
         # Add barriers as necessary
         while current_barriers < max_barriers:
             current_barriers += 1
-            initialize_barrier(current_barriers)
+            self.d[f"x {t}"] = current_barriers  # the default name counts the barriers before it
+            self.new_barrier(t, current_barriers, kinds.pop(0) if kinds else None, names.pop(0) if names else None)
 
         # Remove barriers as necessary
         while current_barriers > max_barriers:
@@ -121,6 +72,17 @@ class dep_defs():
                 self.d[radsw_key].destroy()
                 del self.d[radsw_key]
 
+            # its name and kind
+            label = self.barn.pop(f"lab_bar {current_barriers}{room_number}", None)
+            if label is not None:
+                self.barr.pop(label.cget("text"), None)
+                label.destroy()
+            self.d.pop(f"kind {current_barriers}{room_number}", None)
+            self.calc.pop((room_number, current_barriers), None)
+            row = self.res.pop(f"resultrow {current_barriers}{room_number}", None)
+            if row is not None:
+                row.destroy()
+
             current_barriers -= 1
 
         # Update the number of barriers
@@ -133,6 +95,200 @@ class dep_defs():
         else:
             self.d[f"noteb {t}{room_number}"].grid(row=4, column=0, rowspan=10, columnspan=current_barriers, pady=6.5,
                                                    padx=5, sticky="wn")
+
+    def new_barrier(self, t, index, kind=None, name=None):
+        """The values and widgets of barrier index: a wall or a door (barriers 1 and 2: the floor and the ceiling),
+        with its name or the default one ('Wall 1', 'Door 1')."""
+        room_number = self.d[f"nr {t}"]
+        kind = kind if index > 2 and kind in ("wall", "door") else default_kind(index)
+        self.d[f"kind {index}{room_number}"] = kind
+        self.thm[f"xbar {index}{room_number}"] = 0
+        self.xlmat[f"thic {index}{room_number}"] = 0
+
+        # Default barrier settings
+        for var in ["titleresul","use_ent", "radside", "radforward", "leakvar", "existvar", "sellocation", "forw", "side",
+                    "laks", "entk", "leak"]:
+            self.d[f"{var} {index}{room_number}"] = None
+
+        self.d[f"barrierf {index}{room_number}"] = ttk.Frame(self.d[f"noteb {t}{room_number}"], width=190)
+        self.d[f"barrierf {index}{room_number}"].pack()
+
+        name = (name or "").strip() or self.default_barrier_name(t, kind, index)
+        self.barn[f"lab_bar {index}{room_number}"] = Label(text=name)
+        self.d[f"noteb {t}{room_number}"].add(self.d[f"barrierf {index}{room_number}"], text=name)
+        self.barr[name] = 0
+
+        # Where the person beyond the barrier is, added to every distance from the source (NCRP 147 4.1.2),
+        # unless the whole distance to the person is entered
+        self.d[f"beyond {index}{room_number}"] = StringVar(value=BEYOND_DEFAULT.get(index, "0.3"))
+        self.d[f"whole {index}{room_number}"] = IntVar(value=0)
+        for item in ("beyond", "whole"):
+            self.d[f"{item} {index}{room_number}"].trace_add(
+                "write", lambda *args, e=index, nr=room_number: self.refresh_distance(e, nr))
+
+        # Select Materials label
+        self.matlab = ttk.Label(master=self.d[f"barrierf {index}{room_number}"], style="AL.TLabel",
+                                text="Select Materials:")
+        rowm = 8 if self.d[f"vselroom {t}"].get() == "CT Room" else 99
+
+        self.matlab.grid(row=rowm, column=0, padx=5, pady=6.5, sticky="w")
+        materials_tip = "ct_materials" if self.d[f"vselroom {t}"].get() == "CT Room" else "materials"
+        tip(self.matlab, materials_tip)
+
+        # Add spinbox for number of materials
+        self.d[f"vnumbmat {index}{room_number}"] = IntVar(value=1)
+        spinbox_max = 2 if self.d[f"vselroom {t}"].get() == "CT Room" else 6
+        self.d[f"numbmat {index}{room_number}"] = ttk.Spinbox(master=self.d[f"barrierf {index}{room_number}"],
+            from_=1, to=spinbox_max, width=5, textvariable=self.d[f"vnumbmat {index}{room_number}"],
+            command=lambda e=index, nr=room_number: self.numbmater(e, nr, t))
+        self.d[f"numbmat {index}{room_number}"].grid(row=rowm, column=1, padx=5, pady=6.5, sticky="w")
+        tip(self.d[f"numbmat {index}{room_number}"], materials_tip)
+
+        # Add widgets based on room type
+        if self.d[f"vselroom {t}"].get() == "CT Room":
+            self._add_ct_room_widgets(index, room_number, t)
+        else:
+            self._add_xray_room_widgets(index, room_number, t)
+
+        # Call numbmater to initialize the materials based on the spinbox value
+        self.numbmater(index, room_number, t)
+        self._add_material_mode(index, room_number, t)
+        if kind == "door" and not getattr(self, "restoring", False):  # a project being opened has its own values
+            self.door_defaults(t, index)
+
+    # ===================== names and kinds of the barriers =====================
+    def barrier_kind(self, e, nr):
+        """'floor', 'ceiling', 'wall' or 'door'."""
+        return self.d.get(f"kind {e}{nr}") or default_kind(e)
+
+    def barrier_name(self, e, nr):
+        return self.barn[f"lab_bar {e}{nr}"].cget("text")
+
+    def barrier_list(self, t, skip=None):
+        """[(barrier, kind, name)] of the barriers of room t, without barrier skip."""
+        nr = self.d[f"nr {t}"]
+        return [(e, self.barrier_kind(e, nr), self.barrier_name(e, nr)) for e in range(1, self.d[f"x {t}"] + 1)
+                if e != skip and f"lab_bar {e}{nr}" in self.barn]
+
+    def default_barrier_name(self, t, kind, e):
+        return default_name(kind, e, self.barrier_list(t, skip=e))
+
+    def barrier_count(self, t):
+        """The arrows of 'Number of Barriers': up asks whether the new barrier is a wall or a door (and its name),
+        down removes the last barrier."""
+        try:
+            wanted = self.d[f"vnumwall {t}"].get()
+        except TclError:  # not a number
+            wanted = self.d[f"x {t}"]
+        if wanted > self.d[f"x {t}"]:
+            self.d[f"vnumwall {t}"].set(self.d[f"x {t}"])  # until the barrier is added
+            self.barrier_dialog(t, near=self.d.get(f"numwall {t}"))
+        else:
+            self.d[f"vnumwall {t}"].set(max(wanted, 7))
+            self.barriers(t)
+
+    def barrier_dialog(self, t, e=None, near=None):
+        """The dialog for the kind and name of barrier e, or of a new barrier (e None)."""
+        nr = self.d[f"nr {t}"]
+        window = getattr(self, "barrier_window", None)
+        if window is not None and window.winfo_exists():
+            window.destroy()
+        new = e is None
+        index = self.d[f"x {t}"] + 1 if new else e
+        kind = "wall" if new else self.barrier_kind(e, nr)
+        name = "" if new else self.barrier_name(e, nr)
+
+        def done(kind, name):
+            if new:
+                self.add_barrier(t, kind, name)
+            else:
+                self.set_barrier(t, e, kind, name)
+
+        self.barrier_window = BarrierDialog(self.master, index, kind, name, self.barrier_list(t, skip=index),
+                                            self.d[f"vselroom {t}"].get(), done, new=new, near=near)
+        return self.barrier_window
+
+    def add_barrier(self, t, kind="wall", name=None):
+        """One more barrier at the end of room t; returns its number."""
+        nr = self.d[f"nr {t}"]
+        self.d[f"vnumwall {t}"].set(self.d[f"x {t}"] + 1)
+        self.barriers(t, kinds=[kind], names=[name])
+        e = self.d[f"x {t}"]
+        self.d[f"noteb {t}{nr}"].select(self.d[f"barrierf {e}{nr}"])
+        return e
+
+    def set_barrier(self, t, e, kind=None, name=None, defaults=True):
+        """Barrier e becomes a wall or a door (the floor and the ceiling stay what they are) with the name given, or
+        its default name. defaults: a wall that becomes a door gets what a new door has, where nothing is entered."""
+        nr = self.d[f"nr {t}"]
+        old_kind, old_name = self.barrier_kind(e, nr), self.barrier_name(e, nr)
+        kind = kind if old_kind not in ("floor", "ceiling") and kind in ("wall", "door") else old_kind
+        self.d[f"kind {e}{nr}"] = kind
+        name = (name or "").strip() or self.default_barrier_name(t, kind, e)
+        self.barn[f"lab_bar {e}{nr}"].configure(text=name)
+        self.d[f"noteb {t}{nr}"].tab(self.d[f"barrierf {e}{nr}"], text=name)
+        self.barr.pop(old_name, None)
+        self.barr[name] = 0
+        label = self.d.get(f"resname {e}{nr}")  # the name in the results
+        if label is not None and label.winfo_exists():
+            label.configure(text=name)
+        if defaults and kind == "door" and old_kind != "door":
+            self.door_defaults(t, e)
+
+    def door_defaults(self, t, e):
+        """What a new door starts with, where nothing is entered yet: a secondary barrier in an X-ray or fluoroscopy
+        room (a door is not aimed at by the primary beam), of lead, a lead-lined door (NCRP 147 2.3.3.1), or of wood
+        in a mammography room, a solid-core door (NCRP 147 5.5)."""
+        nr = self.d[f"nr {t}"]
+        room_type = self.d[f"vselroom {t}"].get()
+        radiation = self.d.get(f"radiob_w {e}{nr}0")
+        if room_type in ("X-Ray room", "Fluoroscopy Room") and radiation is not None and radiation.get() == 0:
+            radiation.set(2)
+            self.barrier_sel(e, nr, t, 0)
+        material = self.d.get(f"vmater {e}1{nr}")
+        if material is not None and material.get() in ("", "Select Material"):
+            material.set(door_material(room_type))
+
+    def on_barrier_tab(self, t, event):
+        """A double-click (or right click) on the tab of a wall or a door: its name, and wall or door."""
+        notebook = event.widget
+        try:
+            if notebook.identify(event.x, event.y) in ("", "client"):
+                return
+            frame = notebook.tabs()[notebook.index(f"@{event.x},{event.y}")]
+        except (TclError, IndexError):
+            return
+        nr = self.d[f"nr {t}"]
+        e = next((k for k in range(1, self.d[f"x {t}"] + 1) if str(self.d.get(f"barrierf {k}{nr}")) == str(frame)),
+                 None)
+        if e is None:
+            return
+        notebook.select(frame)
+        if self.barrier_kind(e, nr) in ("floor", "ceiling"):
+            return  # they keep their names
+        self.barrier_dialog(t, e, near=notebook)
+
+    @staticmethod
+    def pointer_on_tab(notebook):
+        """Whether the pointer is on a tab of the notebook (not on what the tab shows)."""
+        try:
+            x = notebook.winfo_pointerx() - notebook.winfo_rootx()
+            y = notebook.winfo_pointery() - notebook.winfo_rooty()
+            return notebook.identify(x, y) not in ("", "client")
+        except TclError:
+            return False
+
+    def plan_barrier(self, t, kind, k, create=False):
+        """The barrier of room t of the k-th wall (or door) of its floor plan: its k-th wall (door), in the order of
+        the tabs. create: walls (doors) are added at the end until there is one."""
+        nr = self.d[f"nr {t}"]
+        while True:
+            found = [e for e in range(1, self.d[f"x {t}"] + 1) if self.barrier_kind(e, nr) == kind]
+            if k < len(found):
+                return found[k]
+            if not create:
+                return None
+            self.add_barrier(t, kind)
 
     def _add_ct_room_widgets(self, index, room_number, t):
         """Add CT room specific widgets."""

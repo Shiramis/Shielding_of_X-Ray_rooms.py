@@ -57,7 +57,7 @@ class  CT_Room():
         self.d["vnumwall {0}".format(str(t))] = IntVar(value=7)
         self.d["numwall {0}".format(str(t))] = ttk.Spinbox(master=self.d["frame_1 " + str(t)],
                                                            textvariable=self.d["vnumwall " + str(t)], from_=7,
-                                                           to=50, width=5, command=lambda: self.barriers(t))
+                                                           to=50, width=5, command=lambda: self.barrier_count(t))
         self.d["numwall " + str(t)].grid(row=0, column=1, pady=10, padx=10, sticky="w")
         tip(self.lanumwall, "num_barriers")
         tip(self.d["numwall " + str(t)], "num_barriers")

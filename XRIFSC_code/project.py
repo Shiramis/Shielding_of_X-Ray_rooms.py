@@ -10,10 +10,11 @@ from PIL import Image
 
 import theme
 from Depcalculations import LEGACY_DISTRIBUTIONS
+from plan_view import room_doors
 
 FORMAT = "xray-shielding-project"
 VERSION = 2  # 2: distance beyond each barrier, CT distance to the barrier, CT scans per procedure
-# Version 1 CT distances went to the occupied point: these were added (floor, ceiling; walls and door 0.3 m)
+# Version 1 CT distances went to the occupied point: these were added (floor, ceiling; walls and doors 0.3 m)
 OLD_CT_OFFSETS = {1: 1.7, 2: 0.5}
 FILE_TYPES = [("Shielding project", "*.shield"), ("All files", "*.*")]
 # Inputs of one radiation type of an X-ray / mammography barrier (keys "<name> <e><nr><i>")
@@ -64,7 +65,8 @@ class ProjectFile:
             barrier = {name: self.read_input(f"{name} {e}{nr}")
                        for name in ("area", "vraoccup", "occupentry", "vselocation", "dikeent", "dist_var",
                                     "beyond", "whole")}
-            barrier.update(materials=[self.read_input(f"vmater {e}{o}{nr}") for o in range(1, count + 1)],
+            barrier.update(name=self.barrier_name(e, nr), kind=self.barrier_kind(e, nr),
+                           materials=[self.read_input(f"vmater {e}{o}{nr}") for o in range(1, count + 1)],
                            matmode=self.read_input(f"matmode {e}{nr}"),
                            shares=[self.read_input(f"share {e}{o}{nr}") for o in range(1, count + 1)],
                            planned=[self.read_input(f"planned {e}{o}{nr}") for o in range(1, count + 1)],
@@ -131,6 +133,12 @@ class ProjectFile:
         if data["barriers"] != self.d[f"x {t}"]:
             self.d[f"vnumwall {t}"].set(data["barriers"])
             self.barriers(t)
+        # walls and doors, with their names (older files: the walls and the door of their place)
+        for e, barrier in enumerate(data["barrier_data"], start=1):
+            if barrier.get("kind") in ("wall", "door"):
+                self.d[f"kind {e}{nr}"] = barrier["kind"]
+        for e, barrier in enumerate(data["barrier_data"], start=1):
+            self.set_barrier(t, e, name=barrier.get("name"), defaults=False)
         room = data["room"]
         if room_type == "CT Room":
             for name in CT_KEYS:
@@ -245,8 +253,8 @@ class ProjectFile:
                 continue
             room["outline"] = [as_point(p) for p in room["outline"]]
             room["source"] = as_point(room.get("source"))
-            if room.get("door"):
-                room["door"]["a"], room["door"]["b"] = as_point(room["door"]["a"]), as_point(room["door"]["b"])
+            for door in room_doors(room):  # older plans had one door
+                door["a"], door["b"] = as_point(door["a"]), as_point(door["b"])
             rooms[t] = room
         self.plans[key] = {"image": image, "image_name": data.get("image_name", ""), "scale": data.get("scale"),
                            "rooms": rooms}
@@ -281,6 +289,17 @@ class ProjectFile:
         version = project.get("version", 1)
         self.reset_workspace()
         self.hide_start_buttons()
+        self.restoring = True  # the rooms get the values of the project, not those of new barriers
+        try:
+            self.build_workspaces(project, archive, version)
+        finally:
+            self.restoring = False
+        if self.depnote is not None and self.depnote.tabs():
+            self.depnote.select(0)
+        else:
+            self.show_start_buttons()
+
+    def build_workspaces(self, project, archive, version):
         for workspace in project["workspaces"]:
             if workspace["kind"] == "department":
                 self.creatdep()
@@ -305,10 +324,6 @@ class ProjectFile:
                 self.d[f"vname_room {t}"].set(workspace["name"])
                 self.restore_room(t, workspace["data"], version)
                 self.restore_plan(("room", t), workspace.get("plan"), {0: t}, archive)
-        if self.depnote is not None and self.depnote.tabs():
-            self.depnote.select(0)
-        else:
-            self.show_start_buttons()
 
     # ===================== menu commands =====================
     def set_project_path(self, path):

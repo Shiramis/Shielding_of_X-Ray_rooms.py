@@ -21,12 +21,12 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 from Depcalculations import wb, archer_transmission, stack_transmission
 from Department_defs import OCCUPANCY_LOCATIONS, DESIGN_GOALS
+from barrier_names import DOOR_HEIGHT
 from tooltips import tip
 
 DEFAULT_SCALE = 0.02          # m per plan pixel when no drawing is loaded (50 px = 1 m)
 DEFAULT_HEIGHT = 2.8          # floor-to-ceiling height (m)
 DEFAULT_SOURCE_HEIGHT = 1.0   # height of the source / isocenter above the floor (m)
-DOOR_HEIGHT = 2.1
 SCHEMATIC_DISTANCE = 2.5      # wall distance used in a schematic room when none is entered (m)
 DEFAULT_FLOOR_TO_FLOOR = 3.0  # floor of this room to the floor of the room above, also below (m)
 AREAS = ["Controlled Area", "Uncontrolled Area", "Supervised Area"]
@@ -41,12 +41,12 @@ NOT_CALCULATED = "#d9d9d9"
 WALL_COLOR, SELECTED_COLOR, DOOR_COLOR, OTHER_COLOR = "#1f3b73", "#f28c28", "#8b5a2b", "#9a9a9a"
 
 MODE_NOTES = {
-    "select": "Click a wall, the door or nothing to edit what is beyond it.\n"
+    "select": "Click a wall, a door or nothing to edit what is beyond it.\n"
               "Wheel: zoom   ·   Right-drag: move the plan",
     "outline": "Click the corners of the room in order. Click the first corner (or press Enter) to close it.\n"
                "Backspace: undo the last corner   ·   Esc: cancel   ·   'Straight walls' snaps to 90°",
     "source": "Click where the X-ray source is (CT: the isocenter; mammography: the unit).",
-    "door": "Click the two edges of the door, on the same wall.",
+    "door": "Click the two edges of the door, on the same wall. Every door traced is one more door of the room.",
     "scale": "Click two points whose real distance you know (e.g. a dimension line), then type it in metres.",
 }
 
@@ -155,8 +155,16 @@ def maximize(window):
         window.geometry(f"{window.winfo_screenwidth() - 40}x{window.winfo_screenheight() - 80}+10+10")
 
 
+def room_doors(room):
+    """The doors traced in a room of the floor plan (older plans have one 'door')."""
+    if "doors" not in room:
+        door = room.pop("door", None)
+        room["doors"] = [door] if door else []
+    return room["doors"]
+
+
 def new_room_plan():
-    return {"outline": [], "closed": False, "walls": [], "door": None, "source": None,
+    return {"outline": [], "closed": False, "walls": [], "doors": [], "source": None,
             "height": DEFAULT_HEIGHT, "source_height": DEFAULT_SOURCE_HEIGHT, "floor_to_floor": DEFAULT_FLOOR_TO_FLOOR,
             "floor": {"location": "", "area": "", "primary": True}, "ceiling": {"location": "", "area": ""}}
 
@@ -171,7 +179,7 @@ class PlanEditor(Toplevel):
         maximize(self)
         self.zoom, self.origin = 1.0, [0.0, 0.0]
         self.points = []          # pending clicks for scale / door
-        self.selected = None      # ("wall", i) or ("door",)
+        self.selected = None      # ("wall", i) or ("door", k)
         self.photo = None
         self.pan_start = None
         self.mode = StringVar(value="select")
@@ -209,6 +217,8 @@ class PlanEditor(Toplevel):
         self.bind("<Return>", lambda e: self.close_outline())
         self.bind("<Escape>", lambda e: self.cancel())
         self.bind("<BackSpace>", lambda e: self.undo_point())
+        self.bind("<Delete>", lambda e: None if e.widget.winfo_class() in ("TEntry", "Entry", "TCombobox")
+                  else self.remove_door())  # not while typing in a field
 
         names = [app.room_name(t) for t in rooms]
         self.room_box["values"] = names
@@ -241,7 +251,7 @@ class PlanEditor(Toplevel):
 
         box = ttk.LabelFrame(side, text="Tools")
         box.pack(fill=X, pady=4)
-        for row, (text, value, key) in enumerate((("Select wall / door", "select", "plan_select"),
+        for row, (text, value, key) in enumerate((("Select a wall / door", "select", "plan_select"),
                                                    ("Draw walls", "outline", "plan_outline"),
                                                    ("Place source", "source", "plan_source"),
                                                    ("Add door", "door", "plan_door"),
@@ -251,8 +261,10 @@ class PlanEditor(Toplevel):
         ttk.Checkbutton(box, text="Straight walls (90°)", variable=self.ortho).grid(row=0, column=1, padx=5, sticky="w")
         tip(ttk.Button(box, text="Clear walls", command=self.clear_outline), "plan_clear").grid(
             row=1, column=1, padx=5, sticky="w")
+        tip(ttk.Button(box, text="Remove door", command=self.remove_door), "plan_remove_door").grid(
+            row=3, column=1, padx=5, sticky="w")
 
-        box = ttk.LabelFrame(side, text="Selected wall / door")
+        box = ttk.LabelFrame(side, text="Selected wall or door")
         box.pack(fill=X, pady=4)
         self.sel_title = StringVar(value="Nothing selected")
         ttk.Label(box, textvariable=self.sel_title, style="BL2.TLabel").grid(row=0, column=0, columnspan=2,
@@ -311,7 +323,9 @@ class PlanEditor(Toplevel):
         return self.rooms[self.room_box.current()]
 
     def room_plan(self, t=None):
-        return self.plan["rooms"].setdefault(self.t if t is None else t, new_room_plan())
+        room = self.plan["rooms"].setdefault(self.t if t is None else t, new_room_plan())
+        room_doors(room)
+        return room
 
     def room_type(self):
         return self.app.d[f"vselroom {self.t}"].get()
@@ -363,7 +377,7 @@ class PlanEditor(Toplevel):
         if self.selected is None:
             return None
         if self.selected[0] == "door":
-            return room["door"]
+            return room["doors"][self.selected[1]]
         return room["walls"][self.selected[1]]
 
     def on_location(self):
@@ -391,13 +405,23 @@ class PlanEditor(Toplevel):
         self.redraw()
 
     # ----- suggestions -----
-    def barrier_of(self, selection):
-        return 3 if selection[0] == "door" else 4 + selection[1]
+    def barrier_of(self, selection, create=False):
+        """The barrier of the room tab of a wall (door) of the plan: the walls (doors) of the room, in order.
+        None if the room has fewer; create: they are added."""
+        return self.app.plan_barrier(self.t, selection[0], selection[1], create=create)
+
+    def name_of(self, selection):
+        """Name of the wall or door in the room tab ('Wall 5' if it is not there yet)."""
+        e = self.barrier_of(selection)
+        if e is not None:
+            return self.app.barrier_name(e, self.app.d[f"nr {self.t}"])
+        return f"{'Door' if selection[0] == 'door' else 'Wall'} {selection[1] + 1}"
 
     def segment_of(self, selection):
         room = self.room_plan()
         if selection[0] == "door":
-            return room["door"]["a"], room["door"]["b"]
+            door = room["doors"][selection[1]]
+            return door["a"], door["b"]
         return edges(room["outline"])[selection[1]]
 
     def distance_to(self, selection):
@@ -424,12 +448,15 @@ class PlanEditor(Toplevel):
             self.sel_title.set("Nothing selected")
             lines = ["Draw the walls, place the source, then click a wall."]
             if room["closed"]:
-                lines = [f"{len(room['walls'])} walls traced: Barrier 1 … Barrier {len(room['walls'])}.",
-                         "Click a wall to choose what is beyond it."]
+                walls = len(room["walls"])
+                lines = [f"{walls} walls traced: {self.name_of(('wall', 0))} … {self.name_of(('wall', walls - 1))}"
+                         + (f"; {len(room['doors'])} door{'s' if len(room['doors']) > 1 else ''}: "
+                            + ", ".join(self.name_of(('door', k)) for k in range(len(room["doors"])))
+                            if room["doors"] else "") + ".",
+                         "Click a wall or a door to choose what is beyond it."]
             self.suggestion.configure(text="\n".join(lines))
             return
-        e = self.barrier_of(self.selected)
-        name = "Door" if e == 3 else f"Barrier {e - 3}"
+        name = self.name_of(self.selected)
         a, b = self.segment_of(self.selected)
         length = self.metres(math.dist(a, b))
         self.sel_title.set(f"{name}" + (f"   ({length:.2f} m long)" if length else ""))
@@ -440,8 +467,10 @@ class PlanEditor(Toplevel):
             lines.append("Distance: place the source to compute it." if self.plan["scale"]
                          else "Distance: set the scale of the drawing first.")
         else:
-            lines.append(f"Distance {'isocenter' if ct else 'source'} → {name.lower()}: {d:.2f} m, plus 0.3 m "
+            lines.append(f"Distance {'isocenter' if ct else 'source'} → {name}: {d:.2f} m, plus 0.3 m "
                          f"beyond it to the occupied point ({d + 0.3:.2f} m)")
+        if self.barrier_of(self.selected) is None:
+            lines.append(f"The room tab has no {name} yet: 'Apply' adds it.")
         neighbour = self.neighbour_of(self.selected)
         if neighbour and not self.location_var.get():
             lines.append(f"Shared with room '{neighbour}': suggested 'Adjacent x-ray rooms' (T = 1).")
@@ -463,12 +492,13 @@ class PlanEditor(Toplevel):
     # ----- applying to the room -----
     def apply_selected(self):
         if self.selected is None:
-            messagebox.showinfo("Floor plan", "Select a wall or the door first.", parent=self)
+            messagebox.showinfo("Floor plan", "Select a wall or a door first.", parent=self)
             return
         item = self.selected_item()
         location = item["location"] or (
             "Adjacent x-ray rooms" if self.neighbour_of(self.selected) else "")
-        self.app.apply_barrier_inputs(self.t, self.barrier_of(self.selected), distance=self.distance_to(self.selected),
+        self.app.apply_barrier_inputs(self.t, self.barrier_of(self.selected, create=True),
+                                      distance=self.distance_to(self.selected),
                                       location=location, area=item["area"] or (
                                           suggested_area(location) if location else ""),
                                       primary=item.get("primary", False))
@@ -480,12 +510,13 @@ class PlanEditor(Toplevel):
             messagebox.showinfo("Floor plan", "Draw the walls of the room first.", parent=self)
             return
         self.store_floor_ceiling()
-        selections = [("wall", i) for i in range(len(room["walls"]))] + ([("door",)] if room["door"] else [])
+        selections = [("wall", i) for i in range(len(room["walls"]))] + [("door", k) for k in range(len(room["doors"]))]
         for selection in selections:
             self.selected = selection
             item = self.selected_item()
             location = item["location"] or ("Adjacent x-ray rooms" if self.neighbour_of(selection) else "")
-            self.app.apply_barrier_inputs(self.t, self.barrier_of(selection), distance=self.distance_to(selection),
+            self.app.apply_barrier_inputs(self.t, self.barrier_of(selection, create=True),
+                                          distance=self.distance_to(selection),
                                           location=location,
                                           area=item["area"] or (suggested_area(location) if location else ""),
                                           primary=item.get("primary", False))
@@ -502,7 +533,9 @@ class PlanEditor(Toplevel):
                                                                 if side["location"] else ""),
                                           primary=side.get("primary", False) if key == "floor" else False)
         self.select(None)
-        self.suggestion.configure(text=f"✓ Applied {len(selections)} walls/door, floor and ceiling to "
+        doors = len(room["doors"])
+        self.suggestion.configure(text=f"✓ Applied {len(room['walls'])} walls, {doors} door{'' if doors == 1 else 's'}, "
+                                       f"the floor and the ceiling to "
                                        f"'{self.app.room_name(self.t)}'.\nCheck the room tab, then press Calculate.")
 
     # ----- drawing -----
@@ -523,7 +556,7 @@ class PlanEditor(Toplevel):
         if image is None:
             return
         for room in self.plan["rooms"].values():
-            room.update(outline=[], closed=False, walls=[], door=None, source=None)
+            room.update(outline=[], closed=False, walls=[], doors=[], source=None)
         self.plan.update(image=image, image_name=os.path.basename(path), scale=None)
         self.fit()
         self.mode.set("scale")
@@ -593,7 +626,7 @@ class PlanEditor(Toplevel):
                 c.create_line(*self.to_screen(a), *self.to_screen(b), width=7 if chosen else 4,
                               fill=SELECTED_COLOR if chosen else WALL_COLOR, capstyle="round")
                 mx, my = self.to_screen(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2))
-                c.create_text(mx, my, text=f"B{i + 1}", fill="white", font=(theme.FAMILY, 9, "bold"),
+                c.create_text(mx, my, text=self.name_of(("wall", i)), fill="white", font=(theme.FAMILY, 9, "bold"),
                               tags="label")
                 bbox = c.bbox(c.find_withtag("label")[-1])
                 c.create_rectangle(bbox[0] - 3, bbox[1] - 1, bbox[2] + 3, bbox[3] + 1,
@@ -611,13 +644,13 @@ class PlanEditor(Toplevel):
             if cursor is not None and self.mode.get() == "outline":
                 c.create_line(*self.to_screen(outline[-1]), *self.to_screen(cursor), width=2, fill=WALL_COLOR,
                               dash=(5, 3))
-        if room["door"]:
-            chosen = self.selected == ("door",)
-            c.create_line(*self.to_screen(room["door"]["a"]), *self.to_screen(room["door"]["b"]),
-                          width=9 if chosen else 7, fill=SELECTED_COLOR if chosen else DOOR_COLOR)
-            a, b = self.to_screen(room["door"]["a"]), self.to_screen(room["door"]["b"])
+        for k, door in enumerate(room["doors"]):
+            chosen = self.selected == ("door", k)
+            a, b = self.to_screen(door["a"]), self.to_screen(door["b"])
+            c.create_line(*a, *b, width=9 if chosen else 7, fill=SELECTED_COLOR if chosen else DOOR_COLOR)
             inside = self.to_screen(centroid(outline))
-            c.create_text(*inward(a, b, inside, -14), text="Door", fill=DOOR_COLOR, font=(theme.FAMILY, 9, "bold"))
+            c.create_text(*inward(a, b, inside, -14), text=self.name_of(("door", k)), fill=DOOR_COLOR,
+                          font=(theme.FAMILY, 9, "bold"))
         if room["source"]:
             x, y = self.to_screen(room["source"])
             c.create_oval(x - 7, y - 7, x + 7, y + 7, fill="#d62728", outline="white", width=2)
@@ -655,7 +688,7 @@ class PlanEditor(Toplevel):
             if room["closed"]:
                 if not messagebox.askyesno("Floor plan", "This room already has walls. Draw them again?", parent=self):
                     return
-                room.update(outline=[], closed=False, walls=[], door=None)
+                room.update(outline=[], closed=False, walls=[], doors=[])
             outline = room["outline"]
             if len(outline) >= 3:
                 fx, fy = self.to_screen(outline[0])
@@ -693,20 +726,19 @@ class PlanEditor(Toplevel):
                 if wall_a != wall_b:
                     self.note.configure(text="Both edges of the door must be on the same wall. Try again.")
                 else:
-                    old = room["door"] or {"location": "", "area": ""}
-                    room["door"] = {"a": a, "b": b, "wall": wall_a, "location": old["location"], "area": old["area"]}
+                    room["doors"].append({"a": a, "b": b, "wall": wall_a, "location": "", "area": ""})
                     self.mode.set("select")
-                    self.select(("door",))
+                    self.select(("door", len(room["doors"]) - 1))
             self.redraw()
         else:
             self.select(self.hit_test(event.x, event.y))
 
     def hit_test(self, x, y):
         room = self.room_plan()
-        if room["door"]:
-            a, b = self.to_screen(room["door"]["a"]), self.to_screen(room["door"]["b"])
+        for k, door in enumerate(room["doors"]):
+            a, b = self.to_screen(door["a"]), self.to_screen(door["b"])
             if point_segment_distance((x, y), a, b) < 9:
-                return ("door",)
+                return ("door", k)
         if room["closed"]:
             for i, (a, b) in enumerate(edges(room["outline"])):
                 if point_segment_distance((x, y), self.to_screen(a), self.to_screen(b)) < 9:
@@ -725,15 +757,23 @@ class PlanEditor(Toplevel):
                 room["outline"][-1] = (last[0], first[1])
         room["closed"] = True
         room["walls"] = [{"location": "", "area": "", "primary": False} for _ in room["outline"]]
-        room["door"] = None
+        room["doors"] = []
         self.mode.set("source" if room["source"] is None else "select")
         self.select(None)
 
     def clear_outline(self):
         room = self.room_plan()
         if room["outline"] and messagebox.askyesno("Floor plan", "Clear the walls of this room?", parent=self):
-            room.update(outline=[], closed=False, walls=[], door=None)
+            room.update(outline=[], closed=False, walls=[], doors=[])
             self.select(None)
+
+    def remove_door(self):
+        """The selected door leaves the plan (the door of the room tab stays)."""
+        if self.selected is None or self.selected[0] != "door":
+            self.note.configure(text="Select the door to remove first.")
+            return
+        del self.room_plan()["doors"][self.selected[1]]
+        self.select(None)
 
     def undo_point(self):
         room = self.room_plan()
@@ -1097,19 +1137,22 @@ class RoomViewer(Toplevel):
         if hit:  # click on a wall: show it in the list
             g, e = hit
             iid = f"{g['t']}|{e}" if e is not None else f"room|{g['t']}"
-            self.tree.selection_set(iid)
-            self.tree.see(iid)
+            if self.tree.exists(iid):
+                self.tree.selection_set(iid)
+                self.tree.see(iid)
 
     def hit_2d(self, event):
-        """(room, barrier) under the pointer on the 2D plan: a wall or the door, else (room, None) inside a room."""
+        """(room, barrier) under the pointer on the 2D plan: a wall or a door, else (room, None) inside a room."""
         ax = self.ax2d
         if ax is None or event.inaxes is not ax:
             return None
         point, best = (event.x, event.y), None
         tolerance = (WALL_WIDTH / 2 + 3) * self.figures["2D plan"][0].dpi / 72
+        doors = {(tuple(a), tuple(b)) for g in self.geometries for _, a, b in g["doors"]}
         for g, e, a, b in self.segments:
             start, end = ax.transData.transform([a, b])
-            distance = point_segment_distance(point, start, end) - (2 if e == 3 else 0)  # the door is on a wall
+            # a door is on a wall: it wins when both are under the pointer
+            distance = point_segment_distance(point, start, end) - (2 if (tuple(a), tuple(b)) in doors else 0)
             if distance <= tolerance and (best is None or distance < best[0]):
                 best = (distance, g, e)
         if best:
@@ -1124,7 +1167,7 @@ class RoomViewer(Toplevel):
         lines = []
         if hit and hit[1] is not None:
             g, e = hit
-            lines = barrier_lines(g["info"][e], f"{g['name']} · {g['barriers'][e]}")
+            lines = barrier_lines(g["info"][e], f"{g['name']} · {g['barriers'][e]}") if e in g["info"] else []
         elif hit:  # inside a room: its floor and ceiling
             g = hit[0]
             lines = [g["name"]]
@@ -1154,6 +1197,8 @@ class RoomViewer(Toplevel):
         if best is None:
             return None
         g, e = best[1], best[2]
+        if e not in g["info"]:  # a wall of the plan that the room tab does not have
+            return None
         return barrier_lines(g["info"][e], f"{g['name']} · {g['barriers'][e]}")
 
     def kerma_at(self, x, y):
@@ -1293,14 +1338,14 @@ class RoomViewer(Toplevel):
                 lx, ly = inward(a, b, (cx, cy), 0.6)
                 ax.text(lx, ly, f"{g['barriers'].get(e, '')}\n{text}", ha="center", va="center", fontsize=7,
                         zorder=5, bbox=label_box)
-            if g["door"]:
-                e, a, b = g["door"]
+            for e, a, b in g["doors"]:
                 colors, text, together = style(e, g)
                 draw_wall_2d(ax, figure, a, b, (cx, cy), colors, together, zorder=4)
                 ax.plot([a[0], b[0]], [a[1], b[1]], color=DOOR_COLOR, linewidth=2.5, zorder=4.3)
                 self.segments.append((g, e, a, b))
                 mx, my = inward(a, b, (cx, cy), -0.6)
-                ax.text(mx, my, f"Door\n{text}", ha="center", va="center", fontsize=7, zorder=5, bbox=label_box)
+                ax.text(mx, my, f"{g['barriers'].get(e, 'Door')}\n{text}", ha="center", va="center", fontsize=7,
+                        zorder=5, bbox=label_box)
             sx, sy = g["source"]
             ax.plot(sx, sy, marker="*", markersize=16, color="#d62728", markeredgecolor="white", zorder=6)
             floor_text, ceiling_text = style(1, g)[1].replace("\n", " "), style(2, g)[1].replace("\n", " ")
@@ -1366,8 +1411,7 @@ class RoomViewer(Toplevel):
                 add_wall(g, e, a, b, (cx, cy), 0, h, colors, together, alpha)
                 ax.text((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, h + 0.15, f"{g['barriers'].get(e, '')}\n{text}",
                         fontsize=7, ha="center")
-            if g["door"]:
-                e, a, b = g["door"]
+            for e, a, b in g["doors"]:
                 colors, text, together = style(e, g)
                 nx, ny = wall_normal(a, b, (cx, cy))
                 a2, b2 = (a[0] + nx * 0.03, a[1] + ny * 0.03), (b[0] + nx * 0.03, b[1] + ny * 0.03)
@@ -1454,14 +1498,14 @@ def radiation_field(geometries, bounds, step):
     X, Y = np.meshgrid(np.arange(x0, x1 + step, step), np.arange(y0, y1 + step, step))
     total = np.full(X.shape, np.nan)
     for g in geometries:
-        segments = list(g["walls"]) + ([g["door"]] if g["door"] else [])  # the door last: it lies on a wall
+        segments = list(g["walls"]) + list(g["doors"])  # the doors last: they lie on a wall
         sx, sy = g["source"]
         dx, dy = X - sx, Y - sy
         best_t = np.full(X.shape, np.inf)
         best = np.full(X.shape, -1)
         for k, (e, a, b) in enumerate(segments):
             hit, t = ray_crossings(sx, sy, dx, dy, a, b)
-            closer = hit & ((t <= best_t + 1e-9) if e == 3 else (t < best_t))
+            closer = hit & ((t <= best_t + 1e-9) if k >= len(g["walls"]) else (t < best_t))
             best_t = np.where(closer, t, best_t)
             best = np.where(closer, k, best)
         terms = [source_terms(g["results"].get(e)) for e, _, _ in segments]
@@ -1481,22 +1525,22 @@ def radiation_field(geometries, bounds, step):
             if h is g:
                 continue
             factor = lambda e: h.get("wall_T", {}).get(e) or 1.0  # not calculated: no attenuation known
-            door = h["door"] if h["door"] and not shared_wall(h["door"][1], h["door"][2], g["outline"], SHARED) \
-                else None
-            if door:
-                door_hit, door_t = ray_crossings(sx, sy, dx, dy, door[1], door[2])
-                door_hit &= door_t < 1
+            doors = []
+            for door in h["doors"]:
+                if not shared_wall(door[1], door[2], g["outline"], SHARED):
+                    door_hit, door_t = ray_crossings(sx, sy, dx, dy, door[1], door[2])
+                    doors.append((door[0], door_hit & (door_t < 1), door_t))
             for e, a, b in h["walls"]:
                 if shared_wall(a, b, g["outline"], SHARED):
                     continue
                 hit, t = ray_crossings(sx, sy, dx, dy, a, b)
                 hit &= t < 1
-                if door:  # through the door, not the wall around it
+                for _, door_hit, door_t in doors:  # through a door, not the wall around it
                     with np.errstate(invalid="ignore"):
                         hit &= ~(door_hit & (np.abs(t - door_t) * reach < 0.05))
                 kerma = np.where(hit, kerma * factor(e), kerma)
-            if door:
-                kerma = np.where(door_hit, kerma * factor(door[0]), kerma)
+            for e, door_hit, _ in doors:
+                kerma = np.where(door_hit, kerma * factor(e), kerma)
         total = np.where(np.isnan(total), kerma, np.where(np.isnan(kerma), total, total + kerma))
     return X, Y, total
 
@@ -1520,8 +1564,7 @@ def layout_rooms(geometries):
         move = lambda p: (p[0] + dx, p[1] + dy)
         g["outline"] = [move(p) for p in g["outline"]]
         g["walls"] = [(e, move(a), move(b)) for e, a, b in g["walls"]]
-        if g["door"]:
-            g["door"] = (g["door"][0], move(g["door"][1]), move(g["door"][2]))
+        g["doors"] = [(e, move(a), move(b)) for e, a, b in g["doors"]]
         g["source"] = move(g["source"])
         x = max(p[0] for p in g["outline"]) + 2
     return geometries
@@ -1638,27 +1681,31 @@ class PlanViews:
             self.d[f"vselocation {e}{nr}"].set(location)
 
     def room_geometry(self, t):
-        """Room outline (m, y up), walls, door, source and results, from the floor plan or schematic."""
+        """Room outline (m, y up), walls, doors, source and results, from the floor plan or schematic. The walls
+        (doors) of the plan are those of the room tab, in order; a wall (door) the room tab does not have is None."""
         nr = self.d[f"nr {t}"]
         barriers = {e: self.barn[f"lab_bar {e}{nr}"].cget("text") for e in range(1, self.d[f"x {t}"] + 1)}
         geometry = {"t": t, "nr": nr, "name": self.room_name(t), "type": self.d[f"vselroom {t}"].get(),
                     "barriers": barriers,
-                    "results": {e: self.calc.get((nr, e)) for e in barriers}, "door": None}
+                    "results": {e: self.calc.get((nr, e)) for e in barriers}, "doors": []}
+        of_kind = lambda kind: [e for e in barriers if self.barrier_kind(e, nr) == kind]
+        nth = lambda found, k: found[k] if k < len(found) else None
         plan = self.plans.get(self.workspace_of(t))
         room = plan["rooms"].get(t) if plan else None
         if room and room["closed"] and plan["scale"]:
             s = plan["scale"]
             to_m = lambda p: (p[0] * s, -p[1] * s)
             outline = [to_m(p) for p in room["outline"]]
+            walls, doors = of_kind("wall"), of_kind("door")
             geometry.update(outline=outline, schematic=False, height=room["height"],
                             source_height=room["source_height"],
-                            walls=[(4 + i, a, b) for i, (a, b) in enumerate(edges(outline))],
-                            source=to_m(room["source"]) if room["source"] else centroid(outline))
-            if room["door"]:
-                geometry["door"] = (3, to_m(room["door"]["a"]), to_m(room["door"]["b"]))
+                            walls=[(nth(walls, i), a, b) for i, (a, b) in enumerate(edges(outline))],
+                            source=to_m(room["source"]) if room["source"] else centroid(outline),
+                            doors=[(nth(doors, k), to_m(door["a"]), to_m(door["b"]))
+                                   for k, door in enumerate(room_doors(room))])
             return geometry
         # Schematic: every wall at its entered distance from the source
-        walls = [e for e in barriers if e >= 4]
+        walls = of_kind("wall")
         distances = [self.barrier_distance(t, e) or SCHEMATIC_DISTANCE for e in walls]
         while len(distances) < 3:
             walls.append(None)
@@ -1668,12 +1715,19 @@ class PlanViews:
         wall_list = [(e, corners[k], corners[(k + 1) % len(corners)]) for k, e in enumerate(walls) if e is not None]
         geometry.update(outline=corners, schematic=True, height=DEFAULT_HEIGHT, source_height=DEFAULT_SOURCE_HEIGHT,
                         walls=wall_list, source=(0.0, 0.0))
-        if 3 in barriers and wall_list:
-            # door drawn on the wall whose distance is closest to the door distance
-            door_distance = self.barrier_distance(t, 3)
-            k = min(range(len(wall_list)), key=lambda j: abs(distances[j] - door_distance)) if door_distance else 0
-            _, a, b = wall_list[k]
-            u = min(0.6 / (math.dist(a, b) or 1), 0.5)
-            geometry["door"] = (3, (a[0] + (b[0] - a[0]) * (0.5 - u), a[1] + (b[1] - a[1]) * (0.5 - u)),
-                                (a[0] + (b[0] - a[0]) * (0.5 + u), a[1] + (b[1] - a[1]) * (0.5 + u)))
+        if wall_list:
+            # each door on the wall whose distance is closest to its own, side by side when they share a wall
+            on_wall = {}
+            for e in of_kind("door"):
+                door_distance = self.barrier_distance(t, e)
+                k = min(range(len(wall_list)), key=lambda j: abs(distances[j] - door_distance)) if door_distance else 0
+                on_wall.setdefault(k, []).append(e)
+            for k, doors in on_wall.items():
+                _, a, b = wall_list[k]
+                length = math.dist(a, b) or 1
+                u = min(0.6, 0.4 * length / len(doors)) / length  # half the width of a door, along the wall
+                point = lambda v: (a[0] + (b[0] - a[0]) * v, a[1] + (b[1] - a[1]) * v)
+                for j, e in enumerate(doors):
+                    middle = (j + 1) / (len(doors) + 1)
+                    geometry["doors"].append((e, point(middle - u), point(middle + u)))
         return geometry

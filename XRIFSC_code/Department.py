@@ -174,7 +174,7 @@ class ddepartment():
                 self.d[f"vnumwall {t}"] = IntVar(value=7)
                 self.d[f"numwall {t}"] = ttk.Spinbox(self.d[f"frame_1 {t}"], from_=7, to=50, width=5,
                                                      textvariable=self.d[f"vnumwall {t}"],
-                                                     command=lambda: self.barriers(t))
+                                                     command=lambda: self.barrier_count(t))
                 self.d[f"numwall {t}"].grid(row=0, column=1, pady=5, padx=5, sticky="w")
                 tip(self.lanumwall, "num_barriers")
                 tip(self.d[f"numwall {t}"], "num_barriers")

@@ -65,10 +65,10 @@ def room_geometry(rect, source, door):
 
 
 def plan_room(outline, source, door, beyond, door_beyond, below, above, floor_primary):
-    """Floor plan of a room: walls top, right, bottom, left are Barrier 1-4, the door is on the bottom wall."""
+    """Floor plan of a room: walls top, right, bottom, left are Wall 1-4, Door 1 is on the bottom wall."""
     return {"outline": outline, "closed": True,
             "walls": [{"location": location, "area": area, "primary": False} for location, area in beyond],
-            "door": {"a": door[0], "b": door[1], "wall": 2, "location": door_beyond[0], "area": door_beyond[1]},
+            "doors": [{"a": door[0], "b": door[1], "wall": 2, "location": door_beyond[0], "area": door_beyond[1]}],
             "source": source, "height": HEIGHT, "source_height": SOURCE_HEIGHT,
             "floor_to_floor": HEIGHT, "floor": {"location": below[0], "area": below[1], "primary": floor_primary},
             "ceiling": {"location": above[0], "area": above[1]}}
@@ -101,15 +101,15 @@ def xray_room(x=0.0):
         barrier(f"{HEIGHT - SOURCE_HEIGHT:.2f}", *PATIENT_ROOMS, ["Concrete", "Lead"],
                 [secondary(rad_all, "leakage + forward/backscatter")]),
         barrier(door_d, *CORRIDOR_DOOR, ["Lead"], [secondary(rad_all, "leakage + side-scatter")]),
-        # Barrier 1: cross-table wall, primary (U = 0.09) plus secondary from the rest of the work
+        # Wall 1: cross-table wall, primary (U = 0.09) plus secondary from the rest of the work
         barrier(top, *OUTDOORS, ["Lead", "Concrete"],
                 [primary(rad_floor, "0.09", "5.2", "cross-table"), secondary(rad_all, "leakage + side-scatter")]),
         barrier(right, *CONTROL_ROOM, ["Lead", "Gypsum Wallboard"],
                 [secondary(rad_all, "leakage + side-scatter")], planned=["0.5", ""]),
-        # Barrier 3: one standard gypsum board (15.9 mm) is planned, but 38.6 mm are needed: goal exceeded
+        # Wall 3: one standard gypsum board (15.9 mm) is planned, but 38.6 mm are needed: goal exceeded
         barrier(bottom, *CORRIDOR, ["Lead", "Gypsum Wallboard"],
                 [secondary(rad_all, "leakage + side-scatter")], planned=["", "15.9"]),
-        # Barrier 4: chest bucky wall, primary (U = 1, K = 2.3) plus secondary; one wall of concrete (room side)
+        # Wall 4: chest bucky wall, primary (U = 1, K = 2.3) plus secondary; one wall of concrete (room side)
         # and lead (outside), each giving half of the shielding
         barrier(left, *OFFICES, ["Concrete", "Lead"],
                 [primary(chest, "1", "2.3", "bucky"), secondary(rad_all, "leakage + side-scatter")],
@@ -201,13 +201,13 @@ EXAMPLES = {
     "xray": ("X-Ray room", lambda: standalone("X-Ray room", "Example Rad Room", xray_room),
              "Radiographic room, 120 patients/week (NCRP 147 average).\n"
              "• Floor: primary beam, U = 0.89, K = 5.2 mGy/patient, with bucky preshielding.\n"
-             "• Barrier 1 (outside wall): cross-table primary, U = 0.09, behind grid and cassette, plus secondary "
+             "• Wall 1 (outside wall): cross-table primary, U = 0.09, behind grid and cassette, plus secondary "
              "radiation, which does not pass through them: each goes through the wall with its own transmission.\n"
-             "• Barrier 4: chest bucky wall, primary U = 1, K = 2.3 mGy/patient, plus secondary. Its materials are "
+             "• Wall 4: chest bucky wall, primary U = 1, K = 2.3 mGy/patient, plus secondary. Its materials are "
              "'Layers of one barrier': concrete on the room side and lead outside, half of the shielding each.\n"
-             "• Barrier 2: control room (controlled area). Door and Barrier 3: corridor.\n"
-             "• Planned thicknesses (under the materials) for the floor, Barriers 2, 3 and 4: open the 2D / 3D View, "
-             "choose 'Dose beyond vs goal P' and tick 'Radiation map'. Barrier 3 plans one gypsum board, which is not "
+             "• Wall 2: control room (controlled area). Door 1 and Wall 3: corridor.\n"
+             "• Planned thicknesses (under the materials) for the floor and Walls 2, 3 and 4: open the 2D / 3D View, "
+             "choose 'Dose beyond vs goal P' and tick 'Radiation map'. Wall 3 plans one gypsum board, which is not "
              "enough: the goal is exceeded (red)."),
     "ct": ("CT room", lambda: standalone("CT Room", "Example CT Room", ct_room),
            "CT room, 100 body and 50 head procedures/week, DLP 550 and 1200 mGy·cm per procedure "

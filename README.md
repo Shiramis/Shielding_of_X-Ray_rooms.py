@@ -3,7 +3,7 @@
 # Shielding of X-ray Rooms
 
 A desktop program for the **structural shielding design of medical X-ray imaging facilities**, following
-**NCRP Report No. 147** (2004). It works out how thick the walls, floor, ceiling and door of a room must be, and checks
+**NCRP Report No. 147** (2004). It works out how thick the walls, doors, floor and ceiling of a room must be, and checks
 the thickness you plan to install.
 
 ![An X-ray room with its results](docs/images/xray_overview.png)
@@ -14,6 +14,9 @@ the thickness you plan to install.
   peripheral angiography, interventional rooms), CT rooms (from the DLP, with the scans or phases per procedure) and
   mammography rooms, including digital breast tomosynthesis.
   You can also design **departments**, with several rooms on one floor plan.
+- **Walls and doors**: a room has a floor, a ceiling and as many walls and doors as you add, each with its own name
+  (Wall 1, Door 1, ... or the name you give it; double-click a tab to rename it). A new door starts as a secondary
+  barrier of lead (mammography: of wood).
 - **Required thickness** of lead, concrete, gypsum wallboard, steel, plate glass or wood for every barrier. The program
   uses the NCRP 147 workloads, unshielded air kerma, use and occupancy factors, preshielding and Archer transmission
   parameters.
@@ -21,8 +24,8 @@ the thickness you plan to install.
   you set each material's share of the shielding and the order from the room side outwards.
 - **Planned thickness check**: the weekly dose beyond the barrier with the thicknesses you plan to install, compared
   with the design goal *P*.
-- **Floor plan**: load the architect's drawing (PDF, PNG, JPG), trace the walls, place the source and say what lies
-  beyond each wall. The program measures the distances and suggests *T* and *P*.
+- **Floor plan**: load the architect's drawing (PDF, PNG, JPG), trace the walls and doors, place the source and say what
+  lies beyond each of them. The program measures the distances and suggests *T* and *P*.
 - **2D / 3D view**: every wall in the colours of its materials, the dose beyond each barrier and a radiation map.
   Point at a wall to see its materials and thicknesses.
 - **Excel report** (summary, details, rooms; only the columns the rooms use), **project files** (`.shield`) and **built-in examples**.
