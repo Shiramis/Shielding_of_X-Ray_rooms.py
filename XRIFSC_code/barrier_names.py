@@ -1,7 +1,7 @@
 """The names and kinds of the barriers of a room. Barriers 1 and 2 are the floor and the ceiling and keep their names;
 the others are walls ('Wall 1', 'Wall 2', ...) or doors ('Door 1', ...), which the user can name. Every barrier of a
 room has its own name."""
-from tkinter import Toplevel, StringVar, TclError
+from tkinter import Toplevel, StringVar
 from tkinter import ttk
 
 import theme
@@ -56,13 +56,14 @@ def kind_note(kind, room_type):
 
 
 class BarrierDialog(Toplevel):
-    """The kind (wall or door) and the name of a barrier: of a new one (e is the number it will have), or of barrier
-    e. others: [(barrier, kind, name)] of the other barriers of the room. on_done(kind, name) gets the name typed,
-    or the default name when it is left empty."""
+    """The kind (wall or door) and the name of a barrier: of a new one (e None), or of barrier e. state() gives, as
+    the room is now, the number the barrier has (a new one: the next) and [(barrier, kind, name)] of the others, so
+    that several dialogs can be open together. on_done(kind, name) gets the name typed, or the default name when it
+    is left empty."""
 
-    def __init__(self, master, e, kind, name, others, room_type, on_done, new=False, near=None):
+    def __init__(self, master, e, kind, name, state, room_type, on_done, new=False, near=None, offset=0):
         super().__init__(master)
-        self.e, self.others, self.on_done, self.room_type = e, others, on_done, room_type
+        self.e, self.state, self.on_done, self.room_type, self.new = e, state, on_done, room_type, new
         self.title("Add a barrier" if new else "Barrier")
         self.transient(master.winfo_toplevel())
         self.resizable(False, False)
@@ -98,51 +99,51 @@ class BarrierDialog(Toplevel):
         self.bind("<Return>", lambda event: self.ok())
         self.bind("<Escape>", lambda event: self.destroy())
         self.update_view()
-        self.place_near(near)
+        self.place_near(near, offset)
         self.entry.focus_set()
         self.entry.select_range(0, "end")
-        self.after_idle(self.hold_focus)
 
-    def default(self):
-        return default_name(self.kind.get(), self.e, self.others)
+    def default(self, kind=None):
+        e, others = self.state()
+        return default_name(kind or self.kind.get(), e, others)
 
     def kind_changed(self):
         # a default name follows the kind: 'Wall 4' becomes 'Door 2'
-        previous = default_name(self.shown_kind, self.e, self.others)
-        if self.name.get().strip().casefold() == previous.casefold():
+        if self.name.get().strip().casefold() == self.default(self.shown_kind).casefold():
             self.name.set(self.default())
         self.shown_kind = self.kind.get()
         self.update_view()
 
+    def problem(self):
+        return name_problem(self.name.get(), self.state()[1])
+
     def update_view(self):
+        """The note, the default name and whether the name can be given, as the room is now (another dialog may have
+        added a barrier)."""
+        if not self.winfo_exists():
+            return
         self.note.configure(text=kind_note(self.kind.get(), self.room_type))
         self.hint.configure(text=f"Leave it empty for '{self.default()}'.")
-        problem = name_problem(self.name.get(), self.others)
+        problem = self.problem()
         self.error.configure(text=problem or "")
         self.ok_button.state(["disabled"] if problem else ["!disabled"])
 
     def ok(self):
-        if name_problem(self.name.get(), self.others):
+        if self.problem():
             self.bell()
             return
         kind, name = self.kind.get(), self.name.get().strip() or self.default()
         self.destroy()
         self.on_done(kind, name)
 
-    def place_near(self, widget):
-        """Under the widget that opened it, inside the screen."""
+    def place_near(self, widget, offset=0):
+        """Under the widget that opened it (offset: down and right, when other dialogs are open), inside the
+        screen."""
         self.update_idletasks()
         if widget is not None and widget.winfo_exists():
             x, y = widget.winfo_rootx(), widget.winfo_rooty() + widget.winfo_height() + 4
         else:
             x, y = self.master.winfo_pointerx(), self.master.winfo_pointery()
-        x = min(max(x, 0), self.winfo_screenwidth() - self.winfo_reqwidth() - 8)
-        y = min(max(y, 0), self.winfo_screenheight() - self.winfo_reqheight() - 48)
+        x = min(max(x + offset, 0), self.winfo_screenwidth() - self.winfo_reqwidth() - 8)
+        y = min(max(y + offset, 0), self.winfo_screenheight() - self.winfo_reqheight() - 48)
         self.geometry(f"+{x}+{y}")
-
-    def hold_focus(self):
-        # the room cannot change while the dialog is open
-        try:
-            self.grab_set()
-        except TclError:  # not shown yet
-            pass

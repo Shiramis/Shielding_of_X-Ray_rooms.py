@@ -30,8 +30,9 @@ TIPS = {
     # ===== Room =====
     "num_barriers": "Number of barriers in the room: the Floor, the Ceiling, then the walls and doors (at first Door 1 "
                     "and Wall 1 to Wall 4).\n"
-                    "The arrow up adds a barrier: you choose a wall or a door and may name it. The arrow down removes "
-                    "the last barrier.",
+                    "Each click on the arrow up opens a window to add a barrier: you choose a wall or a door and may "
+                    "name it (several clicks, several windows). The arrow down removes the last barrier.\n"
+                    "The mouse wheel over this field does not change the barriers.",
     "barrier_tabs": "Double-click a tab (or right-click it) to rename the wall or door, or to make a wall a door and "
                     "a door a wall. Every barrier of the room needs its own name; the Floor and the Ceiling keep "
                     "theirs.\n"

@@ -41,6 +41,7 @@ class dep_defs():
         notebook.bind("<Button-3>", lambda event: self.on_barrier_tab(t, event))
         if f"tabtip {t}" not in self.d:
             self.d[f"tabtip {t}"] = tip(notebook, "barrier_tabs", where=lambda: self.pointer_on_tab(notebook))
+        self.count_arrow_clicks(t)
 
         # Add barriers as necessary
         while current_barriers < max_barriers:
@@ -82,11 +83,15 @@ class dep_defs():
             row = self.res.pop(f"resultrow {current_barriers}{room_number}", None)
             if row is not None:
                 row.destroy()
+            for window in self.open_barrier_windows(t):  # the dialog of a barrier that is no more
+                if window.e == current_barriers:
+                    window.destroy()
 
             current_barriers -= 1
 
         # Update the number of barriers
         self.d[f"x {t}"] = current_barriers
+        self.refresh_barrier_windows(t)
 
         # Adjust grid based on the number of barriers and room type
         if self.d[f"vselroom {t}"].get() == "CT Room":
@@ -173,40 +178,91 @@ class dep_defs():
     def default_barrier_name(self, t, kind, e):
         return default_name(kind, e, self.barrier_list(t, skip=e))
 
+    def count_arrow_clicks(self, t):
+        """The clicks on the arrows of 'Number of Barriers' (and its Up / Down keys): only these change the barriers,
+        not the mouse wheel over it, nor the repeat of an arrow held down."""
+        spinbox = self.d.get(f"numwall {t}")
+        if spinbox is None or f"arrowclicks {t}" in self.d:
+            return
+        self.d[f"arrowclicks {t}"] = 0
+
+        def click(event):
+            try:
+                on_arrow = "arrow" in str(event.widget.identify(event.x, event.y))
+            except TclError:
+                on_arrow = False
+            if on_arrow:
+                self.d[f"arrowclicks {t}"] += 1
+
+        def key(event):
+            self.d[f"arrowclicks {t}"] += 1
+
+        spinbox.bind("<ButtonPress-1>", click, add="+")  # before the spinbox handles it (a double click: twice)
+        for name in ("<KeyPress-Up>", "<KeyPress-Down>"):
+            spinbox.bind(name, key, add="+")
+
     def barrier_count(self, t):
-        """The arrows of 'Number of Barriers': up asks whether the new barrier is a wall or a door (and its name),
-        down removes the last barrier."""
+        """The arrows of 'Number of Barriers': every click on the arrow up opens one more window to add a wall or a
+        door (two clicks, two windows), the arrow down removes the last barrier."""
+        current = self.d[f"x {t}"]
         try:
             wanted = self.d[f"vnumwall {t}"].get()
         except TclError:  # not a number
-            wanted = self.d[f"x {t}"]
-        if wanted > self.d[f"x {t}"]:
-            self.d[f"vnumwall {t}"].set(self.d[f"x {t}"])  # until the barrier is added
+            wanted = current
+        clicks = self.d.get(f"arrowclicks {t}", 1)
+        self.d[f"arrowclicks {t}"] = max(clicks - 1, 0)
+        self.d[f"vnumwall {t}"].set(current)  # it changes when a barrier is added or removed
+        if wanted == current or clicks <= 0:  # the mouse wheel, or an arrow held down
+            return
+        if wanted > current:
             self.barrier_dialog(t, near=self.d.get(f"numwall {t}"))
         else:
             self.d[f"vnumwall {t}"].set(max(wanted, 7))
             self.barriers(t)
 
+    def open_barrier_windows(self, t=None):
+        """The dialogs of barriers still open (of room t)."""
+        self.barrier_windows = [w for w in getattr(self, "barrier_windows", []) if w.winfo_exists()]
+        return [w for w in self.barrier_windows if t is None or w.room == t]
+
     def barrier_dialog(self, t, e=None, near=None):
-        """The dialog for the kind and name of barrier e, or of a new barrier (e None)."""
+        """The dialog for the kind and name of barrier e, or of a new barrier (e None). Several can be open: each
+        click on the arrow up opens one more, and each adds its barrier when its Add is pressed. Barrier e has one
+        dialog: a second double-click brings it to the front."""
         nr = self.d[f"nr {t}"]
-        window = getattr(self, "barrier_window", None)
-        if window is not None and window.winfo_exists():
-            window.destroy()
+        open_windows = self.open_barrier_windows(t)
+        if e is not None:
+            for window in open_windows:
+                if window.e == e:
+                    window.lift()
+                    window.entry.focus_set()
+                    return window
         new = e is None
-        index = self.d[f"x {t}"] + 1 if new else e
         kind = "wall" if new else self.barrier_kind(e, nr)
         name = "" if new else self.barrier_name(e, nr)
+        if new:  # as the room is when its Add is pressed: its barrier comes at the end
+            state = lambda: (self.d[f"x {t}"] + 1, self.barrier_list(t))
+        else:
+            state = lambda: (e, self.barrier_list(t, skip=e))
 
         def done(kind, name):
             if new:
                 self.add_barrier(t, kind, name)
-            else:
+            elif e <= self.d[f"x {t}"]:
                 self.set_barrier(t, e, kind, name)
+            self.refresh_barrier_windows(t)
 
-        self.barrier_window = BarrierDialog(self.master, index, kind, name, self.barrier_list(t, skip=index),
-                                            self.d[f"vselroom {t}"].get(), done, new=new, near=near)
-        return self.barrier_window
+        window = BarrierDialog(self.master, e, kind, name, state, self.d[f"vselroom {t}"].get(), done, new=new,
+                               near=near, offset=theme.px(28) * len(open_windows))
+        window.room = t
+        self.barrier_windows.append(window)
+        self.barrier_window = window  # the last one opened
+        return window
+
+    def refresh_barrier_windows(self, t):
+        """The open dialogs of room t follow its barriers: default names and names already taken."""
+        for window in self.open_barrier_windows(t):
+            window.update_view()
 
     def add_barrier(self, t, kind="wall", name=None):
         """One more barrier at the end of room t; returns its number."""

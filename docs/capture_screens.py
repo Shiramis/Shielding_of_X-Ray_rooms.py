@@ -178,6 +178,7 @@ dialog.destroy()
 
 # adding a barrier: the arrow up of 'Number of Barriers' asks for a wall or a door, and its name
 d[f"vnumwall {t}"].set(d[f"x {t}"] + 1)
+d[f"arrowclicks {t}"] += 1  # a click on the arrow up
 app.barrier_count(t)
 window = app.barrier_window
 window.kind.set("door")

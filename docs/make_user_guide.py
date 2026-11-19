@@ -554,7 +554,10 @@ def xray_room():
     story += [bullets(["<b>Add a wall or a door</b>: the arrow up of <b>Number of Barriers</b> opens <b>Add a barrier"
                        "</b> (" + fig("barrier_dialog.png") + "). Choose <b>Wall</b> or <b>Door</b> and type its "
                        "name, or leave the name empty for the next one (<b>Wall 5</b>, <b>Door 2</b>, ...). Its tab "
-                       "is added at the end. The arrow down removes the last barrier.",
+                       "is added at the end when you press <b>Add</b>. Every click opens one more window (a double "
+                       "click, two), one below the other, so you can add several barriers at once; the room keeps "
+                       "working while they are open. The arrow down removes the last barrier. The mouse wheel over "
+                       "the field, or an arrow held down, does not change the barriers.",
                        "<b>Rename</b>: double-click the tab of a wall or door (or right-click it). The same window "
                        "renames it and makes a wall a door, or a door a wall. The <b>Floor</b> and the <b>Ceiling"
                        "</b> keep their names.",
