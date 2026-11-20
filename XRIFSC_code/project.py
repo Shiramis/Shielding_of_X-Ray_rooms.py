@@ -20,7 +20,7 @@ FILE_TYPES = [("Shielding project", "*.shield"), ("All files", "*.*")]
 # Inputs of one radiation type of an X-ray / mammography barrier (keys "<name> <e><nr><i>")
 RADIATION_KEYS = ["radiob_w", "entryd", "vselxray", "vsexroom", "use_ent", "entk", "preshvar", "radiob_pre",
                   "unairkerv", "airkerv", "radiob_leak", "oworkvar", "workv", "worentry", "numpapwe", "kvpdata",
-                  "dbtmode"]
+                  "dbtmode", "dbtbarrier"]
 CT_KEYS = ["bp_var", "hp_var", "dlpb_var", "dlph_var", "kvp_var"]
 
 
@@ -223,8 +223,9 @@ class ProjectFile:
                 self.unairk(e, nr, i)
                 if saved["unairkerv"] == "2":
                     self.write_input(key("entk"), saved.get("entk"))
-                elif saved.get("dbtmode") in ("1", "2", "3"):
+                elif saved.get("dbtmode") in ("1", "2", "3", "4"):
                     self.write_input(key("dbtmode"), saved["dbtmode"])
+                    self.write_input(key("dbtbarrier"), saved.get("dbtbarrier"))  # Yang et al. 2016
                 elif saved.get("airkerv") in ("1", "2", "3"):
                     self.write_input(key("airkerv"), saved["airkerv"])
                     self.leakage(e, nr, i)

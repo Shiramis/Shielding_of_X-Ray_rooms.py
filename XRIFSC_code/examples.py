@@ -233,6 +233,17 @@ def example_file_name(title):
     return f"Example - {title}.shield"
 
 
+def literature_example_files():
+    """The worked examples of the papers whose data the program offers (Examples/Literature, made by
+    tools/literature_examples.py): [(name, path)]."""
+    folder = os.path.join(examples_folder(), "Literature")
+    try:
+        names = sorted(name[:-len(".shield")] for name in os.listdir(folder) if name.endswith(".shield"))
+    except OSError:
+        return []
+    return [(name, os.path.join(folder, name + ".shield")) for name in names]
+
+
 def ncrp_example_files():
     """The worked examples of NCRP 147 (Examples/NCRP 147, made by tools/ncrp147_examples.py), in the order of the
     report: [(name, path)]."""

@@ -337,13 +337,18 @@ def introduction():
     story += [P("The method and the data are those of NCRP Report No. 147. Newer published data are added where "
                 "NCRP 147 has none or older ones, and are always named with their source:")]
     story += table([["Data of the literature", "What they add", "Section"],
-                    ["Li et al. 2024", "Transmission of modern digital radiography beams at a given kVp", "4.9"],
+                    ["Li et al. 2024", "Transmission of modern digital radiography beams at a given kVp, and of the "
+                                       "table bucky of an orthopedic room (concrete)", "4.9"],
                     ["Kirby et al. 2023", "Workload distributions of modern digital radiography rooms, general and "
                                           "pediatric", "4.10"],
                     ["Biondi et al. 2024", "Workload distributions of interventional rooms", "4.11"],
-                    ["Yang et al. 2017", "Digital breast tomosynthesis", "6.1"]], [38, 112, 20])
+                    ["Yang et al. 2017", "Digital breast tomosynthesis", "6.1"],
+                    ["Yang et al. 2016", "Digital breast tomosynthesis: scatter toward a wall or door, the floor or "
+                                         "the ceiling", "6.1"]], [38, 112, 20])
     story += [P("In the list of workload distributions those of NCRP 147 come first; the others follow below a line "
-                "and their names end with the source, e.g. <i>DR Room (floor) – Kirby 2023</i>.")]
+                "and their names end with the source, e.g. <i>DR Room (floor) – Kirby 2023</i>. Every table of "
+                "these papers that the program uses was checked value by value against the paper, and their worked "
+                "examples are compared with the program in section 11.10.")]
     story += H2("Files the program uses")
     story += [P("The setup (section 3.1) puts these files in the program's folder:")]
     story += table([["File", "What it is"],
@@ -692,7 +697,14 @@ def xray_room():
     story += [P("The DR data were calculated by Monte Carlo for broad beams matching the measured half-value layers "
                 "of an Agfa DR 600 (a GE Revolution XR/d had similar values), with its default filtration or with "
                 "1 mm Al + 0.1 mm Cu added. A kVp between the tabulated ones, or plate glass and wood, have no DR "
-                "data: the program says so.")]
+                "data: the program says so."),
+              P("Li et al. also fit the transmission through concrete of a whole workload distribution, as an "
+                "example: the primary beam of the table bucky of an orthopedic room with an AGFA DX-D 600 (their "
+                "section 4: α = 0.04633 mm<super>−1</super>, β = 0.0644 mm<super>−1</super>, γ = 0.5964). It is the "
+                "workload distribution <b>Orthopedic Room, table bucky (DR 600) – Li 2024</b> of the X-ray room. "
+                "It has <b>concrete only</b> and <b>primary radiation only</b>; the article gives no air kerma per "
+                "patient and no workload per patient, so write <i>K</i><super>1</super><sub>P</sub> yourself and "
+                "give the workload as patients per week.")]
     kvp = VALUES["kvp_data"]
     rows = [["Transmission data", "Lead (mm)", "Concrete (mm)"]]
     for data, rec in kvp.items():
@@ -858,6 +870,11 @@ def ct_and_mammography():
                        "<b>Unshielded scatter air kerma</b>: with <b>Select Unshielded Secondary Air Kerma — "
                        "Suggested (Yang et al. 2017)</b>, choose the examination: <b>2D</b>, <b>3D "
                        "(tomosynthesis)</b> or <b>2D + 3D</b>. Or choose <b>Write</b> and type your own value.",
+                       "<b>Per barrier (Yang 2016)</b>: or choose the air kerma toward the barrier of Yang et al. "
+                       "(2016), measured around the same Hologic unit for its 2D + 3D exams (table below). Choose the "
+                       "barrier (wall / door, floor or ceiling; it starts with the kind of this barrier) and the "
+                       "technique. The article gives no transmission data, so the transmission stays that of Yang et "
+                       "al. (2017).",
                        "<b>Workload</b>: give <b>The Number of Patients per week</b>; there is no workload per "
                        "patient (W<sub>norm</sub>) for DBT."])]
     story += figure("dbt_barrier.png", "A DBT barrier: the suggested scatter air kerma of a 2D + 3D examination.",
@@ -873,6 +890,13 @@ def ct_and_mammography():
                     ["2D + 3D", "", "", "", "0.1048"]], [34, 30, 34, 34, 38])
     story += [P("The oblique view toward the barrier dominates: the scatter of Hologic DBT units peaks about 25° "
                 "from the beam. Section 11 reproduces the example of the article.", "small"), Spacer(1, 6)]
+    story += [P("Yang et al. (2016), table V: the unshielded scatter air kerma per patient at 1 m toward each barrier "
+                "(their 2D + 3D exams, MGH workload). The peak at 25° falls on the floor, so its value is the "
+                "highest:")]
+    story += table([["mGy per patient at 1 m", "Wall / door", "Floor", "Ceiling"],
+                    ["Average technique: 30 kVp W/Ag (2D) + 30 kVp W/Al (3D)", "0.0176", "0.164", "0.0366"],
+                    ["High technique: 35 kVp W/Ag (2D) + 40 kVp W/Al (3D)", "0.0332", "0.307", "0.0733"]],
+                   [86, 28, 28, 28])
     return story
 
 
@@ -1023,7 +1047,10 @@ def report_and_projects():
               P("<b>File › Examples › NCRP 147 examples</b> opens the worked examples of Section 5 of NCRP 147, one "
                 "file each in the folder <b>Examples\\NCRP 147</b>. Each opens with a note that says which barrier "
                 "is which calculation of the report, and gives the result of NCRP 147 next to that of the program "
-                f"({fig('ncrp_note.png')}); section 11.9 compares them all.")]
+                f"({fig('ncrp_note.png')}); section 11.9 compares them all."),
+              P("<b>File › Examples › Examples of the literature</b> opens the worked examples of the articles whose "
+                "data the program offers (Yang et al. 2017 and 2016, Biondi et al. 2024, Li et al. 2024), from the "
+                "folder <b>Examples\\Literature</b>; section 11.10 compares them.")]
     story += figure("ncrp_note.png", "The note of the example of Section 5.3 of NCRP 147 (the radiographic room). "
                                      "It scrolls to the notes on the differences and the distances.",
                     width=150 * mm, crop=(0, 0, 1043, 588))
@@ -1292,6 +1319,7 @@ def worked_examples():
                 f"<i>B</i>: their transmission data are more penetrating.")]
 
     story += ncrp_examples()
+    story += literature_examples()
     story += H2("A whole department")
     story += [P("The example department puts the three rooms on one floor plan, with a control room between the "
                 "X-ray and CT rooms and a corridor below. Its 2D / 3D view shows every barrier, and the radiation "
@@ -1343,6 +1371,42 @@ def ncrp_examples():
                 f"{cross['program']:.2f} mm, and {cross['planned_dose']:.3f} mGy/week with 0.8 mm (the report reads its "
                 "transmissions from figures). The 0.78 mm that the report then quotes comes from a calculation with "
                 "all the sources of the room, which the example does not give.")]
+    return story
+
+
+def literature_examples():
+    data = json.load(open(os.path.join(IMAGES, "literature_examples.json"), encoding="utf-8"))
+    story = H2("The examples of the literature")
+    story += [P("The articles whose data the program offers work out their own examples. Each is a file in "
+                "<b>Examples\\Literature</b>, made and checked by <font name='Mono'>tools/literature_examples.py"
+                "</font> of the source code: Yang et al. 2017 (the DBT room above), Yang et al. 2016 (the floor of a "
+                "DBT room, their Eq. 8 and 9), Biondi et al. 2024 (five interventional rooms, their table 4 with "
+                "Eq. 4) and Li et al. 2024 (the lead that lets 0.001 through at each kV, with both filtrations). "
+                "Kirby et al. 2023 gives no worked example.")]
+    rows = [["Article", "Example", "Quantity", "In the article", "Program", "Same"]]
+    for row in data["examples"]:
+        unit = f" {row['unit']}" if row["unit"] else ""
+        shown = (lambda v: fmt(v)) if row["quantity"] == "B" else (lambda v: f"{v:.2f}")
+        what = f"{row['room']} · {row['barrier']}"
+        quantity = {"K per year": "K (a year)", "Gypsum Wallboard": "Gypsum"}.get(row["quantity"], row["quantity"])
+        same = ("yes" if row["ok"] else "no") if row["compared"] else "–*"
+        if row["quantity"] == "B":
+            paper = fmt(row["paper_value"])
+        else:  # as the article prints it
+            paper = f"{row['paper_value']:.2f}" if row["paper"] == "Li 2024" else f"{row['paper_value']:g}"
+        rows.append([row["paper"].replace(" ", " et al. "), what, quantity, paper + unit,
+                     shown(row["program"]) + unit, same])
+    story += table(rows, [31, 49, 22, 26, 26, 16])
+    story += [P("* Not compared. Yang et al. 2016 take the concrete transmission of Li et al. 2012 (40 kVp, W/Al), "
+                "which the program does not have; with the DBT data of Yang et al. 2017 the program finds less. "
+                "Biondi et al. 2024, table 4: for neuroangiography and vascular surgery the air kerma of the article "
+                "is that of Eq. 4 with 523 and 172 patients a year, the numbers of electrophysiology and of "
+                "neuroangiography in their table 1; the program, with the 172 and 393 patients of these rooms, "
+                "finds the values above. The same comparison, with the difference in %, is the Excel file "
+                "<b>Literature examples - comparison.xlsx</b> in <b>Examples\\Literature</b>, whose sheet <i>Data "
+                "checks</i> also compares values the articles give about their own data (the total workload of "
+                "each spectrum of Kirby et al., the air kerma of a DBT exam of Yang et al. 2017, the fit of Li et "
+                "al.).", "small"), Spacer(1, 4)]
     return story
 
 
@@ -1466,7 +1530,10 @@ def troubleshooting():
                        "Archer B.R., Thornby J.I., Bushong S.C. Diagnostic X-ray shielding design based on an "
                        "empirical model of photon attenuation. <i>Health Physics</i> 44:507–517, 1983.",
                        "Yang K., Schultz T.J., Li X., Liu B. Radiation shielding calculation for digital breast tomosynthesis rooms with an updated workload survey. <i>J. Radiol. Prot.</i> 37:230–246, 2017.",
-                       "Li X., Marschall T.A., Yang K., Liu B. Radiation shielding transmission data for modern digital radiography. <i>Med. Phys.</i>, 2024, doi:10.1002/mp.17449.",
+                       "Yang K., Li X., Liu B. Scatter radiation intensities around a clinical digital breast "
+                       "tomosynthesis unit and the impact on radiation shielding considerations. <i>Med. Phys.</i> "
+                       "43:1096–1110, 2016, doi:10.1118/1.4940352.",
+                       "Li X., Marschall T.A., Yang K., Liu B. Radiation shielding transmission data for modern digital radiography. <i>Med. Phys.</i> 51:8768–8775, 2024, doi:10.1002/mp.17449.",
                        "Kirby K.M., Schueler B.A., Littrell L.A., Long Z. Workload and use factor data for a modern "
                        "digital radiography system. <i>J. Appl. Clin. Med. Phys.</i> 24:e13962, 2023, "
                        "doi:10.1002/acm2.13962.",

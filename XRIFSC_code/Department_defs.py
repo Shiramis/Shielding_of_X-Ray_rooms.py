@@ -4,7 +4,8 @@ from tkinter import *
 from tkinter import ttk
 import theme
 from tooltips import tip
-from Depcalculations import wb, PRIMARY_KERMA, KVP_DATA, DBT, SOURCES, KIRBY, BIONDI
+from Depcalculations import (wb, PRIMARY_KERMA, KVP_DATA, DBT, SOURCES, KIRBY, BIONDI, LI_ORTHOPEDIC,
+                             DBT_BARRIER_MODE, YANG2016_KERMA)
 from barrier_names import BarrierDialog, default_kind, default_name, door_material
 
 # NCRP 147 shielding design goals P (mGy/week). Supervised areas are treated as uncontrolled.
@@ -19,7 +20,8 @@ DISTRIBUTIONS = {
     "X-Ray room": (("Rad Room (chest bucky)", "Rad Room (floor or other barriers)", "Rad Room (all barriers)",
                     "Chest Room"),
                    tuple(name for name in KIRBY if name.startswith("DR Room")),
-                   tuple(name for name in KIRBY if not name.startswith("DR Room"))),
+                   tuple(name for name in KIRBY if not name.startswith("DR Room")),
+                   (LI_ORTHOPEDIC,)),
     "Fluoroscopy Room": (("Fluoroscopy Tube (R&F room)", "Rad Tube (R&F room)", "Cardiac Angiography",
                           "Peripheral Angiography"), tuple(BIONDI)),
     "Mammography Room": (("Mammography Room",), (DBT,)),
@@ -445,7 +447,8 @@ class dep_defs():
                     f"radside {index}{room_number}{i}", f"radforward {index}{room_number}{i}", f"radleak {index}{room_number}{i}",
                     f"kvpbox {index}{room_number}{i}", f"labbeyond {index}{room_number}{i}",
                     f"beyondentry {index}{room_number}{i}", f"dtotal {index}{room_number}{i}",
-                    f"dbt1 {index}{room_number}{i}", f"dbt2 {index}{room_number}{i}", f"dbt3 {index}{room_number}{i}"]
+                    f"dbt1 {index}{room_number}{i}", f"dbt2 {index}{room_number}{i}", f"dbt3 {index}{room_number}{i}",
+                    f"dbt4 {index}{room_number}{i}", f"dbtbox {index}{room_number}{i}"]
                 vars_to_delete = [f"vselxray {index}{room_number}{i}", f"preshvar {index}{room_number}{i}",
                     f"oworkvar {index}{room_number}{i}", f"radiob_pre {index}{room_number}{i}",
                     f"workv {index}{room_number}{i}", f"vsexroom {index}{room_number}{i}",
@@ -935,7 +938,8 @@ class dep_defs():
     def unairk(self, e, nr, i):
         # Destroy any existing widgets related to secondary barrier
         self.destroy_widgets([f"leak {e}{nr}{i}", f"side {e}{nr}{i}", f"forw {e}{nr}{i}", f"entk {e}{nr}{i}",
-                              f"dbt1 {e}{nr}{i}", f"dbt2 {e}{nr}{i}", f"dbt3 {e}{nr}{i}"])
+                              f"dbt1 {e}{nr}{i}", f"dbt2 {e}{nr}{i}", f"dbt3 {e}{nr}{i}", f"dbt4 {e}{nr}{i}",
+                              f"dbtbox {e}{nr}{i}"])
         if f"radside {e}{nr}{i}" in self.d:
             self.destroy_widgets([f"radside {e}{nr}{i}", f"radforward {e}{nr}{i}", f"radleak {e}{nr}{i}"])
         unairkerv_key = f"unairkerv {e}{nr}{i}"
@@ -950,6 +954,20 @@ class dep_defs():
                 self.create_radio_button(key=f"dbt{k} {e}{nr}{i}", master=self.d[f"barrierf {e}{nr}"], text=text,
                                          variable=self.d[f"dbtmode {e}{nr}{i}"], value=k, row=i * 12 + 7,
                                          column=k - 1, tip_key="dbt_mode")
+            # or Yang et al. 2016: toward this barrier (wall / door, floor, ceiling), at the average or high technique
+            self.create_radio_button(key=f"dbt4 {e}{nr}{i}", master=self.d[f"barrierf {e}{nr}"],
+                                     text="Per barrier (Yang 2016):", variable=self.d[f"dbtmode {e}{nr}{i}"],
+                                     value=DBT_BARRIER_MODE, row=i * 12 + 8, column=0, tip_key="dbt_barrier")
+            if self.d.get(f"dbtbarrier {e}{nr}{i}") is None:
+                kind = self.barrier_kind(e, nr)
+                self.d[f"dbtbarrier {e}{nr}{i}"] = StringVar(
+                    value={"floor": "Floor", "ceiling": "Ceiling"}.get(kind, "Wall / door") + ", average technique")
+            box = ttk.Combobox(self.d[f"barrierf {e}{nr}"], textvariable=self.d[f"dbtbarrier {e}{nr}{i}"],
+                               values=list(YANG2016_KERMA), state="readonly", width=30)
+            box.grid(row=i * 12 + 8, column=1, columnspan=2, pady=6.5, padx=5, sticky="w")
+            box.bind("<<ComboboxSelected>>", lambda event: self.d[f"dbtmode {e}{nr}{i}"].set(DBT_BARRIER_MODE))
+            self.d[f"dbtbox {e}{nr}{i}"] = box
+            tip(box, "dbt_barrier")
         elif self.d[unairkerv_key].get() == 1:
             # NCRP-suggested mode: create radio buttons for different types of scatter/leakage
             self.d[f"airkerv {e}{nr}{i}"] = IntVar(value=0)

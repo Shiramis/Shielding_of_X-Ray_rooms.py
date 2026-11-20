@@ -93,6 +93,8 @@ TIPS = {
                              "  Biondi 2024: interventional rooms, secondary only (Phys. Med. 125 (2024) 104509)\n"
                              "  Yang 2017: digital breast tomosynthesis (J. Radiol. Prot. 37 (2017) 230); give the "
                              "workload as patients per week\n"
+                             "  Li 2024: the table bucky of an orthopedic room (Med. Phys. 51 (2024) 8768), primary "
+                             "transmission through concrete only; write K¹ and give patients per week\n"
                              "It sets Wnorm, the unshielded air kerma and the transmission parameters "
                              "(α, β, γ) used for the thickness.",
     "kvp_data": "Transmission data for this kVp:\n"
@@ -104,6 +106,15 @@ TIPS = {
                 "Unshielded scatter air kerma per patient at 1 m: both breasts, a CC and an oblique view each, one "
                 "oblique toward and one away from the barrier:\n"
                 "  2D 0.0669 · 3D 0.0379 · 2D + 3D 0.1048 mGy/patient.",
+    "dbt_barrier": "Digital breast tomosynthesis, per barrier (Yang et al., Med. Phys. 43 (2016) 1096, table V): "
+                   "unshielded scatter air kerma per patient at 1 m toward a wall or door, the floor or the ceiling of "
+                   "a Hologic Selenia Dimensions room, for its 2D + 3D exams (mGy/patient):\n"
+                   "  average technique (30 kVp W/Ag 2D + 30 kVp W/Al 3D): wall / door 0.0176 · floor 0.164 · "
+                   "ceiling 0.0366\n"
+                   "  high technique (35 kVp W/Ag 2D + 40 kVp W/Al 3D): wall / door 0.0332 · floor 0.307 · "
+                   "ceiling 0.0733\n"
+                   "Yang et al. 2016 give no transmission data: the transmission stays that of Yang et al. 2017 "
+                   "(the same unit).",
     "kvp": "Tube voltage (kVp) for a single-kVp transmission curve.\n"
            "Primary: 25–150 kVp. Secondary: 30, 50, 70, 100, 125 or 150 kVp.\n"
            "With kVp you must write the unshielded air kerma yourself.",

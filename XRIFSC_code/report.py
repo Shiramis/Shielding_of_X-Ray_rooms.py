@@ -13,9 +13,10 @@ NOTES = [
     ("always", "Method: NCRP Report No. 147 (2004), Structural Shielding Design for Medical X-Ray Imaging "
                "Facilities."),
     ("literature", "Workload distributions whose name ends with a source use data of the literature instead of NCRP "
-                   "147: Yang et al. 2017 (tomosynthesis), Kirby et al. 2023 (digital radiography, made into air "
-                   "kerma and transmission with the NCRP 147 method), Biondi et al. 2024 (interventional rooms); "
-                   "'DR 600' kVp data: Li et al. 2024. See the User Guide."),
+                   "147: Yang et al. 2017 (tomosynthesis; per barrier: Yang et al. 2016), Kirby et al. 2023 "
+                   "(digital radiography, made into air kerma and transmission with the NCRP 147 method), Biondi et "
+                   "al. 2024 (interventional rooms), Li et al. 2024 (orthopedic table bucky, concrete); 'DR 600' kVp "
+                   "data: Li et al. 2024. See the User Guide."),
     ("xray", "Air kerma beyond the barrier for each radiation type: K = N · U · T · K¹ / d²  (mGy/week)."),
     ("always", "Required transmission: B = P / ΣK, with P the shielding design goal of the area beyond the barrier."),
     ("xray", "Thickness: every radiation type goes through the barrier with its own α, β, γ (of its workload "

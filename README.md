@@ -62,8 +62,13 @@ preshielding, and the thickness is the one at which Σ *K*·*B*(*x* + *x*pre) = 
     of NCRP 147 (Appendices B and C). The same code reproduces the NCRP 147 tables from the NCRP 147 spectra
     (`python tools/literature_data.py --check`).
   - **Biondi et al. 2024**: workloads and secondary transmission of five interventional rooms.
-  - **Yang et al. 2017**: digital breast tomosynthesis.
-  - **Li et al. 2024**: for primary beams given by their kVp, the transmission data of modern digital radiography.
+  - **Yang et al. 2017**: digital breast tomosynthesis; and **Yang et al. 2016**: its scatter toward a wall or door,
+    the floor or the ceiling.
+  - **Li et al. 2024**: for primary beams given by their kVp, the transmission data of modern digital radiography, and
+    the concrete transmission of the table bucky of an orthopedic room.
+- Every table of these papers that the program uses was checked value by value against the paper. Their worked
+  examples are files in `Examples/Literature` (**File › Examples › Examples of the literature**), compared with the
+  program in `Examples/Literature/Literature examples - comparison.xlsx` (made by `tools/literature_examples.py`).
 - The NCRP 147 values in `Data Shielding.xlsx` were checked one by one against the report (User Guide, section 12).
 
 The [User Guide](User%20Guide.pdf) explains every step and works through the examples by hand.
@@ -153,8 +158,10 @@ The guide recalculates every worked example by hand and stops if a result differ
   attenuation, *Health Physics* 44:507–517, 1983.
 - Yang K., Schultz T.J., Li X., Liu B., Radiation shielding calculation for digital breast tomosynthesis rooms with
   an updated workload survey, *J. Radiol. Prot.* 37:230–246, 2017.
+- Yang K., Li X., Liu B., Scatter radiation intensities around a clinical digital breast tomosynthesis unit and the
+  impact on radiation shielding considerations, *Med. Phys.* 43:1096–1110, 2016, doi:10.1118/1.4940352.
 - Li X., Marschall T.A., Yang K., Liu B., Radiation shielding transmission data for modern digital radiography,
-  *Med. Phys.*, 2024, doi:10.1002/mp.17449.
+  *Med. Phys.* 51:8768–8775, 2024, doi:10.1002/mp.17449.
 - Kirby K.M., Schueler B.A., Littrell L.A., Long Z., Workload and use factor data for a modern digital radiography
   system, *J. Appl. Clin. Med. Phys.* 24:e13962, 2023, doi:10.1002/acm2.13962.
 - Biondi M., Bortoli E., Avitabile R., et al., Radiation shielding calculation for interventional radiology: an updated

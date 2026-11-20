@@ -208,6 +208,26 @@ def dbt_kerma(mode):
                for m in DBT_MODES[mode])
 
 
+# Yang K, Li X, Liu B, Med. Phys. 43 (2016) 1096, table V: unshielded scatter air kerma per patient at 1 m
+# (mGy/patient) toward each barrier of a Hologic Selenia Dimensions DBT room, for its 2D + 3D exams (MGH workload), at
+# the average technique (30 kVp W/Ag 2D + 30 kVp W/Al 3D) and the high one (35 kVp W/Ag 2D + 40 kVp W/Al 3D). The
+# paper gives no transmission data: the DBT workload distribution keeps those of Yang et al. 2017 (same unit).
+DBT_BARRIER_MODE = 4  # the choice 'Per barrier (Yang 2016)', after 2D, 3D, 2D + 3D
+YANG2016_KERMA = {"Wall / door, average technique": 1.76e-2, "Floor, average technique": 1.64e-1,
+                  "Ceiling, average technique": 3.66e-2, "Wall / door, high technique": 3.32e-2,
+                  "Floor, high technique": 3.07e-1, "Ceiling, high technique": 7.33e-2}
+YANG2016_TECHNIQUES = {"average": "30 kVp W/Ag (2D) + 30 kVp W/Al (3D)", "high": "35 kVp W/Ag (2D) + 40 kVp W/Al (3D)"}
+
+# Li X, Marschall TA, Yang K, Liu B, Med. Phys. 51 (2024) 8768, section 4: transmission through concrete of the primary
+# beam of a workload distribution, the table bucky of an orthopedic room with an AGFA DX-D 600 (their example, figure
+# 5). Concrete only, primary only; the paper gives no air kerma per patient nor workload per patient.
+LI_ORTHOPEDIC = "Orthopedic Room, table bucky (DR 600) – Li 2024"
+SOURCES[LI_ORTHOPEDIC] = "Li et al. 2024"
+TRANSMISSION_SHEETS[LI_ORTHOPEDIC] = ("Li 2024 workload abc", None)
+PRIMARY_ONLY = [LI_ORTHOPEDIC]
+NO_WORKLOAD_NORM = [DBT, LI_ORTHOPEDIC]  # their workload must be given in patients per week
+
+
 # Transmission data for a primary beam at a given kVp: NCRP 147, or modern digital radiography (Li X, Marschall TA,
 # Yang K, Liu B, Med. Phys. 2024, doi:10.1002/mp.17449, tables 1 and 2: Agfa DR 600, 60-120 kV every 10 kV)
 KVP_DATA = ["NCRP 147", "DR 600, default filtration (Li 2024)", "DR 600, +1 mm Al +0.1 mm Cu (Li 2024)"]
@@ -237,6 +257,13 @@ MISSING_HELP = {
     "Patients per week (DBT)": "NCRP 147 gives no workload per patient (Wnorm) for Digital Breast Tomosynthesis: "
                                "at the top of the room choose 'The Number of Patients per week' (or tick "
                                "'Different Workload' on this radiation type).",
+    "Patients per week (Li 2024)": "Li et al. 2024 give no workload per patient (Wnorm) for this workload "
+                                   "distribution: at the top of the room choose 'The Number of Patients per week' (or "
+                                   "tick 'Different Workload' on this radiation type).",
+    "Primary radiation only": "this workload distribution (Li et al. 2024) has transmission data for the primary beam "
+                              "only (through concrete). Choose 'Primary', or another workload distribution.",
+    "Barrier of Yang 2016": "at 'Per barrier (Yang 2016)' choose the barrier (wall / door, floor or ceiling) and the "
+                            "technique.",
     "Occupancy Factor (T)": "under 'Shielding Area' choose 'Write occupancy factor (T)' and type it, "
                             "or 'select Location' and pick what is beyond the barrier.",
     "Distance from the Source to the Barrier (m)": "type the distance (d_{P}, d_{L}, d_{S} or d_{sec}) from the X-ray source "
@@ -455,8 +482,12 @@ class departprimsec():
         elif value(f"unairkerv {e}{nr}{i}") == 2:
             source = "Secondary (entered)"
         elif value(f"unairkerv {e}{nr}{i}") == 1 and distribution == DBT:
-            mode = {1: "2D", 2: "3D", 3: "2D + 3D"}.get(value(f"dbtmode {e}{nr}{i}"), "")
-            source = f"DBT {mode} ({origin})" if mode else ""
+            if value(f"dbtmode {e}{nr}{i}") == DBT_BARRIER_MODE:
+                choice = self.dbt_barrier_choice(e, nr, i)
+                source = f"DBT toward the {choice.lower()} (Yang et al. 2016)" if choice in YANG2016_KERMA else ""
+            else:
+                mode = {1: "2D", 2: "3D", 3: "2D + 3D"}.get(value(f"dbtmode {e}{nr}{i}"), "")
+                source = f"DBT {mode} ({origin})" if mode else ""
         elif value(f"unairkerv {e}{nr}{i}") == 1:
             if value(f"airkerv {e}{nr}{i}") == 1:
                 source = {1: "Leakage + side-scatter", 2: "Leakage + forward/backscatter",
@@ -479,6 +510,14 @@ class departprimsec():
                 if location is not None and location == self.d[f"vselocation {e}{nr}"].get():
                     return float(factor)
         return None
+
+    def dbt_barrier_choice(self, e, nr, i):
+        """The barrier and technique chosen for the air kerma of Yang et al. 2016 ('Floor, high technique'), or ''."""
+        variable = self.d.get(f"dbtbarrier {e}{nr}{i}")
+        try:
+            return variable.get() if variable is not None else ""
+        except TclError:
+            return ""
 
     def transmission_params(self, sheet, distribution, data="NCRP 147"):
         # (alpha, beta, gamma) per material for a workload distribution or kVp, or None if it is not in the table
@@ -559,8 +598,8 @@ class departprimsec():
             if total is None:
                 need.append("Workload")
                 fields.append(f"worentry {suffix}")
-            elif w_norm is None and distribution == DBT:
-                need.append("Patients per week (DBT)")
+            elif w_norm is None and distribution in NO_WORKLOAD_NORM:
+                need.append("Patients per week (DBT)" if distribution == DBT else "Patients per week (Li 2024)")
             elif w_norm is None:
                 need.append("Workload Distribution (X-ray room or kVp)")
             else:
@@ -587,11 +626,17 @@ class departprimsec():
                 fields.append(f"entk {e}{nr}{i}")
         elif radiation == 2:  # secondary
             Us = 1
+            if distribution in PRIMARY_ONLY:
+                need.append("Primary radiation only")
             source = self.d[f"unairkerv {e}{nr}{i}"].get() if f"unairkerv {e}{nr}{i}" in self.d else 0
             if source == 1 and distribution == DBT:  # Yang et al. 2017: per view, in the chosen mode
                 mode = self.d[f"dbtmode {e}{nr}{i}"].get() if f"dbtmode {e}{nr}{i}" in self.d else 0
                 if mode in DBT_MODES:
                     K1 = dbt_kerma(mode)
+                elif mode == DBT_BARRIER_MODE:  # Yang et al. 2016: toward the barrier, at the technique chosen
+                    K1 = YANG2016_KERMA.get(self.dbt_barrier_choice(e, nr, i))
+                    if K1 is None:
+                        need.append("Barrier of Yang 2016")
                 else:
                     need.append("Unshielded Air Kerma")
             elif source == 1:  # NCRP 147 values for the workload distribution

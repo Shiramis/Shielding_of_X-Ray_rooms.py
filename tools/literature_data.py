@@ -22,6 +22,12 @@ workload survey using a dose monitoring software. Phys Med 2024;125:104509 (tabl
     (haemodynamics, electrophysiology) or peripheral angiography (angiography, neuroangiography, vascular surgery)
     times Wsite / Wnorm (their Eq. 4; NCRP 147 4.1.4); the program does this from the sheet 'Biondi 2024'.
 
+Li X, Marschall TA, Yang K, Liu B. Radiation shielding transmission data for modern digital radiography.
+Med Phys 2024;51(12):8768-8775 (section 4, figure 5).
+    Their example of a workload distribution: the primary beam of the table bucky of an orthopedic room (AGFA DX-D
+    600), its transmission through concrete fitted to the Archer equation. Concrete only; no air kerma per patient.
+    (Their tables 1 and 2, the transmission at each kVp, are in the sheet 'prim abc DR 600'.)
+
 Run from the project folder:  python tools/literature_data.py [--check]     (needs numpy and openpyxl)
 """
 import math
@@ -85,6 +91,10 @@ BIONDI = [  # room, workload (mAs per patient) per bin and total, NCRP 147 distr
 
 def biondi_name(room):
     return f"{room} – Biondi 2024"
+
+
+# ===================== Li et al. 2024, section 4: transmission of a workload distribution =====================
+LI_ORTHOPEDIC = ("Orthopedic Room, table bucky (DR 600) – Li 2024", {"Concrete": (0.04633, 0.0644, 0.5964)})
 
 
 # ===================== NCRP 147 Appendices B and C =====================
@@ -328,6 +338,12 @@ def write(wb, tables):
     for room, bins, total, base, params in BIONDI:
         ws.append([biondi_name(room)] + list(bins) + [total, total / 60, base])
         sec.append([biondi_name(room)] + [v for p in params for v in p])
+    # --- Li 2024: their workload example, as published
+    ws = replace_sheet(wb, "Li 2024 workload abc")
+    abc_header(ws, "Li et al., Med Phys 2024;51:8768, section 4: transmission of the primary beam of the workload of "
+                   "the table bucky of an orthopedic room (AGFA DX-D 600), concrete only")
+    name, params = LI_ORTHOPEDIC
+    ws.append([name] + [v for material in MATERIALS for v in params.get(material, (None, None, None))])
     for sheet in ("Kirby 2023", "Kirby 2023 kerma", "Biondi 2024"):
         for cell in wb[sheet][2]:
             cell.font = Font(bold=True)

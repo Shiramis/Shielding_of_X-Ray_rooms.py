@@ -67,6 +67,8 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Source: "..\Examples\*.shield"; DestDir: "{app}\Examples"; Flags: ignoreversion
 Source: "..\Examples\NCRP 147\*.shield"; DestDir: "{app}\Examples\NCRP 147"; Flags: ignoreversion
 Source: "..\Examples\NCRP 147\*.xlsx"; DestDir: "{app}\Examples\NCRP 147"; Flags: ignoreversion
+Source: "..\Examples\Literature\*.shield"; DestDir: "{app}\Examples\Literature"; Flags: ignoreversion
+Source: "..\Examples\Literature\*.xlsx"; DestDir: "{app}\Examples\Literature"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}\{#AppName}"; Filename: "{app}\{#AppExe}"

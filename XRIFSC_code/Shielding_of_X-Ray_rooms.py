@@ -18,7 +18,7 @@ from CTroom import CT_Room
 from report import ReportExport
 from plan_view import PlanViews
 from project import ProjectFile
-from examples import Examples, EXAMPLES, ensure_example_files, ncrp_example_files
+from examples import Examples, EXAMPLES, ensure_example_files, ncrp_example_files, literature_example_files
 import theme
 from PIL import ImageTk
 
@@ -271,6 +271,12 @@ class App(ddepartment,dep_defs,departprimsec,dqprimsec,dquick,droom,CT_Room,Repo
             for name, path in ncrp:
                 submenu.add_command(label=f"§{name}", command=lambda path=path: self.open_ncrp_example(path))
             menu.add_cascade(label="NCRP 147 examples", menu=submenu)
+        literature = literature_example_files()
+        if literature:  # the worked examples of the papers whose data the program offers
+            submenu = Menu(menu, tearoff=0)
+            for name, path in literature:
+                submenu.add_command(label=name, command=lambda path=path: self.open_ncrp_example(path))
+            menu.add_cascade(label="Examples of the literature", menu=submenu)
         menu.add_separator()
         menu.add_command(label="Open from the Examples folder...", command=self.open_examples_folder)
         return menu
