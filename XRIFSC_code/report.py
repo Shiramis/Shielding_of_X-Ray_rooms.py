@@ -13,10 +13,12 @@ NOTES = [
     ("always", "Method: NCRP Report No. 147 (2004), Structural Shielding Design for Medical X-Ray Imaging "
                "Facilities."),
     ("literature", "Workload distributions whose name ends with a source use data of the literature instead of NCRP "
-                   "147: Yang et al. 2017 (tomosynthesis; per barrier: Yang et al. 2016), Kirby et al. 2023 "
-                   "(digital radiography, made into air kerma and transmission with the NCRP 147 method), Biondi et "
-                   "al. 2024 (interventional rooms), Li et al. 2024 (orthopedic table bucky, concrete); 'DR 600' kVp "
-                   "data: Li et al. 2024. See the User Guide."),
+                   "147: Kirby et al. 2023 (digital radiography, made into air kerma and transmission with the "
+                   "NCRP 147 method), Chen et al. 2013 (radiographic rooms in Taiwan), Biondi et al. 2024 "
+                   "(interventional rooms), Judge et al. 2013 (digital mammography), Yang et al. 2017 and Li et al. "
+                   "2013 (tomosynthesis; toward each barrier: Yang et al. 2016), Li et al. 2024 (orthopedic table "
+                   "bucky, concrete); kVp data: 'DR 600' Li et al. 2024, W/Al and W/Rh Li et al. 2012, W/Ag Li et "
+                   "al. 2013. See the User Guide."),
     ("xray", "Air kerma beyond the barrier for each radiation type: K = N · U · T · K¹ / d²  (mGy/week)."),
     ("always", "Required transmission: B = P / ΣK, with P the shielding design goal of the area beyond the barrier."),
     ("xray", "Thickness: every radiation type goes through the barrier with its own α, β, γ (of its workload "
@@ -154,8 +156,8 @@ def write_report(path, title, rooms):
     # the notes of what the report has
     distributions = [dist for _, _, rec in records for dist in rec.get("distributions") or []]
     has = {"always": True,
-           "literature": any(" – " in (dist.get("distribution") or "") or "Li 2024" in (dist.get("distribution") or "")
-                             or "DR 600" in (dist.get("distribution") or "") for dist in distributions),
+           "literature": any(mark in (dist.get("distribution") or "") for dist in distributions
+                             for mark in (" – ", "Li 20", "DR 600")),
            "xray": any(rec["kind"] != "ct" for _, _, rec in records),
            "ct": any(rec["kind"] == "ct" for _, _, rec in records),
            "none needed": any(x == 0 for _, _, rec in records for _, x in rec.get("thickness", [])),

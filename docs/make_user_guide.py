@@ -342,13 +342,18 @@ def introduction():
                     ["Kirby et al. 2023", "Workload distributions of modern digital radiography rooms, general and "
                                           "pediatric", "4.10"],
                     ["Biondi et al. 2024", "Workload distributions of interventional rooms", "4.11"],
-                    ["Yang et al. 2017", "Digital breast tomosynthesis", "6.1"],
+                    ["Chen et al. 2013", "Workload distributions of radiographic rooms in Taiwan", "4.12"],
+                    ["Yang et al. 2017", "Digital breast tomosynthesis: workload, scatter per view, transmission", "6.1"],
+                    ["Li et al. 2013", "Digital breast tomosynthesis: workload and transmission; W/Ag beams at a kVp",
+                     "6.1, 6.3"],
                     ["Yang et al. 2016", "Digital breast tomosynthesis: scatter toward a wall or door, the floor or "
-                                         "the ceiling", "6.1"]], [38, 112, 20])
+                                         "the ceiling (with the workload of Li et al. 2013)", "6.1"],
+                    ["Judge et al. 2013", "Digital mammography: the scatter of three full-field digital units", "6.2"],
+                    ["Li et al. 2012", "W/Al and W/Rh mammography beams at a kVp", "6.3"]], [38, 112, 20])
     story += [P("In the list of workload distributions those of NCRP 147 come first; the others follow below a line "
                 "and their names end with the source, e.g. <i>DR Room (floor) – Kirby 2023</i>. Every table of "
-                "these papers that the program uses was checked value by value against the paper, and their worked "
-                "examples are compared with the program in section 11.10.")]
+                "these papers that the program uses was checked against the paper, value by value or by reproducing "
+                "it from the others, and their worked examples are compared with the program in section 11.10.")]
     story += H2("Files the program uses")
     story += [P("The setup (section 3.1) puts these files in the program's folder:")]
     story += table([["File", "What it is"],
@@ -408,7 +413,7 @@ def method():
                      "<i>x</i><sub>pre,<i>i</i></sub>) = <i>P</i>")
     story += [P("Every radiation type therefore needs its workload distribution (or kVp). A primary beam given by its "
                 "kVp can use, instead of the NCRP 147 data, those of modern digital radiography (section 4.9); the "
-                "workload distributions of the literature have their own (sections 4.10, 4.11 and 6.1).")]
+                "workload distributions of the literature have their own (sections 4.10 to 4.12, 6.1 and 6.2).")]
     story += note("Earlier versions used the transmission of one radiation type, ticked <b>Set for the "
                   "calculation</b>, for the whole Σ<i>K</i>, and took its preshielding off the whole thickness. Where a "
                   "primary beam behind the image receptor and secondary radiation reach the same barrier, the "
@@ -671,12 +676,15 @@ def xray_room():
                     ["X-Ray room", "Rad Room (chest bucky), Rad Room (floor or other barriers), Rad Room (all "
                                    "barriers), Chest Room",
                      "DR Room (chest bucky / floor / cross-table wall / all barriers) – Kirby 2023; Pediatric DR "
-                     "(the same four) – Kirby 2023 (section 4.10)"],
+                     "(the same four) – Kirby 2023 (section 4.10); Rad Room (floor / chest bucky / all barriers) – "
+                     "Chen 2013 (section 4.12); Orthopedic Room, table bucky (DR 600) – Li 2024 (section 4.9)"],
                     ["Fluoroscopy Room", "Fluoroscopy Tube (R&amp;F room), Rad Tube (R&amp;F room), Cardiac "
                                          "Angiography, Peripheral Angiography",
                      "Angiography, Electrophysiology, Haemodynamics, Neuroangiography, Vascular Surgery – Biondi "
                      "2024 (section 4.11)"],
-                    ["Mammography Room", "Mammography Room", "Digital Breast Tomosynthesis – Yang 2017 (section 6.1)"]],
+                    ["Mammography Room", "Mammography Room", "Digital Mammography (FFDM) – Judge 2013 (section 6.2); "
+                                                             "Digital Breast Tomosynthesis – Yang 2017 and – Li 2013 "
+                                                             "(section 6.1)"]],
                    [32, 64, 74])
     story += [P("In an R&amp;F room the fluoroscopy tube gives secondary radiation only (the image receptor stops its "
                 "beam), while the radiographic tube can aim at the floor or a wall: choose <b>Rad Tube (R&amp;F "
@@ -718,6 +726,38 @@ def xray_room():
     story += [P("The harder modern beams need noticeably more shielding than the NCRP 147 data suggest.")]
     story += kirby_section()
     story += biondi_section()
+    story += chen_section()
+    return story
+
+
+def chen_section():
+    workbook = load_workbook(EXCEL, data_only=True)
+    kerma = {r[0]: r for r in literature_rows(workbook, "Chen 2013 kerma")}
+    prim = {r[0]: r for r in literature_rows(workbook, "Chen 2013 prim abc")}
+    sec = {r[0]: r for r in literature_rows(workbook, "Chen 2013 sec abc")}
+    story = H2("Radiographic rooms in Taiwan: Chen et al. 2013")
+    story += [P("Chen et al. (2013) surveyed for one week 10 750 projections of 6657 examinations in 13 radiographic "
+                "rooms of nine hospitals in Taiwan (seven DR, five CR, one film). Their workload per patient is much "
+                "lower than that of NCRP 147 (0.31 against 1.9 mA·min toward the floor, 0.11 against 0.6 toward the "
+                "wall bucky), mainly because of fewer exposures per patient (1.6 against 3.4) and smaller patients. "
+                "An <b>X-Ray room</b> offers their three workload distributions:")]
+    story += [bullets(["<b>W<sub>norm</sub></b> (their table 1), <b>K</b><super>1</super><sub>P</sub> per patient at "
+                       "1 m (table 4, calculated with PCXMC) and <b>use factors</b> (table 5: floor 0.98, cross-table "
+                       "wall 0.02, wall bucky 1), filled in when the distribution is chosen.",
+                       "<b>Transmission</b> through lead and concrete (their table 6); for secondary radiation their "
+                       "<i>all barriers</i> fit, as they use it. The other materials have no data.",
+                       "<b>Leakage and scatter</b>: the article gives none. They are made from their table 1 with the "
+                       "method of NCRP 147 (Appendix C), as for Kirby et al., by <font name='Mono'>"
+                       "tools/literature_data.py</font>. With the same method their table 1 gives their own "
+                       "K<super>1</super><sub>P</sub> (0.88 against 0.89, 0.35 and 1.24) and their lead and concrete "
+                       "transmission within 1 % (section 11.10)."])]
+    rows = [["Workload distribution", "W<sub>norm</sub>", "K<super>1</super><sub>P</sub>",
+             "K<super>1</super><sub>sec</sub> leakage + side / + forward", "Lead α, β, γ (primary / secondary)"]]
+    for name, r in kerma.items():
+        kp = "–" if r[9] is None else f"{r[9]:g}"
+        rows.append([name, f"{r[1]:g}", kp, f"{fmt(r[6])} / {fmt(r[8])}",
+                     f"{', '.join(f'{v:g}' for v in prim[name][1:4])} / {', '.join(f'{v:g}' for v in sec[name][1:4])}"])
+    story += table(rows, [52, 18, 14, 40, 46])
     return story
 
 
@@ -860,23 +900,18 @@ def ct_and_mammography():
     story += [P("If the chosen data have no transmission values for a material, the result says <i>No "
                 "transmission data for</i> that material.")]
     story += H2("Digital breast tomosynthesis")
-    story += [P("For a DBT unit choose the workload distribution <b>Digital Breast Tomosynthesis – Yang 2017</b>. "
-                "NCRP 147 "
-                "has no DBT data; the program uses those of Yang et al. (2017), from a survey of 310 421 "
-                "acquisitions on eight Hologic Selenia Dimensions rooms:")]
+    story += [P("NCRP 147 has no DBT data. The program offers two workload distributions of a Hologic Selenia "
+                "Dimensions, both from the MGH group: <b>Digital Breast Tomosynthesis – Yang 2017</b>, from a survey "
+                "of 310 421 acquisitions on eight rooms, and <b>Digital Breast Tomosynthesis – Li 2013</b>, from 343 "
+                "examinations in three rooms. With Yang 2017:")]
     story += [bullets(["<b>Transmission</b>: their table 8, scatter from a typical Hologic DBT room, for lead, "
                        "concrete, steel, gypsum wallboard, plate glass and wood. These beams are more penetrating "
                        "than the NCRP 147 mammography data.",
                        "<b>Unshielded scatter air kerma</b>: with <b>Select Unshielded Secondary Air Kerma — "
                        "Suggested (Yang et al. 2017)</b>, choose the examination: <b>2D</b>, <b>3D "
                        "(tomosynthesis)</b> or <b>2D + 3D</b>. Or choose <b>Write</b> and type your own value.",
-                       "<b>Per barrier (Yang 2016)</b>: or choose the air kerma toward the barrier of Yang et al. "
-                       "(2016), measured around the same Hologic unit for its 2D + 3D exams (table below). Choose the "
-                       "barrier (wall / door, floor or ceiling; it starts with the kind of this barrier) and the "
-                       "technique. The article gives no transmission data, so the transmission stays that of Yang et "
-                       "al. (2017).",
-                       "<b>Workload</b>: give <b>The Number of Patients per week</b>; there is no workload per "
-                       "patient (W<sub>norm</sub>) for DBT."])]
+                       "<b>Workload</b>: give <b>The Number of Patients per week</b>; Yang et al. give no workload "
+                       "per patient (W<sub>norm</sub>)."])]
     story += figure("dbt_barrier.png", "A DBT barrier: the suggested scatter air kerma of a 2D + 3D examination.",
                     crop=(0, 0, 1154, 688))
     story += [P("Their table 9 gives the air kerma per view at 1 m. An examination has both breasts, each with a CC "
@@ -890,13 +925,56 @@ def ct_and_mammography():
                     ["2D + 3D", "", "", "", "0.1048"]], [34, 30, 34, 34, 38])
     story += [P("The oblique view toward the barrier dominates: the scatter of Hologic DBT units peaks about 25° "
                 "from the beam. Section 11 reproduces the example of the article.", "small"), Spacer(1, 6)]
-    story += [P("Yang et al. (2016), table V: the unshielded scatter air kerma per patient at 1 m toward each barrier "
-                "(their 2D + 3D exams, MGH workload). The peak at 25° falls on the floor, so its value is the "
-                "highest:")]
+    story += [P("With <b>Digital Breast Tomosynthesis – Li 2013</b>:")]
+    story += [bullets(["<b>Workload</b>: W<sub>norm</sub> = 12.61 mA·min per patient (their table IV(c), 2D + 3D, "
+                       "screening and diagnosis), so the total workload can be given too.",
+                       "<b>Transmission</b>: their table V(a), the primary radiation of this workload (W/Rh, W/Ag and "
+                       "W/Al), which they take for the secondary radiation as NCRP 147 does; six materials.",
+                       "<b>Unshielded scatter air kerma</b>: <b>Toward the barrier (Yang 2016)</b>. Yang et al. (2016) "
+                       "measured the scatter around the same unit with this workload (their reference 4) and give it "
+                       "per patient at 1 m toward each barrier (table V, below). The choice starts with the kind of the "
+                       "barrier (wall or door, floor, ceiling) and the average technique; Yang et al. 2016 give no "
+                       "transmission of their own."])]
     story += table([["mGy per patient at 1 m", "Wall / door", "Floor", "Ceiling"],
                     ["Average technique: 30 kVp W/Ag (2D) + 30 kVp W/Al (3D)", "0.0176", "0.164", "0.0366"],
                     ["High technique: 35 kVp W/Ag (2D) + 40 kVp W/Al (3D)", "0.0332", "0.307", "0.0733"]],
                    [86, 28, 28, 28])
+    story += [P("The peak of the scatter at about 25° falls on the floor, so its value is the highest. For the floor "
+                "at 1.2 m, 100 patients a week and the high technique, Yang et al. find ~35 mm of concrete with the "
+                "40 kVp W/Al transmission of Li et al. 2012 (section 6.3); with the transmission of the whole "
+                "workload (Li 2013) the program finds about 23 mm.")]
+    workbook = load_workbook(EXCEL, data_only=True)
+    judge = [r for r in workbook["Judge 2013"].iter_rows(min_row=3, values_only=True) if isinstance(r[1], (int, float))]
+    story += H2("Digital mammography (FFDM): Judge et al. 2013")
+    story += [P("Judge et al. (2013) measured the scatter at 1 m around three full-field digital mammography units of "
+                "the Irish screening programme, with a 6 cm breast phantom, in three planes and at 0–165°. The "
+                "workload distribution <b>Digital Mammography (FFDM) – Judge 2013</b> offers, under the suggested "
+                "secondary air kerma, the unit:")]
+    rows = [["Unit", "Maximum scatter at 1 m, one exposure (µGy)", "K<super>1</super><sub>sec</sub> (mGy per "
+                                                                     "patient)", "Transmission (Mo/Mo, Simpkin)"]]
+    for unit, dose, exposures, k1, kvp in judge:
+        rows.append([unit, f"{dose:g}", f"{k1:g}", f"{kvp} kVp"])
+    story += table(rows, [40, 52, 40, 38])
+    story += [P("K<super>1</super><sub>sec</sub> is their maximum scatter (at 100 mAs, 13.5 mAs for the Philips, more "
+                "than clinical) times the 4 exposures of a patient, as they work out the annual scatter. For the "
+                "barriers they used Simpkin's Mo/Mo transmission (that of NCRP 147) without saying at which kVp; 30 "
+                "kVp reproduces their GE and Hologic results and 35 kVp their Philips results exactly (section "
+                "11.10), so the program uses these. Give the workload as patients per week.")]
+    story += H2("Transmission at a kVp: mammography and DBT beams")
+    story += [P("In a mammography room, <b>Give kVp</b> has next to the kVp the choice of the transmission data, and "
+                "the kVp list follows it. The secondary radiation is taken as attenuated like the primary beam (NCRP "
+                "147, Li et al.). Write the unshielded air kerma yourself.")]
+    story += table([["Transmission data", "Beams", "kVp"],
+                    ["NCRP 147", "Its secondary data (unchanged)", "30 (mammography), 50–150"],
+                    ["Mo/Mo (NCRP 147)", "Mo target and filter (Simpkin), NCRP 147 Table A.1", "25, 30, 35"],
+                    ["W/Al (Li 2012)", "Hologic Selenia Dimensions, tomosynthesis (3D)", "25, 30, 35, 40, 45, 49"],
+                    ["W/Rh (Li 2012)", "Hologic Selenia Dimensions, 2D", "25, 30, 35, 39"],
+                    ["W/Ag (Li 2013)", "Hologic Selenia Dimensions, 2D", "25, 30, 35, 39"]], [40, 90, 40])
+    story += [P("Li et al. calculated the broad-beam transmission by Monte Carlo from spectra measured on the unit, for "
+                "the six materials. Their tables reproduce each other: weighting the single-kVp curves by the air "
+                "kerma of each kVp bin of the Li 2013 workload gives their table V(a) within 0.3 % (section 11.10). "
+                "With <b>Give kVp</b> in a mammography room and a total workload, W<sub>norm</sub> is that of the "
+                "NCRP 147 mammography room, 6.7 mA·min per patient.")]
     return story
 
 
@@ -1380,16 +1458,18 @@ def literature_examples():
     story += [P("The articles whose data the program offers work out their own examples. Each is a file in "
                 "<b>Examples\\Literature</b>, made and checked by <font name='Mono'>tools/literature_examples.py"
                 "</font> of the source code: Yang et al. 2017 (the DBT room above), Yang et al. 2016 (the floor of a "
-                "DBT room, their Eq. 8 and 9), Biondi et al. 2024 (five interventional rooms, their table 4 with "
-                "Eq. 4) and Li et al. 2024 (the lead that lets 0.001 through at each kV, with both filtrations). "
-                "Kirby et al. 2023 gives no worked example.")]
+                "DBT room, their Eq. 8 and 9, with the transmission of Li et al. 2012), Judge et al. 2013 (the "
+                "barriers of their table 1 for three units), Biondi et al. 2024 (five interventional rooms, their "
+                "table 4 with Eq. 4) and Li et al. 2024 (the lead that lets 0.001 through at each kV, with both "
+                "filtrations). Kirby et al. 2023, Chen et al. 2013 and Li et al. 2013 give no worked example; for "
+                "them see the end of this section.")]
     rows = [["Article", "Example", "Quantity", "In the article", "Program", "Same"]]
     for row in data["examples"]:
         unit = f" {row['unit']}" if row["unit"] else ""
         shown = (lambda v: fmt(v)) if row["quantity"] == "B" else (lambda v: f"{v:.2f}")
         what = f"{row['room']} · {row['barrier']}"
         quantity = {"K per year": "K (a year)", "Gypsum Wallboard": "Gypsum"}.get(row["quantity"], row["quantity"])
-        same = ("yes" if row["ok"] else "no") if row["compared"] else "–*"
+        same = ("no" if not row["ok"] else "≈" if row.get("approximate") else "yes") if row["compared"] else "–*"
         if row["quantity"] == "B":
             paper = fmt(row["paper_value"])
         else:  # as the article prints it
@@ -1397,16 +1477,27 @@ def literature_examples():
         rows.append([row["paper"].replace(" ", " et al. "), what, quantity, paper + unit,
                      shown(row["program"]) + unit, same])
     story += table(rows, [31, 49, 22, 26, 26, 16])
-    story += [P("* Not compared. Yang et al. 2016 take the concrete transmission of Li et al. 2012 (40 kVp, W/Al), "
-                "which the program does not have; with the DBT data of Yang et al. 2017 the program finds less. "
-                "Biondi et al. 2024, table 4: for neuroangiography and vascular surgery the air kerma of the article "
-                "is that of Eq. 4 with 523 and 172 patients a year, the numbers of electrophysiology and of "
-                "neuroangiography in their table 1; the program, with the 172 and 393 patients of these rooms, "
-                "finds the values above. The same comparison, with the difference in %, is the Excel file "
-                "<b>Literature examples - comparison.xlsx</b> in <b>Examples\\Literature</b>, whose sheet <i>Data "
-                "checks</i> also compares values the articles give about their own data (the total workload of "
-                "each spectrum of Kirby et al., the air kerma of a DBT exam of Yang et al. 2017, the fit of Li et "
-                "al.).", "small"), Spacer(1, 4)]
+    story += [P("≈ Yang et al. 2016 give \"~35 mm\" of concrete; the Archer equation with the 40 kVp W/Al data of Li "
+                "et al. 2012 gives 32 mm. * Not compared. Biondi et al. 2024, table 4: for neuroangiography and "
+                "vascular surgery the air kerma of the article is that of Eq. 4 with 523 and 172 patients a year, "
+                "the numbers of electrophysiology and of neuroangiography in their table 1; the program, with the 172 "
+                "and 393 patients of these rooms, finds the values above. Judge et al. 2013 do not give the kVp of "
+                "their transmission data: 30 kVp (GE, Hologic) and 35 kVp (Philips) reproduce all their values. The "
+                "same comparison, with the difference in %, is the Excel file <b>Literature examples - "
+                "comparison.xlsx</b> in <b>Examples\\Literature</b>.", "small"), Spacer(1, 4)]
+    checks = [row for row in data["data"] if row["paper"] in ("Chen 2013", "Li 2013", "Kirby 2023")]
+    story += [P("The articles without a worked example are checked through their own data, in the sheet <i>Data "
+                "checks</i> of the same file. Chen et al.: their table 1, with the method of NCRP 147, gives their "
+                "air kerma (table 4) and their transmission through lead and concrete (table 6). Li et al. 2013: "
+                "the single-kVp transmission of Li 2012 (W/Rh, W/Al) and Li 2013 (W/Ag), weighted by the air kerma "
+                "of each kVp bin of their table IV(c), gives their table V(a). Kirby et al.: the sum of each "
+                "spectrum gives their total workload. Every check agrees:")]
+    rows = [["Article", "Check", "In the article", "From the program's data"]]
+    for row in checks:
+        value = (lambda v: f"{v:.3g}") if abs(row["paper_value"]) < 10 else (lambda v: f"{v:.1f}")
+        rows.append([row["paper"].replace(" ", " et al. "), row["what"].replace("&", "&amp;"),
+                     value(row["paper_value"]), value(row["program"])])
+    story += table(rows, [26, 88, 28, 28])
     return story
 
 
@@ -1483,7 +1574,16 @@ def reference():
                                                               "(sheets 'Kirby 2023 kerma', 'Kirby 2023 prim abc', "
                                                               "'Kirby 2023 sec abc'), section 4.10"],
                     ["Interventional rooms (not NCRP 147)", "Biondi et al. 2024, tables 2 and 3 (sheets 'Biondi 2024', "
-                                                            "'Biondi 2024 sec abc'), section 4.11"]],
+                                                            "'Biondi 2024 sec abc'), section 4.11"],
+                    ["Radiographic rooms in Taiwan (not NCRP 147)", "Chen et al. 2013, tables 1, 4, 5, 6 (sheets 'Chen "
+                                                                    "2013', 'Chen 2013 kerma', 'Chen 2013 prim abc', "
+                                                                    "'Chen 2013 sec abc'), section 4.12"],
+                    ["DBT of Li et al. 2013, FFDM (not NCRP 147)", "Li et al. 2013, table V(a) (sheet 'Li 2013 DBT "
+                                                                   "abc'); Yang et al. 2016 table V; Judge et al. "
+                                                                   "2013 table 1 (sheet 'Judge 2013'), sections 6.1, "
+                                                                   "6.2"],
+                    ["Mammography beams at a kVp (not NCRP 147)", "Li et al. 2012 tables I, II and Li et al. 2013 "
+                                                                  "table VI (sheet 'Mammography kVp abc'), section 6.3"]],
                    [70, 100])
     return story
 
@@ -1533,6 +1633,16 @@ def troubleshooting():
                        "Yang K., Li X., Liu B. Scatter radiation intensities around a clinical digital breast "
                        "tomosynthesis unit and the impact on radiation shielding considerations. <i>Med. Phys.</i> "
                        "43:1096–1110, 2016, doi:10.1118/1.4940352.",
+                       "Li X., Zhang D., Liu B. Transmission of broad W/Rh and W/Al (target/filter) x-ray beams "
+                       "operated at 25–49 kVp through common shielding materials. <i>Med. Phys.</i> 39:4132–4138, "
+                       "2012, doi:10.1118/1.4725755.",
+                       "Li X., Zhang D., Liu B. Workload and transmission data for the installation of a digital "
+                       "breast tomosynthesis system. <i>Med. Phys.</i> 40:063901, 2013, doi:10.1118/1.4803470.",
+                       "Judge M.A., Keavey E., Phelan N. Scatter radiation intensities around full-field digital "
+                       "mammography units. <i>Br. J. Radiol.</i> 86:20120130, 2013, doi:10.1259/bjr.20120130.",
+                       "Chen T.R., Tyan Y.S., Chu C.H., Wu M.C., Tung C.J. Surveyed data for structural shielding "
+                       "calculations of radiographic x-ray installations in Taiwan. <i>Health Phys.</i> 104(5 Suppl "
+                       "2):S60–S67, 2013, doi:10.1097/HP.0b013e318286caeb.",
                        "Li X., Marschall T.A., Yang K., Liu B. Radiation shielding transmission data for modern digital radiography. <i>Med. Phys.</i> 51:8768–8775, 2024, doi:10.1002/mp.17449.",
                        "Kirby K.M., Schueler B.A., Littrell L.A., Long Z. Workload and use factor data for a modern "
                        "digital radiography system. <i>J. Appl. Clin. Med. Phys.</i> 24:e13962, 2023, "

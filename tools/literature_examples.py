@@ -2,10 +2,13 @@
 example in Examples/Literature, each opening with a note that gives the data of the example and the result of the
 paper next to that of the program.
 
-    Yang et al. 2017 (DBT room, section 3.4), Yang et al. 2016 (DBT floor, Eq. 8-9), Biondi et al. 2024 (table 4,
-    Eq. 4: five interventional rooms), Li et al. 2024 (lead for a transmission of 0.001, section 3).
-    Kirby et al. 2023 gives no worked example; the sheet 'Data checks' compares values the papers state about their
-    own data with those of the program.
+    Yang et al. 2017 (DBT room, section 3.4), Yang et al. 2016 (DBT floor, Eq. 8-9, with the transmission of Li et
+    al. 2012), Judge et al. 2013 (table 1: three FFDM units), Biondi et al. 2024 (table 4, Eq. 4: five interventional
+    rooms), Li et al. 2024 (lead for a transmission of 0.001, section 3).
+    Kirby et al. 2023, Chen et al. 2013 and Li et al. 2013 give no worked example; the sheet 'Data checks' compares
+    values the papers give about their own data with those the program finds from its data (Chen: their table 6 and
+    K1 from their table 1 with the NCRP 147 method; Li 2013: their table V(a) from the single-kVp tables of Li 2012
+    and Li 2013 and the workload of their table IV(c)).
 
 Run from the project folder:  python tools/literature_examples.py
 It builds every example, calculates it with the program, checks the results against the papers, writes the files,
@@ -41,15 +44,27 @@ REFERENCES = {
                "radiography. Med Phys 2024;51(12):8768-8775.",
     "Kirby 2023": "Kirby KM, Schueler BA, Littrell LA, Long Z. Workload and use factor data for a modern digital "
                   "radiography system. J Appl Clin Med Phys 2023;24(5):e13962.",
+    "Li 2012": "Li X, Zhang D, Liu B. Transmission of broad W/Rh and W/Al (target/filter) x-ray beams operated at 25-49 "
+               "kVp through common shielding materials. Med Phys 2012;39(7):4132-4138.",
+    "Li 2013": "Li X, Zhang D, Liu B. Workload and transmission data for the installation of a digital breast "
+               "tomosynthesis system. Med Phys 2013;40(6):063901.",
+    "Judge 2013": "Judge MA, Keavey E, Phelan N. Scatter radiation intensities around full-field digital mammography "
+                  "units. Br J Radiol 2013;86(1021):20120130.",
+    "Chen 2013": "Chen TR, Tyan YS, Chu CH, Wu MC, Tung CJ. Surveyed data for structural shielding calculations of "
+                 "radiographic x-ray installations in Taiwan. Health Phys 2013;104(5 Suppl 2):S60-S67.",
 }
+JUDGE = "Digital Mammography (FFDM) – Judge 2013"  # the program's name of the FFDM workload distribution
 
 
-def dbt(d, mode, toward=None):
-    """A secondary radiation type of a DBT unit: mode 3 = 2D + 3D (Yang et al. 2017, table 9), mode 4 = per barrier
-    (Yang et al. 2016, table V; toward: e.g. 'Floor, high technique')."""
-    return {"radiob_w": "2", "d": d, "vselxray": "1", "vsexroom": DBT, "use_ent": None, "entk": None, "preshvar": "0",
-            "radiob_pre": "0", "unairkerv": "1", "airkerv": "0", "radiob_leak": "0", "oworkvar": "0", "workv": None,
-            "worentry": None, "numpapwe": None, "kvpdata": None, "dbtmode": str(mode), "dbtbarrier": toward}
+def suggested(distribution, d, **choice):
+    """A secondary radiation type with the air kerma the program suggests for the distribution: DBT (Yang et al.
+    2017, dbtmode 3 = 2D + 3D) or FFDM (Judge et al. 2013, ffdmunit 1-3)."""
+    item = {"radiob_w": "2", "d": d, "vselxray": "1", "vsexroom": distribution, "use_ent": None, "entk": None,
+            "preshvar": "0", "radiob_pre": "0", "unairkerv": "1", "airkerv": "0", "radiob_leak": "0", "oworkvar": "0",
+            "workv": None, "worentry": None, "numpapwe": None, "kvpdata": None, "dbtmode": None, "dbtbarrier": None,
+            "ffdmunit": None}
+    item.update({k: str(v) for k, v in choice.items()})
+    return item
 
 
 def department(name, rooms):
@@ -71,7 +86,8 @@ def example(file, title, paper, workspace, about, checks):
 
 example("Yang 2017 - DBT room", "Yang et al. 2017: digital breast tomosynthesis room", "Yang 2017",
         room("Mammography Room", "Yang 2017: DBT room",
-             {4: barrier(4, ["Gypsum Wallboard"], [dbt(2.0, 3)], location=OFFICE, name="Office wall")},
+             {4: barrier(4, ["Gypsum Wallboard"], [suggested(DBT, 2.0, dbtmode=3)], location=OFFICE,
+                         name="Office wall")},
              patients=100),
         "100 patients per week, every exam a 2D + 3D screening of both breasts (2 CC and 1 oblique view toward and 1 "
         "away from the barrier, in 2D and in 3D), a fully occupied office (T = 1, P = 0.02 mGy/week) 2 m from the "
@@ -83,19 +99,48 @@ example("Yang 2017 - DBT room", "Yang et al. 2017: digital breast tomosynthesis 
          ("Yang 2017: DBT room", "Office wall", "Gypsum Wallboard", "mm", 23, 1.0,
           "a minimum of 23 mm gypsum, with the transmission data of table 8")])
 
+yang2016 = secondary(None, 1.2, written="0.307", kvp=40)  # K1sec of their table V, the 40 kVp W/Al data of Li 2012
+yang2016["kvpdata"] = "W/Al (Li 2012)"
 example("Yang 2016 - DBT floor", "Yang et al. 2016: the floor of a DBT room", "Yang 2016",
-        room("Mammography Room", "Yang 2016: DBT room",
-             {1: barrier(1, ["Concrete"], [dbt(1.2, 4, "Floor, high technique")], T=1)}, patients=100),
+        room("Mammography Room", "Yang 2016: DBT room", {1: barrier(1, ["Concrete"], [yang2016], T=1)}, patients=100),
         "100 patients per week, the scatter toward the floor at the high technique (35 kVp W/Ag for 2D and 40 kVp W/Al "
         "for 3D): K¹_{sec} = 3.07×10⁻¹ mGy per patient at 1 m (their table V), a fully occupied area below at the "
-        "shortest distance, 1.2 m, P = 0.02 mGy/week. Yang et al. 2016 give no transmission data: they take those of "
-        "Li et al. 2012 (40 kVp, W/Al), which the program does not have; the program uses those of the DBT workload "
-        "distribution, Yang et al. 2017 table 8 (the same unit), so its thickness is not the paper's.",
+        "shortest distance, 1.2 m, P = 0.02 mGy/week. As the article, the transmission is that of the 40 kVp W/Al beam "
+        "of Li et al. 2012 ('Give kVp': 40, W/Al (Li 2012)), and K¹_{sec} is written. In the program the same air "
+        "kerma is the choice 'Floor, high technique' of the workload distribution 'Digital Breast Tomosynthesis – Li "
+        "2013', which uses the transmission of the DBT workload of Li et al. 2013 instead.",
         [("Yang 2016: DBT room", "Floor", "K", "mGy/week", 21.3, 0.05, "K = 3.07×10⁻¹ / 1.2² × 100 = 21.3 mGy/week (Eq. 8)"),
          ("Yang 2016: DBT room", "Floor", "B", "", 9.4e-4, 0.05e-4, "B = 0.02 / 21.3 = 9.4×10⁻⁴ (Eq. 9)"),
-         ("Yang 2016: DBT room", "Floor", "Concrete", "mm", 35, None,
-          "~35 mm concrete with the transmission of Li et al. 2012 (40 kVp, W/Al); the program uses Yang et al. 2017 "
-          "table 8, so the two are not compared")])
+         ("Yang 2016: DBT room", "Floor", "Concrete", "mm", 35, ("approximately", 3.5),
+          "~35 mm concrete with the transmission of Li et al. 2012, 40 kVp W/Al: an approximate value (the Archer "
+          "equation with their table I gives 32 mm)")])
+
+# Judge et al. 2013, table 1: each unit's maximum scatter at 1 m x 40 000 exposures a year (40 patients a day, 4
+# exposures, 5 days, 50 weeks), a member of the public (0.3 mGy a year, T = 1) at 1 m, Simpkin's Mo/Mo transmission
+JUDGE_TABLE = [("GE Essential", 248, 1.21e-3, (21, 9, 180)), ("Hologic Selenia", 180, 1.67e-3, (19, 8, 169)),
+               ("Philips MDM", 60, 5.00e-3, (18, 8, 157))]
+judge_walls, judge_checks = {}, []
+for k, (unit, ais, B, (gypsum, glass, wood)) in enumerate(JUDGE_TABLE, start=1):
+    wall = barrier(3 + k, ["Gypsum Wallboard", "Plate Glass", "Wood"], [suggested(JUDGE, 1.0, ffdmunit=k)], T=1,
+                   name=unit)
+    wall["dikeent"] = f"{0.3 / WEEKS:.6g}"
+    judge_walls[3 + k] = wall
+    room_name = "Judge 2013: FFDM room"
+    judge_checks += [(room_name, unit, "K per year", "mGy/year", ais, 1.0,
+                      "annual incident scatter: the maximum scatter at 1 m × 40 000 exposures"),
+                     (room_name, unit, "B", "", B, 0.006e-3 if B < 2e-3 else 0.02e-3, "B = 0.3 / AIS (Eq. 2, T = 1)"),
+                     (room_name, unit, "Gypsum Wallboard", "mm", gypsum, 0.6, "gypsum plasterboard, table 1"),
+                     (room_name, unit, "Plate Glass", "mm", glass, 0.6, "plate glass, table 1"),
+                     (room_name, unit, "Wood", "mm", wood, 1.0, "wood, table 1")]
+example("Judge 2013 - FFDM room", "Judge et al. 2013: three full-field digital mammography units", "Judge 2013",
+        room("Mammography Room", "Judge 2013: FFDM room", judge_walls, patients=10000 / WEEKS),
+        "Their table 1: the barrier at 1 m from each unit for a member of the public (0.3 mGy a year, T = 1), with the "
+        "maximum scatter at 1 m of one exposure × 40 000 exposures a year (40 patients a day, 4 exposures each, 5 days "
+        "a week, 50 weeks). In the program: the workload distribution 'Digital Mammography (FFDM) – Judge 2013' with "
+        "the unit of each wall (K¹_{sec} = 4 exposures × the maximum scatter), 10 000 / 52 patients a week, P = 0.3 / 52 "
+        "mGy/week. Judge et al. used Simpkin's Mo/Mo transmission without stating its kVp: 30 kVp reproduces their GE "
+        "and Hologic values and 35 kVp their Philips values, which the program uses.",
+        judge_checks)
 
 # Biondi et al. 2024: table 1 (procedures in 2023), table 2 (workload), table 4 with their Eq. 4 (the NCRP 147
 # secondary air kerma of cardiac or peripheral angiography, leakage + forward/backscatter, times Wsite / Wnorm)
@@ -188,9 +233,87 @@ def data_checks(app):
         rows.append({"paper": "Li 2024", "what": f"Orthopedic table bucky, concrete {label}", "paper_value": published,
                      "program": value, "tolerance": 0.0,
                      "how": "section 4, the fit to the Archer equation (the program's workload distribution)"})
+    rows += chen_checks(app) + li2013_checks()
     for row in rows:
         row["ok"] = abs(row["program"] - row["paper_value"]) <= row["tolerance"] + 1e-12
     return rows
+
+
+def thickness_at(transmission, B, high=0.01):
+    """The thickness at which transmission(x), falling with x, comes down to B."""
+    low = 0.0
+    while transmission(high) > B:
+        high *= 2
+    for _ in range(200):
+        middle = (low + high) / 2
+        low, high = (middle, high) if transmission(middle) > B else (low, middle)
+    return (low + high) / 2
+
+
+def chen_checks(app):
+    """Chen et al. 2013: their table 1 sums to its totals; with the NCRP 147 method (tools/literature_data.py) their
+    table 1 gives their primary air kerma (table 4) and their transmission through lead and concrete (table 6)."""
+    import literature_data
+    from Depcalculations import wb, PRIMARY_KERMA, CHEN, archer_thickness
+    tables, rows = literature_data.Tables(wb), []
+    sheet = [r for r in wb["Chen 2013"].iter_rows(min_row=3, values_only=True)]
+    bins = [r for r in sheet if isinstance(r[0], (int, float))]
+    totals = next(r for r in sheet if r[0] == "W total (published)")
+    kerma = {r[0]: r for r in literature_rows(wb, "Chen 2013 kerma")}
+    prim = {r[0]: r for r in literature_rows(wb, "Chen 2013 prim abc")}
+    for k, (barrier, name) in enumerate(zip(("floor", "wall", "all"), CHEN), start=1):
+        rows.append({"paper": "Chen 2013", "what": f"{barrier}: total workload of table 1 (mA·min/patient)",
+                     "paper_value": totals[k], "program": sum(r[k] for r in bins), "tolerance": 0.0025,
+                     "how": "table 1: the total against the sum of its 24 bins, each rounded to 3 decimals"})
+        rows.append({"paper": "Chen 2013", "what": f"{barrier}: K¹P (mGy/patient), table 4 and NCRP 147 method",
+                     "paper_value": float(PRIMARY_KERMA.get(name) or literature_data.CHEN_KP1[barrier]),
+                     "program": kerma[name][10], "tolerance": 0.015,
+                     "how": "table 4 (PCXMC), against their table 1 with the NCRP 147 K_W1 (Fig. B.1)"})
+        spectrum = literature_data.Spectrum(tables, dict(zip(literature_data.CHEN_KVP,
+                                                             literature_data.CHEN_SPECTRA[barrier])),
+                                            *literature_data.CHEN_FIELD[barrier])
+        for material, column in (("Lead", 1), ("Concrete", 4)):
+            fit = tuple(float(v) for v in prim[name][column:column + 3])
+            paper = archer_thickness(fit, 1e-3)
+            rows.append({"paper": "Chen 2013", "what": f"{barrier}: {material.lower()} for B = 10⁻³ (mm), table 6 and "
+                                                       "NCRP 147 method",
+                         "paper_value": paper, "program": thickness_at(
+                             lambda x: spectrum.transmission(material, x, False), 1e-3),
+                         "tolerance": 0.01 * paper,
+                         "how": "their fit (table 6), against the transmission of their table 1 with the NCRP 147 "
+                                "data of each kVp (Table A.1, weighted by the air kerma)"})
+    return rows
+
+
+def li2013_checks():
+    """Li et al. 2013: the sums of their table IV(c); their table V(a), the transmission of the combined DBT workload,
+    from the single-kVp data of Li 2012 (tables I, II) and Li 2013 (table VI) weighted by the air kerma of each bin."""
+    import literature_data
+    from Depcalculations import wb, MAMMO_KVP_TABLES, archer_transmission, archer_thickness
+    workload, rows = literature_data.LI2013_WORKLOAD, []
+    for k, (label, published) in enumerate((("mA·min per patient", 12.61), ("K¹ (mGy per patient)", 19.22)), start=2):
+        rows.append({"paper": "Li 2013", "what": f"table IV(c), sum (2D + 3D) of the {label}", "paper_value": published,
+                     "program": sum(r[k] for r in workload), "tolerance": 0.02,
+                     "how": "table IV(c), screening and diagnosis: the sum against its rows"})
+    data = {"W/Rh": "W/Rh (Li 2012)", "W/Al": "W/Al (Li 2012)", "W/Ag": "W/Ag (Li 2013)"}
+    total = sum(r[3] for r in workload)
+    fits = next(r for r in wb["Li 2013 DBT abc"].iter_rows(min_row=3, values_only=True) if isinstance(r[0], str))
+    columns = {"Lead": 1, "Concrete": 4, "Gypsum Wallboard": 7, "Steel": 10, "Plate Glass": 13, "Wood": 16}
+    for material, column in columns.items():
+        fit = tuple(float(v) for v in fits[column:column + 3])
+        paper = archer_thickness(fit, 1e-3)
+        combined = lambda x, m=material: sum(r[3] * archer_transmission(MAMMO_KVP_TABLES[data[r[0]]][r[1]][m], x)
+                                             for r in workload) / total
+        rows.append({"paper": "Li 2013", "what": f"{material} for B = 10⁻³ (mm), table V(a) and the single-kVp data",
+                     "paper_value": paper, "program": thickness_at(combined, 1e-3), "tolerance": 0.01 * paper,
+                     "how": "their fit (table V(a)), against Eq. 1: the W/Rh, W/Al (Li 2012) and W/Ag (Li 2013) "
+                            "transmission at the highest kVp of each bin, weighted by its K¹ (table IV(c))"})
+    return rows
+
+
+def literature_rows(wb, sheet):
+    return [r for r in wb[sheet].iter_rows(min_row=3, values_only=True)
+            if isinstance(r[0], str) and isinstance(r[1], (int, float))]
 
 
 def main():
@@ -220,7 +343,9 @@ def main():
             rec = app.calc[(nr, e)]
             assert not rec["missing"], (item["file"], room_name, barrier_name, rec["missing"])
             value = program_value(app, rec, nr, e, quantity)
-            ok = tolerance is None or abs(value - paper) <= tolerance
+            approximate = isinstance(tolerance, tuple)  # the paper gives an approximate value
+            limit = tolerance[1] if approximate else tolerance
+            ok = limit is None or abs(value - paper) <= limit
             if not ok:
                 failed.append((item["file"], room_name, barrier_name, quantity, paper, value))
             shown = f"{value:.3g}" if quantity in ("B",) else f"{value:.2f}"
@@ -229,6 +354,7 @@ def main():
             rows.append({"paper": item["paper"], "example": item["title"].split(": ", 1)[1],
                          "room": room_name.split(": ", 1)[1], "barrier": barrier_name, "quantity": quantity,
                          "unit": unit, "paper_value": paper, "program": value, "compared": tolerance is not None,
+                         "approximate": approximate,
                          "ok": ok, "how": how})
             print(f"{item['file']:36s} {room_name[-22:]:22s} {barrier_name:14s} {quantity:16s} paper {paper:<9g} "
                   f"program {value:.4g}" + ("" if tolerance is not None else "   (not compared)"))
@@ -314,17 +440,22 @@ def write_comparison(rows, checks):
         put(ws, r, 9, f"=H{r}-G{r}", "+0.00E+00;-0.00E+00;0" if row["quantity"] == "B" else "+0.00;-0.00;0.00",
             formula_font)
         put(ws, r, 10, f'=IF(G{r}=0,"",I{r}/G{r})', "+0.0%;-0.0%;0.0%", formula_font)
-        put(ws, r, 11, ("yes" if row["ok"] else "DIFFERENT") if row["compared"] else "no")
+        put(ws, r, 11, ("DIFFERENT" if not row["ok"] else "approximately" if row.get("approximate") else "yes")
+            if row["compared"] else "no")
         put(ws, r, 12, plain(row["how"][0].upper() + row["how"][1:] + "."))
     notes(ws, 5 + len(rows) + 1, [
         "Blue: values (Paper: what the paper gives; Program: the result of the program). Black: formulas.",
-        "Compared 'yes': within the rounding of the paper. 'no': shown, not compared, for the reason given.",
+        "Compared 'yes': within the rounding of the paper; 'approximately': the paper gives an approximate value; "
+        "'no': shown, not compared, for the reason given.",
         "Biondi et al. 2024, table 4, Eq. 4: for neuroangiography and vascular surgery the paper's air kerma comes "
         "from the patients of another room of its table 1 (523 and 172); the program uses those of the room (172 and "
         "393).",
-        "Yang et al. 2016: the paper's concrete thickness uses the transmission data of Li et al. 2012, which the "
-        "program does not have.",
-        "Kirby et al. 2023 has no worked example: see the sheet 'Data checks'."] + list(REFERENCES.values()))
+        "Yang et al. 2016: '~35 mm' of concrete with the 40 kVp W/Al data of Li et al. 2012; the Archer equation with "
+        "their table I gives 32 mm.",
+        "Judge et al. 2013 do not state the kVp of the Simpkin Mo/Mo data: 30 kVp (GE, Hologic) and 35 kVp (Philips) "
+        "reproduce their table 1.",
+        "Kirby et al. 2023, Chen et al. 2013 and Li et al. 2013 have no worked example: see the sheet 'Data checks'."]
+          + list(REFERENCES.values()))
 
     ws = book.create_sheet("Data checks")
     sheet(ws, "Values the papers give about their own data, against the data in the program", made,
@@ -339,8 +470,10 @@ def write_comparison(rows, checks):
         put(ws, r, 6, "yes" if row["ok"] else "DIFFERENT")
         put(ws, r, 7, row["how"][0].upper() + row["how"][1:] + ".")
     notes(ws, 5 + len(checks) + 1, [
-        "Every table of these papers that the program uses (Kirby table 3; Biondi tables 2 and 3; Yang 2017 tables 8 "
-        "and 9; Yang 2016 table V; Li 2024 tables 1 and 2) was also compared value by value with the program's data."])
+        "Kirby table 3, Biondi tables 2 and 3, Yang 2017 tables 8 and 9, Yang 2016 table V and Li 2024 tables 1 and 2 "
+        "were also compared value by value with the program's data.",
+        "Chen tables 1 and 6, and Li 2012 tables I and II with Li 2013 tables IV(c), V(a) and VI, reproduce each other "
+        "(rows above); Judge table 1 is reproduced in the sheet Examples."])
 
     path = os.path.join(FOLDER, COMPARISON)
     book.save(path)

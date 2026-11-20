@@ -4,8 +4,8 @@ from tkinter import *
 from tkinter import ttk
 import theme
 from tooltips import tip
-from Depcalculations import (wb, PRIMARY_KERMA, KVP_DATA, DBT, SOURCES, KIRBY, BIONDI, LI_ORTHOPEDIC,
-                             DBT_BARRIER_MODE, YANG2016_KERMA)
+from Depcalculations import (wb, PRIMARY_KERMA, KVP_DATA, DBT, SOURCES, KIRBY, BIONDI, LI_ORTHOPEDIC, YANG2016_KERMA,
+                             DBT_LI2013, JUDGE_FFDM, JUDGE_UNITS, CHEN, KERMA_SOURCES, MAMMO_KVP_DATA, MAMMO_KVPS)
 from barrier_names import BarrierDialog, default_kind, default_name, door_material
 
 # NCRP 147 shielding design goals P (mGy/week). Supervised areas are treated as uncontrolled.
@@ -21,10 +21,10 @@ DISTRIBUTIONS = {
                     "Chest Room"),
                    tuple(name for name in KIRBY if name.startswith("DR Room")),
                    tuple(name for name in KIRBY if not name.startswith("DR Room")),
-                   (LI_ORTHOPEDIC,)),
+                   tuple(CHEN), (LI_ORTHOPEDIC,)),
     "Fluoroscopy Room": (("Fluoroscopy Tube (R&F room)", "Rad Tube (R&F room)", "Cardiac Angiography",
                           "Peripheral Angiography"), tuple(BIONDI)),
-    "Mammography Room": (("Mammography Room",), (DBT,)),
+    "Mammography Room": (("Mammography Room",), (JUDGE_FFDM,), (DBT, DBT_LI2013)),
 }
 # NCRP 147 Table 4.1 locations, exactly as in the occupancy sheet the calculation reads
 OCCUPANCY_LOCATIONS = [row[0] for row in wb['Occupancy Factor ( T )'].iter_rows(min_row=2, values_only=True) if row[0]]
@@ -576,7 +576,8 @@ class dep_defs():
         literature (Yang et al. 2017, Kirby et al. 2023, Biondi et al. 2024)."""
         button, distribution = self.d.get(f"airkncrp {e}{nr}{i}"), self.d.get(f"vsexroom {e}{nr}{i}")
         if button is not None:
-            source = SOURCES.get(distribution.get() if distribution is not None else None, "NCRP 147")
+            name = distribution.get() if distribution is not None else None
+            source = KERMA_SOURCES.get(name) or SOURCES.get(name, "NCRP 147")
             button.configure(text="Select Unshielded Secondary\nAir Kerma (mGy∙patient⁻¹)\n"
                                   f"Suggested ({source})")
 
@@ -636,31 +637,46 @@ class dep_defs():
                 if self.d.get(f"kvpbox {e}{nr}{i}") is not None:
                     self.d[f"kvpbox {e}{nr}{i}"].destroy()
                     self.d[f"kvpbox {e}{nr}{i}"] = None
-                # Custom Spinbox for secondary barrier
-                def increment_spinbox(spinbox, values):
-                    current_value = int(spinbox.get())
-                    current_index = values.index(current_value)
-                    new_index = current_index
-                    if 0 <= new_index < len(values):
-                        spinbox.set(values[new_index])
+                # The kVp of the secondary transmission data: those of NCRP 147; in a mammography room also the Mo/Mo
+                # beams of NCRP 147 and the W/Al, W/Rh (Li et al. 2012) and W/Ag beams (Li et al. 2013)
+                mammography = self.room_type_of(nr) == "Mammography Room"
+                old = self.d.get(f"kvpdata {e}{nr}{i}")
+                data = StringVar(value=old.get() if old is not None and old.get() in MAMMO_KVP_DATA else "NCRP 147")
+                self.d[f"kvpdata {e}{nr}{i}"] = data
+                values = MAMMO_KVPS[data.get() if mammography else "NCRP 147"]
+                self.d[vsexroom_key] = IntVar(value=values[0])
+                spinbox = ttk.Spinbox(master=self.d[barrierf_key], values=values, textvariable=self.d[vsexroom_key],
+                                      width=10)
+                spinbox.grid(row=i * 12 + 5, column=2, pady=6.5, padx=5, sticky="w")
+                self.d[selxroom_key] = spinbox
+                tip(spinbox, "kvp")
+                if mammography:
+                    box = ttk.Combobox(master=self.d[barrierf_key], values=MAMMO_KVP_DATA, textvariable=data,
+                                       state="readonly", width=20)
+                    box.grid(row=i * 12 + 5, column=3, columnspan=2, pady=6.5, padx=5, sticky="w")
+                    self.d[f"kvpbox {e}{nr}{i}"] = box
+                    tip(box, "kvp_data_mammo")
 
-                custom_values = [30, 50, 70, 100, 125, 150]
-                self.d[vsexroom_key] = IntVar(value=custom_values[0])
-                self.d[selxroom_key] = ttk.Spinbox(master=self.d[barrierf_key], values=custom_values,
-                                                   textvariable=self.d[vsexroom_key], width=10)
-                self.d[selxroom_key].bind("<<Increment>>",
-                                          lambda e: increment_spinbox(self.d[selxroom_key], custom_values))
-                self.d[selxroom_key].bind("<<Decrement>>",
-                                          lambda e: increment_spinbox(self.d[selxroom_key], custom_values))
-                self.d[selxroom_key].grid(row=i * 12 + 5, column=2, columnspan=2, pady=6.5, padx=5, sticky="w")
-                tip(self.d[selxroom_key], "kvp")
+                    def follow(*args):  # the kVp of the data chosen; a kVp they also have is kept
+                        if not spinbox.winfo_exists():
+                            return
+                        kvps = MAMMO_KVPS.get(data.get(), MAMMO_KVPS["NCRP 147"])
+                        spinbox.configure(values=kvps)
+                        try:
+                            current = self.d[vsexroom_key].get()
+                        except TclError:
+                            current = None
+                        if current not in kvps:
+                            self.d[vsexroom_key].set(kvps[0])
+
+                    data.trace_add("write", follow)
 
     def uns(self, e, nr, i):
         if self.d[f"radiob_w {e}{nr}{i}"].get() != 1:
             return
         room = self.d[f"vsexroom {e}{nr}{i}"].get()
-        barrier = self.barn[f"lab_bar {e}{nr}"].cget("text")
-        # Unshielded primary air kerma per patient at 1 m (mGy/patient): NCRP 147, or Kirby et al. 2023
+        barrier = {"floor": "Floor", "ceiling": "Ceiling"}.get(self.barrier_kind(e, nr), "")
+        # Unshielded primary air kerma per patient at 1 m (mGy/patient): NCRP 147, Kirby et al. 2023, Chen et al. 2013
         kerma = PRIMARY_KERMA.get(room, "")
         # NCRP 147 primary use factors
         if room in ("Rad Room (chest bucky)", "Chest Room"):
@@ -672,6 +688,11 @@ class dep_defs():
                 use = ""
             else:
                 use = "1" if ("(floor)" in room) == (barrier == "Floor") else ""
+        elif room in CHEN:  # their table 5: floor 0.98 and cross-table wall 0.02; wall bucky 1
+            if "(floor)" in room:
+                use = {"Floor": "0.98", "Ceiling": ""}.get(barrier, "0.02")
+            else:
+                use = "1" if "(chest bucky)" in room and barrier == "" else ""
         elif barrier == "Floor":
             use = "1"
         else:
@@ -938,36 +959,47 @@ class dep_defs():
     def unairk(self, e, nr, i):
         # Destroy any existing widgets related to secondary barrier
         self.destroy_widgets([f"leak {e}{nr}{i}", f"side {e}{nr}{i}", f"forw {e}{nr}{i}", f"entk {e}{nr}{i}",
-                              f"dbt1 {e}{nr}{i}", f"dbt2 {e}{nr}{i}", f"dbt3 {e}{nr}{i}", f"dbt4 {e}{nr}{i}",
-                              f"dbtbox {e}{nr}{i}"])
+                              f"dbt1 {e}{nr}{i}", f"dbt2 {e}{nr}{i}", f"dbt3 {e}{nr}{i}", f"dbtlabel {e}{nr}{i}",
+                              f"dbtbox {e}{nr}{i}", f"ffdm1 {e}{nr}{i}", f"ffdm2 {e}{nr}{i}", f"ffdm3 {e}{nr}{i}"])
         if f"radside {e}{nr}{i}" in self.d:
             self.destroy_widgets([f"radside {e}{nr}{i}", f"radforward {e}{nr}{i}", f"radleak {e}{nr}{i}"])
         unairkerv_key = f"unairkerv {e}{nr}{i}"
 
         distribution = self.d.get(f"vsexroom {e}{nr}{i}")
-        dbt = distribution is not None and distribution.get() == DBT
+        name = distribution.get() if distribution is not None else None
         self.update_kerma_label(e, nr, i)
-        if self.d[unairkerv_key].get() == 1 and dbt:
+        frame = self.d[f"barrierf {e}{nr}"]
+        if self.d[unairkerv_key].get() == 1 and name == DBT:
             # Digital breast tomosynthesis (Yang et al. 2017): the scatter per patient of the mode
             self.d[f"dbtmode {e}{nr}{i}"] = IntVar(value=3)
             for k, text in ((1, "2D"), (2, "3D (tomosynthesis)"), (3, "2D + 3D")):
                 self.create_radio_button(key=f"dbt{k} {e}{nr}{i}", master=self.d[f"barrierf {e}{nr}"], text=text,
                                          variable=self.d[f"dbtmode {e}{nr}{i}"], value=k, row=i * 12 + 7,
                                          column=k - 1, tip_key="dbt_mode")
-            # or Yang et al. 2016: toward this barrier (wall / door, floor, ceiling), at the average or high technique
-            self.create_radio_button(key=f"dbt4 {e}{nr}{i}", master=self.d[f"barrierf {e}{nr}"],
-                                     text="Per barrier (Yang 2016):", variable=self.d[f"dbtmode {e}{nr}{i}"],
-                                     value=DBT_BARRIER_MODE, row=i * 12 + 8, column=0, tip_key="dbt_barrier")
+        elif self.d[unairkerv_key].get() == 1 and name == DBT_LI2013:
+            # The workload of Li et al. 2013, with the scatter of Yang et al. 2016 toward this barrier (wall / door,
+            # floor, ceiling), at the average or high technique
+            label = ttk.Label(frame, text="Toward the barrier\n(Yang 2016):")
+            label.grid(row=i * 12 + 7, column=0, pady=6.5, padx=5, sticky="w")
+            self.d[f"dbtlabel {e}{nr}{i}"] = label
             if self.d.get(f"dbtbarrier {e}{nr}{i}") is None:
                 kind = self.barrier_kind(e, nr)
                 self.d[f"dbtbarrier {e}{nr}{i}"] = StringVar(
                     value={"floor": "Floor", "ceiling": "Ceiling"}.get(kind, "Wall / door") + ", average technique")
-            box = ttk.Combobox(self.d[f"barrierf {e}{nr}"], textvariable=self.d[f"dbtbarrier {e}{nr}{i}"],
-                               values=list(YANG2016_KERMA), state="readonly", width=30)
-            box.grid(row=i * 12 + 8, column=1, columnspan=2, pady=6.5, padx=5, sticky="w")
-            box.bind("<<ComboboxSelected>>", lambda event: self.d[f"dbtmode {e}{nr}{i}"].set(DBT_BARRIER_MODE))
+            box = ttk.Combobox(frame, textvariable=self.d[f"dbtbarrier {e}{nr}{i}"], values=list(YANG2016_KERMA),
+                               state="readonly", width=30)
+            box.grid(row=i * 12 + 7, column=1, columnspan=2, pady=6.5, padx=5, sticky="w")
             self.d[f"dbtbox {e}{nr}{i}"] = box
-            tip(box, "dbt_barrier")
+            for widget in (label, box):
+                tip(widget, "dbt_barrier")
+        elif self.d[unairkerv_key].get() == 1 and name == JUDGE_FFDM:
+            # Full-field digital mammography (Judge et al. 2013): the scatter of the unit
+            if self.d.get(f"ffdmunit {e}{nr}{i}") is None:
+                self.d[f"ffdmunit {e}{nr}{i}"] = IntVar(value=1)
+            for k, (unit, _, _) in JUDGE_UNITS.items():
+                self.create_radio_button(key=f"ffdm{k} {e}{nr}{i}", master=frame, text=unit,
+                                         variable=self.d[f"ffdmunit {e}{nr}{i}"], value=k, row=i * 12 + 7,
+                                         column=k - 1, tip_key="ffdm_unit")
         elif self.d[unairkerv_key].get() == 1:
             # NCRP-suggested mode: create radio buttons for different types of scatter/leakage
             self.d[f"airkerv {e}{nr}{i}"] = IntVar(value=0)

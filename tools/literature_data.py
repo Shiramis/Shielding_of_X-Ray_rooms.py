@@ -28,6 +28,23 @@ Med Phys 2024;51(12):8768-8775 (section 4, figure 5).
     600), its transmission through concrete fitted to the Archer equation. Concrete only; no air kerma per patient.
     (Their tables 1 and 2, the transmission at each kVp, are in the sheet 'prim abc DR 600'.)
 
+Chen TR, Tyan YS, Chu CH, Wu MC, Tung CJ. Surveyed data for structural shielding calculations of radiographic x-ray
+installations in Taiwan. Health Phys 2013;104(5 Suppl 2):S60-S67 (tables 1, 4, 5, 6).
+    Workload toward the floor, the wall bucky and all barriers; their primary air kerma per patient (PCXMC), use factors
+    and transmission through lead and concrete, as published. They give no leakage or scatter: it is made from their
+    spectra with the NCRP 147 method (Appendix C), as for Kirby et al.
+
+Li X, Zhang D, Liu B. Transmission of broad W/Rh and W/Al (target/filter) x-ray beams operated at 25-49 kVp through
+common shielding materials. Med Phys 2012;39(7):4132-4138 (tables I, II).
+Li X, Zhang D, Liu B. Workload and transmission data for the installation of a digital breast tomosynthesis system.
+Med Phys 2013;40(6):063901 (tables IV(c), V(a), VI).
+    Single-kVp transmission of W/Al, W/Rh and W/Ag beams of a Hologic Selenia Dimensions; the transmission and the
+    workload per patient of its combined DBT workload. As published.
+
+Judge MA, Keavey E, Phelan N. Scatter radiation intensities around full-field digital mammography units. Br J Radiol
+2013;86(1021):20120130 (table 1).
+    Maximum scatter at 1 m of one exposure of three units, 4 exposures per patient, as published.
+
 Run from the project folder:  python tools/literature_data.py [--check]     (needs numpy and openpyxl)
 """
 import math
@@ -95,6 +112,84 @@ def biondi_name(room):
 
 # ===================== Li et al. 2024, section 4: transmission of a workload distribution =====================
 LI_ORTHOPEDIC = ("Orthopedic Room, table bucky (DR 600) – Li 2024", {"Concrete": (0.04633, 0.0644, 0.5964)})
+
+# ===================== Chen et al. 2013 (Taiwan radiographic rooms) =====================
+# Table 1: mean workload (mA min per patient) per 5 kVp bin, 40 to 140 kVp, toward the floor, the wall (bucky) and all
+CHEN_KVP = list(range(25, 145, 5))
+CHEN_SPECTRA = {
+    "floor": [0, 0, 0, 0.001, 0.005, 0.005, 0.007, 0.011, 0.026, 0.021, 0.054, 0.045, 0.064, 0.037, 0.027, 0.001, 0.000,
+              0.001, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+    "wall": [0, 0, 0, 0.000, 0.000, 0.002, 0.004, 0.011, 0.011, 0.017, 0.018, 0.004, 0.010, 0.008, 0.003, 0.004, 0.002,
+             0.007, 0.005, 0.003, 0.002, 0.000, 0.000, 0.000],
+    "all": [0, 0, 0, 0.001, 0.005, 0.008, 0.011, 0.022, 0.037, 0.038, 0.073, 0.049, 0.074, 0.045, 0.030, 0.004, 0.002,
+            0.008, 0.006, 0.004, 0.002, 0.000, 0.000, 0.000],
+}
+CHEN_TOTAL = {"floor": 0.306, "wall": 0.111, "all": 0.417}  # Table 1, total workload (mA min per patient)
+# Table 4 (mean of the 13 rooms): unshielded primary air kerma per patient at 1 m (mGy, PCXMC); Table 5: use factors
+CHEN_KP1 = {"floor": 0.89, "wall": 0.35, "all": 1.24}
+CHEN_USE = {"floor": 0.98, "cross-table wall": 0.02, "wall": 1.00}
+# Table 6: transmission fitted to Equation A.2 (lead, concrete); 'all barriers' is the one for secondary barriers
+CHEN_FITS = {"floor": {"Lead": (2.9416, 19.5961, 0.6138), "Concrete": (0.0418, 0.1375, 0.4478)},
+             "wall": {"Lead": (2.3731, 16.9321, 0.6222), "Concrete": (0.0367, 0.1245, 0.5089)},
+             "all": {"Lead": (2.6146, 18.3195, 0.5890), "Concrete": (0.0385, 0.1334, 0.4494)}}
+CHEN_NAMES = {"floor": "Rad Room (floor) – Chen 2013", "wall": "Rad Room (chest bucky) – Chen 2013",
+              "all": "Rad Room (all barriers) – Chen 2013"}
+# the field of NCRP 147 Table 4.7 for the scatter of each (as for Kirby et al.): F (cm2) at dF (m)
+CHEN_FIELD = {"floor": (1000, 1.0), "wall": (1535, 1.83), "all": (1000, 1.0)}
+
+# ===================== Li et al. 2012 and 2013: mammography / DBT beams of a Hologic Selenia Dimensions ============
+# (alpha, beta, gamma) per kVp of lead, concrete, gypsum wallboard, steel, plate glass, wood (the order of MATERIALS)
+LI2012_WAL = {  # Li et al. 2012, Table I: W target, Al filter
+    25: [(63.06, 27.09, 0.1490), (0.4283, 0.6450, 0.4340), (0.2180, 0.3308, 0.3798), (11.44, 8.967, 0.2344),
+         (0.4733, 0.7575, 0.4454), (0.02190, 0.01372, 0.3181)],
+    30: [(25.72, 49.12, 0.1217), (0.2545, 0.4988, 0.3782), (0.1391, 0.2945, 0.4519), (5.831, 9.782, 0.2166),
+         (0.2919, 0.6105, 0.4443), (0.01723, 0.01196, 0.4733)],
+    35: [(22.20, 42.34, 0.2152), (0.1826, 0.4967, 0.4828), (0.09200, 0.2694, 0.4893), (4.344, 9.436, 0.3310),
+         (0.1975, 0.5284, 0.4656), (0.01417, 0.009502, 0.4630)],
+    40: [(17.92, 41.58, 0.3201), (0.1379, 0.4620, 0.5482), (0.06727, 0.2510, 0.5468), (2.957, 8.541, 0.3569),
+         (0.1492, 0.4492, 0.5028), (0.01244, 0.008440, 0.5356)],
+    45: [(12.97, 39.85, 0.3514), (0.1093, 0.4065, 0.5917), (0.05115, 0.2210, 0.5830), (2.297, 8.032, 0.4421),
+         (0.1173, 0.4391, 0.5791), (0.01142, 0.008285, 0.7651)],
+    49: [(11.50, 37.07, 0.4101), (0.09267, 0.4031, 0.6295), (0.04267, 0.2252, 0.6361), (1.752, 8.332, 0.4704),
+         (0.1007, 0.4478, 0.6430), (0.01073, 0.008158, 0.8549)],
+}
+LI2012_WRH = {  # Li et al. 2012, Table II: W target, Rh filter
+    25: [(67.94, 20.96, 0.08503), (0.4906, 0.4668, 0.3878), (0.2432, 0.2539, 0.3153), (13.71, 4.772, 0.1771),
+         (0.5308, 0.5201, 0.3626), (0.02429, 0.009839, 0.3314)],
+    30: [(49.72, 45.85, 0.2231), (0.2721, 0.6599, 0.2827), (0.1538, 0.3565, 0.3216), (7.870, 12.80, 0.2533),
+         (0.3101, 0.7473, 0.3029), (0.01855, 0.01307, 0.2267)],
+    35: [(25.61, 82.42, 0.3307), (0.1580, 0.8254, 0.3908), (0.07447, 0.4409, 0.3739), (3.199, 17.11, 0.2814),
+         (0.1702, 0.9212, 0.3908), (0.01378, 0.02024, 0.3624)],
+    39: [(17.96, 81.68, 0.3821), (0.1376, 0.9611, 0.5957), (0.06656, 0.5080, 0.5791), (3.134, 18.14, 0.4678),
+         (0.1485, 1.079, 0.5887), (0.01154, 0.01996, 0.4113)],
+}
+LI2013_WAG = {  # Li et al. 2013, Table VI: W target, Ag filter
+    25: [(67.00, 21.26, 0.2288), (0.4288, 0.5526, 0.4359), (0.2174, 0.2774, 0.3707), (11.15, 7.133, 0.1884),
+         (0.4812, 0.6010, 0.4720), (0.02201, 0.01011, 0.3083)],
+    30: [(46.95, 33.73, 0.1923), (0.2891, 0.4375, 0.2742), (0.1384, 0.2394, 0.2387), (8.295, 8.655, 0.2527),
+         (0.3197, 0.5001, 0.2888), (0.01756, 0.008786, 0.1797)],
+    35: [(28.41, 62.94, 0.3201), (0.1541, 0.5974, 0.3090), (0.06557, 0.3031, 0.2593), (5.402, 16.81, 0.5086),
+         (0.1514, 0.6343, 0.2725), (0.01186, 0.01312, 0.1603)],
+    39: [(15.44, 67.38, 0.2861), (0.1292, 0.6718, 0.4475), (0.06427, 0.3709, 0.4628), (2.956, 14.31, 0.3706),
+         (0.1443, 0.7505, 0.4603), (0.01071, 0.01373, 0.2387)],
+}
+MAMMO_KVP_DATA = {"W/Al (Li 2012)": LI2012_WAL, "W/Rh (Li 2012)": LI2012_WRH, "W/Ag (Li 2013)": LI2013_WAG}
+# Li et al. 2013, Table V(a): the primary radiation of the combined DBT workload (W/Rh, W/Ag and W/Al, Table IV(c))
+LI2013_DBT = ("Digital Breast Tomosynthesis – Li 2013",
+              [(13.33, 65.26, 0.2119), (0.1338, 0.6346, 0.3777), (0.06343, 0.3415, 0.3708), (2.560, 13.66, 0.2724),
+               (0.1444, 0.6858, 0.3714), (0.01285, 0.01410, 0.3422)])
+LI2013_WNORM = 12.61  # Table IV(c), Sum(2D+3D): mA min per patient, screening and diagnosis
+# Table IV(c), screening and diagnosis: (filter, highest kVp of the interval, mA min per patient, K1 mGy per patient)
+LI2013_WORKLOAD = [("W/Rh", 25, 0.0660, 0.0405), ("W/Rh", 30, 4.16, 3.70), ("W/Rh", 35, 2.12, 2.38),
+                   ("W/Ag", 30, 1.06, 1.24), ("W/Ag", 35, 1.32, 1.78), ("W/Ag", 39, 0.0433, 0.0779),
+                   ("W/Al", 30, 0.953, 1.77), ("W/Al", 35, 2.29, 6.07), ("W/Al", 40, 0.542, 1.88),
+                   ("W/Al", 45, 0.0550, 0.264)]
+
+# ===================== Judge et al. 2013: scatter around full-field digital mammography units =====================
+# Table 1: maximum scatter dose at 1 m of one exposure (uGy; 100 mAs, 13.5 mAs for the Philips); 4 exposures per patient
+# (text). The kVp of the Simpkin Mo/Mo data that reproduces their Table 1 (they do not state it): 30, 30 and 35.
+JUDGE = [("GE Essential", 6.2, 30), ("Hologic Selenia", 4.5, 30), ("Philips MDM", 1.5, 35)]
+JUDGE_EXPOSURES = 4
 
 
 # ===================== NCRP 147 Appendices B and C =====================
@@ -338,13 +433,62 @@ def write(wb, tables):
     for room, bins, total, base, params in BIONDI:
         ws.append([biondi_name(room)] + list(bins) + [total, total / 60, base])
         sec.append([biondi_name(room)] + [v for p in params for v in p])
+    # --- Chen: table 1 as published; the air kerma per patient: Wnorm table 1, primary table 4 (theirs, PCXMC),
+    #     secondary made from their spectra with the NCRP 147 method (Appendix C), as for Kirby; transmission: table 6
+    ws = replace_sheet(wb, "Chen 2013")
+    ws.append(["Chen et al., Health Phys 2013;104(5 Suppl 2):S60-S67, table 1: mean workload (mA min per patient) per "
+               "5 kVp bin, toward the floor, the wall (bucky) and all barriers"])
+    ws.append(["kVp", "Floor", "Wall (bucky)", "All barriers"])
+    for k, kvp in enumerate(CHEN_KVP):
+        ws.append([kvp] + [CHEN_SPECTRA[b][k] for b in ("floor", "wall", "all")])
+    ws.append(["W total (published)"] + [CHEN_TOTAL[b] for b in ("floor", "wall", "all")])
+    kerma = replace_sheet(wb, "Chen 2013 kerma")
+    kerma.append(["Chen et al. 2013: Wnorm table 1, primary Kp1 table 4 (PCXMC); leakage and scatter made from table 1 "
+                  "with the NCRP 147 method (Appendix C) by tools/literature_data.py (mGy per patient at 1 m)"])
+    kerma.append(["Workload Distribution", "Wnorm (mA min patient-1)", "F (cm2)", "df (m)", "Leakage", "Side-Scatter",
+                  "Leakage and Side-Scatter (Ksec)", "Forward/ Backscatter", "Leakage and Forward/ Backscatter (Ksec)",
+                  "Primary Kp1", "Kp1 by the NCRP 147 method (not used)"])
+    prim, sec = replace_sheet(wb, "Chen 2013 prim abc"), replace_sheet(wb, "Chen 2013 sec abc")
+    abc_header(prim, "Chen et al. 2013, table 6: transmission of the primary beam of each workload (lead, concrete)")
+    abc_header(sec, "Chen et al. 2013, table 6: 'all barriers', which they use for secondary barriers (lead, concrete)")
+    for barrier in ("floor", "wall", "all"):
+        field, distance = CHEN_FIELD[barrier]
+        k = Spectrum(tables, dict(zip(CHEN_KVP, CHEN_SPECTRA[barrier])), field, distance).kerma()
+        kerma.append([CHEN_NAMES[barrier], CHEN_TOTAL[barrier], field, distance] +
+                     [float(f"{k[q]:.3g}") for q in ("leak", "side", "leak+side", "forward", "leak+forward")] +
+                     [None if barrier == "all" else CHEN_KP1[barrier], float(f"{k['KP1']:.3g}")])
+        for sheet, fits in ((prim, CHEN_FITS[barrier]), (sec, CHEN_FITS["all"])):
+            sheet.append([CHEN_NAMES[barrier]] + [v for m in MATERIALS for v in fits.get(m, (None, None, None))])
+        print(f"{CHEN_NAMES[barrier]:40s} Kp1 NCRP method {k['KP1']:.3g} (Chen {CHEN_KP1[barrier]}), "
+              f"leak+side {k['leak+side']:.3g}, leak+forward {k['leak+forward']:.3g}")
+    # --- Li 2012 and Li 2013: mammography beams at a kVp, and the DBT workload of Li 2013
+    ws = replace_sheet(wb, "Mammography kVp abc")
+    ws.append(["Li et al., Med Phys 2012;39:4132 (tables I, II) and Med Phys 2013;40:063901 (table VI): transmission "
+               "of broad W/Al, W/Rh and W/Ag beams of a Hologic Selenia Dimensions, per kVp"])
+    for data, table in MAMMO_KVP_DATA.items():
+        ws.append([data])
+        ws.append(["kVp"] + sum(([f"{m} α (mm-1)", "β (mm-1)", "γ"] for m in MATERIALS), []))
+        for kvp, params in table.items():
+            ws.append([kvp] + [v for p in params for v in p])
+    ws = replace_sheet(wb, "Li 2013 DBT abc")
+    abc_header(ws, "Li et al., Med Phys 2013;40:063901, table V(a): transmission of the primary radiation of the "
+                   f"combined DBT workload (W/Rh, W/Ag, W/Al), table IV(c); Wnorm {LI2013_WNORM} mA min per patient")
+    ws.append([LI2013_DBT[0]] + [v for p in LI2013_DBT[1] for v in p])
+    # --- Judge 2013: the scatter of three FFDM units
+    ws = replace_sheet(wb, "Judge 2013")
+    ws.append(["Judge et al., Br J Radiol 2013;86:20120130, table 1: maximum scatter dose at 1 m of one exposure; "
+               f"{JUDGE_EXPOSURES} exposures per patient (text)"])
+    ws.append(["Unit", "Maximum scatter at 1 m (uGy per exposure)", "Exposures per patient",
+               "K1sec (mGy per patient at 1 m)", "kVp of the Mo/Mo transmission (NCRP 147, Simpkin)"])
+    for unit, dose, kvp in JUDGE:
+        ws.append([unit, dose, JUDGE_EXPOSURES, round(dose * JUDGE_EXPOSURES / 1000, 6), kvp])
     # --- Li 2024: their workload example, as published
     ws = replace_sheet(wb, "Li 2024 workload abc")
     abc_header(ws, "Li et al., Med Phys 2024;51:8768, section 4: transmission of the primary beam of the workload of "
                    "the table bucky of an orthopedic room (AGFA DX-D 600), concrete only")
     name, params = LI_ORTHOPEDIC
     ws.append([name] + [v for material in MATERIALS for v in params.get(material, (None, None, None))])
-    for sheet in ("Kirby 2023", "Kirby 2023 kerma", "Biondi 2024"):
+    for sheet in ("Kirby 2023", "Kirby 2023 kerma", "Biondi 2024", "Chen 2013", "Chen 2013 kerma", "Judge 2013"):
         for cell in wb[sheet][2]:
             cell.font = Font(bold=True)
 

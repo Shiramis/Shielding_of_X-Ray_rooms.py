@@ -208,15 +208,74 @@ def dbt_kerma(mode):
                for m in DBT_MODES[mode])
 
 
-# Yang K, Li X, Liu B, Med. Phys. 43 (2016) 1096, table V: unshielded scatter air kerma per patient at 1 m
-# (mGy/patient) toward each barrier of a Hologic Selenia Dimensions DBT room, for its 2D + 3D exams (MGH workload), at
-# the average technique (30 kVp W/Ag 2D + 30 kVp W/Al 3D) and the high one (35 kVp W/Ag 2D + 40 kVp W/Al 3D). The
-# paper gives no transmission data: the DBT workload distribution keeps those of Yang et al. 2017 (same unit).
-DBT_BARRIER_MODE = 4  # the choice 'Per barrier (Yang 2016)', after 2D, 3D, 2D + 3D
+# Digital breast tomosynthesis of Li X, Zhang D, Liu B, Med. Phys. 40 (2013) 063901: the workload per patient of the
+# combined DBT workload of three MGH rooms (table IV(c), 2D + 3D, screening and diagnosis) and the transmission of its
+# primary radiation (table V(a), sheet 'Li 2013 DBT abc'), which they take for the secondary radiation too
+DBT_LI2013 = "Digital Breast Tomosynthesis – Li 2013"
+SOURCES[DBT_LI2013] = "Li et al. 2013"
+WORKLOAD_NORM[DBT_LI2013] = 12.61  # mA min per patient
+TRANSMISSION_SHEETS[DBT_LI2013] = ("Li 2013 DBT abc", "Li 2013 DBT abc")
+# With it, the scatter of Yang K, Li X, Liu B, Med. Phys. 43 (2016) 1096, measured around a Hologic Selenia Dimensions
+# with this MGH workload (their ref. 4), table V: unshielded scatter air kerma per patient at 1 m (mGy/patient) toward
+# each barrier, at the average technique (30 kVp W/Ag 2D + 30 kVp W/Al 3D) and the high one (35 kVp W/Ag 2D + 40 kVp
+# W/Al 3D). Yang et al. 2016 give no transmission data.
 YANG2016_KERMA = {"Wall / door, average technique": 1.76e-2, "Floor, average technique": 1.64e-1,
                   "Ceiling, average technique": 3.66e-2, "Wall / door, high technique": 3.32e-2,
                   "Floor, high technique": 3.07e-1, "Ceiling, high technique": 7.33e-2}
 YANG2016_TECHNIQUES = {"average": "30 kVp W/Ag (2D) + 30 kVp W/Al (3D)", "high": "35 kVp W/Ag (2D) + 40 kVp W/Al (3D)"}
+KERMA_SOURCES = {DBT_LI2013: "Yang et al. 2016"}  # where the suggested secondary air kerma comes from, if not SOURCES
+
+# Full-field digital mammography (2D) of Judge MA, Keavey E, Phelan N, Br. J. Radiol. 86 (2013) 20120130, table 1: the
+# maximum scatter at 1 m of one exposure of three units x 4 exposures per patient = K1sec (mGy/patient). Their barriers
+# are calculated with Simpkin's Mo/Mo transmission (NCRP 147 Table A.1) at the kVp that reproduces their table 1.
+JUDGE_FFDM = "Digital Mammography (FFDM) – Judge 2013"
+SOURCES[JUDGE_FFDM] = "Judge et al. 2013"
+JUDGE_UNITS = {k: (row[0], float(row[3]), int(row[4]))  # 1, 2, 3: (unit, K1sec, kVp)
+               for k, row in enumerate((r for r in wb["Judge 2013"].iter_rows(min_row=3, values_only=True)
+                                        if isinstance(r[0], str) and isinstance(r[1], (int, float))), start=1)}
+
+# Radiographic rooms in Taiwan (Chen TR et al., Health Phys. 104 (2013) S60): workload per patient (table 1), primary
+# air kerma per patient (table 4, PCXMC) and transmission through lead and concrete (table 6; for secondary radiation
+# their 'all barriers'). Leakage and scatter: made from their spectra with the NCRP 147 method by
+# tools/literature_data.py, as for Kirby et al.
+CHEN = []
+for _row in literature_rows("Chen 2013 kerma"):
+    CHEN.append(_row[0])
+    WORKLOAD_NORM[_row[0]] = _row[1]
+    UNSHIELDED_SECONDARY[_row[0]] = _row[:9]
+    if _row[9] is not None:
+        PRIMARY_KERMA[_row[0]] = f"{_row[9]:g}"
+    SOURCES[_row[0]] = "Chen et al. 2013"
+    TRANSMISSION_SHEETS[_row[0]] = ("Chen 2013 prim abc", "Chen 2013 sec abc")
+
+
+# Transmission of mammography and DBT beams at a kVp ('Give kVp' in a mammography room): NCRP 147 (its secondary data),
+# the Mo/Mo beams of NCRP 147 Table A.1 (Simpkin), and the W/Al, W/Rh (Li et al. 2012) and W/Ag beams (Li et al. 2013)
+# of a Hologic Selenia Dimensions (sheet 'Mammography kVp abc'). The secondary radiation is taken as attenuated like
+# the primary beam (NCRP 147, Li et al.).
+MAMMO_KVP_DATA = ["NCRP 147", "Mo/Mo (NCRP 147)", "W/Al (Li 2012)", "W/Rh (Li 2012)", "W/Ag (Li 2013)"]
+
+
+def _mammography_tables():
+    """{data: {kVp: {material: (alpha, beta, gamma)}}} of the mammography beams at a kVp."""
+    columns = {"Lead": 1, "Concrete": 4, "Gypsum Wallboard": 7, "Steel": 10, "Plate Glass": 13, "Wood": 16}
+    tables = {"Mo/Mo (NCRP 147)": {}}
+    for row in wb["prim abc"].iter_rows(min_row=3, values_only=True):
+        if row[0] in (25, 30, 35):
+            tables["Mo/Mo (NCRP 147)"][row[0]] = {m: tuple(float(row[c + k]) for k in range(3))
+                                                  for m, c in columns.items()}
+    current = None
+    for row in wb["Mammography kVp abc"].iter_rows(min_row=2, values_only=True):
+        if isinstance(row[0], str) and row[0] in MAMMO_KVP_DATA:
+            current = tables.setdefault(row[0], {})
+        elif isinstance(row[0], (int, float)) and current is not None:
+            current[int(row[0])] = {m: tuple(float(row[c + k]) for k in range(3)) for m, c in columns.items()}
+    return tables
+
+
+MAMMO_KVP_TABLES = _mammography_tables()
+MAMMO_KVPS = {"NCRP 147": [30, 50, 70, 100, 125, 150]}  # the kVp of the NCRP 147 secondary data
+MAMMO_KVPS.update({data: sorted(table) for data, table in MAMMO_KVP_TABLES.items()})
 
 # Li X, Marschall TA, Yang K, Liu B, Med. Phys. 51 (2024) 8768, section 4: transmission through concrete of the primary
 # beam of a workload distribution, the table bucky of an orthopedic room with an AGFA DX-D 600 (their example, figure
@@ -225,7 +284,9 @@ LI_ORTHOPEDIC = "Orthopedic Room, table bucky (DR 600) – Li 2024"
 SOURCES[LI_ORTHOPEDIC] = "Li et al. 2024"
 TRANSMISSION_SHEETS[LI_ORTHOPEDIC] = ("Li 2024 workload abc", None)
 PRIMARY_ONLY = [LI_ORTHOPEDIC]
-NO_WORKLOAD_NORM = [DBT, LI_ORTHOPEDIC]  # their workload must be given in patients per week
+NO_WORKLOAD_NORM = [DBT, LI_ORTHOPEDIC, JUDGE_FFDM]  # their workload must be given in patients per week
+NO_WNORM_MESSAGE = {DBT: "Patients per week (DBT)", LI_ORTHOPEDIC: "Patients per week (Li 2024)",
+                    JUDGE_FFDM: "Patients per week (Judge 2013)"}
 
 
 # Transmission data for a primary beam at a given kVp: NCRP 147, or modern digital radiography (Li X, Marschall TA,
@@ -260,6 +321,14 @@ MISSING_HELP = {
     "Patients per week (Li 2024)": "Li et al. 2024 give no workload per patient (Wnorm) for this workload "
                                    "distribution: at the top of the room choose 'The Number of Patients per week' (or "
                                    "tick 'Different Workload' on this radiation type).",
+    "Patients per week (Judge 2013)": "Judge et al. 2013 give no workload per patient (Wnorm): at the top of the room "
+                                      "choose 'The Number of Patients per week' (or tick 'Different Workload' on this "
+                                      "radiation type).",
+    "FFDM unit (Judge 2013)": "under the suggested secondary air kerma choose the unit: GE Essential, Hologic Selenia "
+                              "or Philips MDM.",
+    "kVp for the mammography data": "the transmission data chosen for the kVp exist for: Mo/Mo (NCRP 147) 25, 30, 35 kVp; "
+                                    "W/Al (Li 2012) 25, 30, 35, 40, 45, 49 kVp; W/Rh (Li 2012) and W/Ag (Li 2013) 25, "
+                                    "30, 35, 39 kVp. Choose one of these, or the NCRP 147 data.",
     "Primary radiation only": "this workload distribution (Li et al. 2024) has transmission data for the primary beam "
                               "only (through concrete). Choose 'Primary', or another workload distribution.",
     "Barrier of Yang 2016": "at 'Per barrier (Yang 2016)' choose the barrier (wall / door, floor or ceiling) and the "
@@ -482,12 +551,14 @@ class departprimsec():
         elif value(f"unairkerv {e}{nr}{i}") == 2:
             source = "Secondary (entered)"
         elif value(f"unairkerv {e}{nr}{i}") == 1 and distribution == DBT:
-            if value(f"dbtmode {e}{nr}{i}") == DBT_BARRIER_MODE:
-                choice = self.dbt_barrier_choice(e, nr, i)
-                source = f"DBT toward the {choice.lower()} (Yang et al. 2016)" if choice in YANG2016_KERMA else ""
-            else:
-                mode = {1: "2D", 2: "3D", 3: "2D + 3D"}.get(value(f"dbtmode {e}{nr}{i}"), "")
-                source = f"DBT {mode} ({origin})" if mode else ""
+            mode = {1: "2D", 2: "3D", 3: "2D + 3D"}.get(value(f"dbtmode {e}{nr}{i}"), "")
+            source = f"DBT {mode} ({origin})" if mode else ""
+        elif value(f"unairkerv {e}{nr}{i}") == 1 and distribution == DBT_LI2013:
+            choice = self.dbt_barrier_choice(e, nr, i)
+            source = f"DBT toward the {choice.lower()} (Yang et al. 2016)" if choice in YANG2016_KERMA else ""
+        elif value(f"unairkerv {e}{nr}{i}") == 1 and distribution == JUDGE_FFDM:
+            unit = JUDGE_UNITS.get(self.ffdm_unit(e, nr, i))
+            source = f"FFDM {unit[0]} ({origin})" if unit else ""
         elif value(f"unairkerv {e}{nr}{i}") == 1:
             if value(f"airkerv {e}{nr}{i}") == 1:
                 source = {1: "Leakage + side-scatter", 2: "Leakage + forward/backscatter",
@@ -519,6 +590,14 @@ class departprimsec():
         except TclError:
             return ""
 
+    def ffdm_unit(self, e, nr, i):
+        """The FFDM unit chosen for the air kerma of Judge et al. 2013 (1, 2, 3), or None."""
+        variable = self.d.get(f"ffdmunit {e}{nr}{i}")
+        try:
+            return variable.get() if variable is not None else None
+        except TclError:
+            return None
+
     def transmission_params(self, sheet, distribution, data="NCRP 147"):
         # (alpha, beta, gamma) per material for a workload distribution or kVp, or None if it is not in the table
         if distribution == DBT:  # Yang et al. 2017, table 8: scatter from a Hologic DBT room (sheet 'DBT abc')
@@ -528,6 +607,11 @@ class departprimsec():
         if distribution in TRANSMISSION_SHEETS:  # Kirby 2023, Biondi 2024: their own sheets, laid out as 'prim abc'
             sheet = TRANSMISSION_SHEETS[distribution][0 if sheet == "prim abc" else 1]
             if sheet is None:  # Biondi 2024: no primary
+                return None
+        if data in MAMMO_KVP_DATA[1:]:  # mammography beams at a kVp: Mo/Mo (NCRP 147), Li et al. 2012, 2013
+            try:
+                return MAMMO_KVP_TABLES[data].get(int(distribution))
+            except (TypeError, ValueError):
                 return None
         if data in KVP_DATA[1:]:  # Li et al. 2024 (sheet 'prim abc DR 600'): one block of rows per filtration
             blocks = []
@@ -594,12 +678,14 @@ class departprimsec():
                 fields.append(f"numpapwe {suffix}")
         elif mode == 1:
             total = self.entry_number(f"worentry {suffix}")
-            w_norm = 2.5 if kvp else WORKLOAD_NORM.get(distribution)
+            # a kVp: the Wnorm of NCRP 147 for the rad room (all barriers), or for the mammography room
+            mammography = self.d[f"vselroom {t}"].get() == "Mammography Room"
+            w_norm = (WORKLOAD_NORM["Mammography Room"] if mammography else 2.5) if kvp else WORKLOAD_NORM.get(distribution)
             if total is None:
                 need.append("Workload")
                 fields.append(f"worentry {suffix}")
             elif w_norm is None and distribution in NO_WORKLOAD_NORM:
-                need.append("Patients per week (DBT)" if distribution == DBT else "Patients per week (Li 2024)")
+                need.append(NO_WNORM_MESSAGE[distribution])
             elif w_norm is None:
                 need.append("Workload Distribution (X-ray room or kVp)")
             else:
@@ -633,12 +719,18 @@ class departprimsec():
                 mode = self.d[f"dbtmode {e}{nr}{i}"].get() if f"dbtmode {e}{nr}{i}" in self.d else 0
                 if mode in DBT_MODES:
                     K1 = dbt_kerma(mode)
-                elif mode == DBT_BARRIER_MODE:  # Yang et al. 2016: toward the barrier, at the technique chosen
-                    K1 = YANG2016_KERMA.get(self.dbt_barrier_choice(e, nr, i))
-                    if K1 is None:
-                        need.append("Barrier of Yang 2016")
                 else:
                     need.append("Unshielded Air Kerma")
+            elif source == 1 and distribution == DBT_LI2013:  # Yang et al. 2016: toward the barrier, at the technique
+                K1 = YANG2016_KERMA.get(self.dbt_barrier_choice(e, nr, i))
+                if K1 is None:
+                    need.append("Barrier of Yang 2016")
+            elif source == 1 and distribution == JUDGE_FFDM:  # Judge et al. 2013: the unit chosen
+                unit = JUDGE_UNITS.get(self.ffdm_unit(e, nr, i))
+                if unit is None:
+                    need.append("FFDM unit (Judge 2013)")
+                else:
+                    K1 = unit[1]
             elif source == 1:  # NCRP 147 values for the workload distribution
                 kind = self.d[f"airkerv {e}{nr}{i}"].get() if f"airkerv {e}{nr}{i}" in self.d else 0
                 if kind == 1:
@@ -671,11 +763,13 @@ class departprimsec():
         return K
 
     def kvp_data(self, e, nr, i):
-        """The transmission data chosen for a primary beam given by its kVp (NCRP 147 otherwise)."""
+        """The transmission data chosen for a radiation type given by its kVp: for a primary beam NCRP 147 or DR 600
+        (Li 2024), for a secondary one in a mammography room NCRP 147, Mo/Mo or the beams of Li et al. 2012, 2013."""
         var = self.d.get(f"kvpdata {e}{nr}{i}")
         if var is None or self.d[f"vselxray {e}{nr}{i}"].get() != 2:
             return "NCRP 147"
-        return var.get() if var.get() in KVP_DATA else "NCRP 147"
+        primary = self.d[f"radiob_w {e}{nr}{i}"].get() == 1
+        return var.get() if var.get() in (KVP_DATA if primary else MAMMO_KVP_DATA) else "NCRP 147"
 
     def whole_distance(self, e, nr):
         """True when the distances of barrier e are typed all the way to the person beyond it (nothing added)."""
@@ -717,8 +811,15 @@ class departprimsec():
             distribution = None
         if distribution in (None, "", "Select X-ray room"):
             return None, "Workload Distribution (X-ray room or kVp)"
-        data = self.kvp_data(e, nr, i) if primary else "NCRP 147"
+        data = self.kvp_data(e, nr, i)
+        if distribution == JUDGE_FFDM:  # Simpkin's Mo/Mo data at the kVp of the unit, as Judge et al.
+            unit = JUDGE_UNITS.get(self.ffdm_unit(e, nr, i))
+            if unit is None:
+                return None, "FFDM unit (Judge 2013)"
+            return MAMMO_KVP_TABLES["Mo/Mo (NCRP 147)"][unit[2]], None
         params = self.transmission_params("prim abc" if primary else "sec abc", distribution, data)
+        if params is None and data in MAMMO_KVP_DATA[1:]:
+            return None, "kVp for the mammography data"
         if params is None and data != "NCRP 147":
             return None, "kVp for the DR 600 data (60-120 kV, every 10 kV)"
         if params is None and primary and distribution in BIONDI:
