@@ -410,6 +410,26 @@ NO_WNORM_MESSAGE = {DBT: "Patients per week (DBT)", LI_ORTHOPEDIC: "Patients per
 # Yang K, Liu B, Med. Phys. 2024, doi:10.1002/mp.17449, tables 1 and 2: Agfa DR 600, 60-120 kV every 10 kV)
 KVP_DATA = ["NCRP 147", "DR 600, default filtration (Li 2024)", "DR 600, +1 mm Al +0.1 mm Cu (Li 2024)"]
 
+# ===================== secondary air kerma of a kVp, at a scattering angle (NCRP 147 Appendices B and C) ==========
+# Tungsten anode, aluminium filter: Figure C.1 gives the scatter fraction a1 as a formula for 50-150 kVp, drawn from
+# 20 to 140 degrees. The workload per patient is the one the program takes for a kVp (NCRP 147 Rad Room).
+ANGLES, ANGLE_KVP, KVP_WNORM = (20, 140), (50, 150), 2.5
+# Leakage (C.2): 0.876 mGy/h at 1 m at 150 kVp and 3.3 mA, behind a housing of 2.32 mm lead; at a lower kVp it falls
+# with kVp² and the transmission of that housing (Eq. C.6-C.9)
+LEAK_RATE, LEAK_KVP, LEAK_MA, HOUSING = 0.876 / 60, 150, 3.3, 2.32
+ANGLE_OUT_OF_RANGE = "Scatter at an angle: 50-150 kVp, not mammography"
+
+
+def kerma_per_workload(kvp):
+    """K_W1: primary air kerma at 1 m per mA min (mGy), NCRP 147 Figure B.1, tungsten anode, aluminium filter."""
+    return 1.222 - 5.664e-2 * kvp + 1.227e-3 * kvp ** 2 - 3.136e-6 * kvp ** 3
+
+
+def scatter_fraction(theta, kvp):
+    """a1 (× 10⁻⁶, per cm² of primary field at 1 m) at the scattering angle theta (degrees), NCRP 147 Figure C.1."""
+    return 1.6e-2 * (kvp - 125) + 8.43 - 1.11e-1 * theta + 9.83e-4 * theta ** 2 - 1.74e-6 * theta ** 3
+
+
 # What to do for each missing input, shown in the "Missing data" window
 NL = chr(10)
 
@@ -473,6 +493,10 @@ MISSING_HELP = {
     "Further area (distance, T and P)": "under 'Also check an area further away' type how much further than the "
                                         "person beyond the barrier it is (m, 0 or more), its occupancy factor T "
                                         "(more than 0, at most 1) and its design goal P, or untick it.",
+    "Scattering angle (20-140°)": "type the angle between the primary beam and the direction to the barrier, from 20 "
+                                  "to 140 degrees (NCRP 147 Figure C.1).",
+    ANGLE_OUT_OF_RANGE: "the scatter fraction of NCRP 147 Figure C.1 is for tungsten-anode beams of 50 to 150 kVp: "
+                        "choose such a kVp, or write the unshielded secondary air kerma.",
     "Field size (F and d_F)": "beside 'Field size', type the primary field F (cm², e.g. the image receptor) and "
                               "its distance d_{F} from the source (m, e.g. the SID), and for a written air kerma the "
                               "field it was given for, all more than 0, or untick 'Field size'.",
@@ -691,6 +715,13 @@ class departprimsec():
             field = [self.entry_number(f"{name} {e}{nr}{i}") for name in ("fieldF", "fielddF", "fieldF0", "fielddF0")]
             if value(f"fieldvar {e}{nr}{i}") == 1 and all(field):
                 source += f", field {field[0]:g} cm² at {field[1]:g} m (written for {field[2]:g} cm² at {field[3]:g} m)"
+        elif value(f"unairkerv {e}{nr}{i}") == 1 and value(f"vselxray {e}{nr}{i}") == 2:
+            theta = self.entry_number(f"angle {e}{nr}{i}")
+            F, dF = self.entry_number(f"angleF {e}{nr}{i}"), self.entry_number(f"angledF {e}{nr}{i}")
+            if None not in (theta, F, dF) and dF > 0:
+                leak = " + leakage" if value(f"angleleak {e}{nr}{i}") == 1 else ""
+                source = (f"Scatter at {theta:g}°{leak} (NCRP 147 Appendix C, {F:g} cm² at {dF:g} m, "
+                          f"{KVP_WNORM:g} mA·min per patient)")
         elif value(f"unairkerv {e}{nr}{i}") == 1 and distribution == DBT:
             mode = {1: "2D", 2: "3D", 3: "2D + 3D"}.get(value(f"dbtmode {e}{nr}{i}"), "")
             source = f"DBT {mode} ({origin})" if mode else ""
@@ -859,7 +890,11 @@ class departprimsec():
             if distribution in PRIMARY_ONLY:
                 need.append("Primary radiation only")
             source = self.d[f"unairkerv {e}{nr}{i}"].get() if f"unairkerv {e}{nr}{i}" in self.d else 0
-            if source == 1 and distribution == DBT:  # Yang et al. 2017: per view, in the chosen mode
+            if source == 1 and kvp:  # a kVp: the scatter at the angle given, with the leakage if ticked
+                K1, missing, marked = self.angle_kerma(e, nr, i, t)
+                need += missing
+                fields += marked
+            elif source == 1 and distribution == DBT:  # Yang et al. 2017: per view, in the chosen mode
                 mode = self.d[f"dbtmode {e}{nr}{i}"].get() if f"dbtmode {e}{nr}{i}" in self.d else 0
                 if mode in DBT_MODES:
                     K1 = dbt_kerma(mode)
@@ -927,6 +962,38 @@ class departprimsec():
             return "NCRP 147"
         primary = self.d[f"radiob_w {e}{nr}{i}"].get() == 1
         return var.get() if var.get() in (KVP_DATA if primary else MAMMO_KVP_DATA) else "NCRP 147"
+
+    def angle_kerma(self, e, nr, i, t):
+        """Unshielded secondary air kerma per patient at 1 m of a radiation type given by its kVp (NCRP 147 Appendix
+        C): the scatter at the angle given, K_W1(kVp) · Wnorm · a1(θ, kVp) · 10⁻⁶ · F / d_F² (Eq. C.2, Figures B.1 and
+        C.1), and, if ticked, the leakage of the tube at that kVp (Eq. C.6-C.9); Wnorm 2.5 mA min, as the program takes
+        for a kVp. Returns (K1 or None, what is missing, the entries to mark)."""
+        need, fields = [], []
+        try:
+            kvp = float(self.d[f"vsexroom {e}{nr}{i}"].get())
+        except (KeyError, TclError, ValueError):
+            kvp = None
+        if kvp is None or not ANGLE_KVP[0] <= kvp <= ANGLE_KVP[1] or \
+                self.d[f"vselroom {t}"].get() == "Mammography Room":
+            need.append(ANGLE_OUT_OF_RANGE)
+        theta = self.entry_number(f"angle {e}{nr}{i}")
+        if theta is None or not ANGLES[0] <= theta <= ANGLES[1]:
+            need.append("Scattering angle (20-140°)")
+            fields.append(f"angle_entry {e}{nr}{i}")
+        F, dF = self.entry_number(f"angleF {e}{nr}{i}"), self.entry_number(f"angledF {e}{nr}{i}")
+        if F is None or dF is None or F <= 0 or dF <= 0:
+            need.append("Field size (F and d_F)")
+            fields += [f"angleF_entry {e}{nr}{i}", f"angledF_entry {e}{nr}{i}"]
+        if need:
+            return None, need, fields
+        K1 = kerma_per_workload(kvp) * KVP_WNORM * scatter_fraction(theta, kvp) * 1e-6 * F / dF ** 2
+        leak = self.d.get(f"angleleak {e}{nr}{i}")
+        if leak is not None and leak.get() == 1:
+            # the housing at the kVp of Table A.1 (every 5 kVp; between two, the higher, which is harder)
+            lead = lambda v: archer_transmission(
+                self.transmission_params("prim abc", min(150, 5 * math.ceil(v / 5)))["Lead"], HOUSING)
+            K1 += LEAK_RATE * kvp ** 2 * lead(kvp) * KVP_WNORM / (LEAK_KVP ** 2 * lead(LEAK_KVP) * LEAK_MA)
+        return K1, [], []
 
     def field_scale(self, e, nr, i, row=None):
         """How much the scatter of radiation type i grows with its primary field (NCRP 147 4.1.7.2, Eq. C.2):

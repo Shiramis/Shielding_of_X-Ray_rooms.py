@@ -36,6 +36,8 @@ the thickness you plan to install.
 - **Field size**: the scatter of the suggested secondary air kerma scaled to the field you use (NCRP 147 §4.1.7.2,
   Eq. C.2), instead of the field of NCRP 147 Table 4.7; an air kerma you write is scaled from the field it was given
   for.
+- **Scatter at an angle** for a single kVp: the scatter fraction of NCRP 147 Figure C.1 at the angle you give, with the
+  leakage of the tube at that kVp (Appendix C).
 - **Shielding height** of walls and doors (2.1 m, 2.5 m for a darkroom, or up to the ceiling; NCRP 147 §2.3.6, §5.8),
   in the report and the 3D view.
 - **Floor plan**: load the architect's drawing (PDF, PNG, JPG), trace the walls and doors, place the source and say what

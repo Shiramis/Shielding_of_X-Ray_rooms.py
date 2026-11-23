@@ -6,7 +6,7 @@ import theme
 from tooltips import tip
 from Depcalculations import (wb, PRIMARY_KERMA, KVP_DATA, DBT, SOURCES, KIRBY, BIONDI, LI_ORTHOPEDIC, YANG2016_KERMA,
                              DBT_LI2013, JUDGE_FFDM, JUDGE_UNITS, CHEN, KERMA_SOURCES, MAMMO_KVP_DATA, MAMMO_KVPS,
-                             EXISTING_MAX, UNSHIELDED_SECONDARY, OCCUPANCY_T, HEIGHTS)
+                             EXISTING_MAX, UNSHIELDED_SECONDARY, OCCUPANCY_T, HEIGHTS, ANGLES)
 from barrier_names import BarrierDialog, KEEP, default_kind, default_name, door_material
 
 MATERIALS = ("Lead", "Concrete", "Gypsum Wallboard", "Steel", "Plate Glass", "Wood")
@@ -644,7 +644,8 @@ class dep_defs():
                     f"kvpbox {index}{room_number}{i}", f"labbeyond {index}{room_number}{i}",
                     f"beyondentry {index}{room_number}{i}", f"dtotal {index}{room_number}{i}",
                     f"dbt1 {index}{room_number}{i}", f"dbt2 {index}{room_number}{i}", f"dbt3 {index}{room_number}{i}",
-                    f"dbt4 {index}{room_number}{i}", f"dbtbox {index}{room_number}{i}", f"fieldframe {index}{room_number}{i}"]
+                    f"dbt4 {index}{room_number}{i}", f"dbtbox {index}{room_number}{i}", f"fieldframe {index}{room_number}{i}",
+                    f"angleframe {index}{room_number}{i}"]
                 vars_to_delete = [f"vselxray {index}{room_number}{i}", f"preshvar {index}{room_number}{i}",
                     f"oworkvar {index}{room_number}{i}", f"radiob_pre {index}{room_number}{i}",
                     f"workv {index}{room_number}{i}", f"vsexroom {index}{room_number}{i}",
@@ -670,6 +671,7 @@ class dep_defs():
                     f"lau {e}{nr}{i}", f"use_ent {e}{nr}{i}", f"presh {e}{nr}{i}",f"radbucky {e}{nr}{i}", 
                     f"radcross {e}{nr}{i}", f"laks {e}{nr}{i}", f"entk {e}{nr}{i}",f"radside {e}{nr}{i}",
                     f"radforward {e}{nr}{i}",f"radleak {e}{nr}{i}",f"airkncrp {e}{nr}{i}", f"fieldframe {e}{nr}{i}",
+                    f"angleframe {e}{nr}{i}",
                     f"unairk {e}{nr}{i}",f"othwork {e}{nr}{i}", f"radworkl {e}{nr}{i}",f"radnumb {e}{nr}{i}",
                     f"worentry {e}{nr}{i}",f"numpapwe {e}{nr}{i}", f"selxroom {e}{nr}{i}"]
         # ===== Workload Distribution =====
@@ -776,8 +778,9 @@ class dep_defs():
         if button is not None:
             name = distribution.get() if distribution is not None else None
             source = KERMA_SOURCES.get(name) or SOURCES.get(name, "NCRP 147")
-            button.configure(text="Select Unshielded Secondary\nAir Kerma (mGy∙patient⁻¹)\n"
-                                  f"Suggested ({source})")
+            kvp = self.d.get(f"vselxray {e}{nr}{i}")
+            way = "At an angle (NCRP 147)" if kvp is not None and kvp.get() == 2 else f"Suggested ({source})"
+            button.configure(text=f"Select Unshielded Secondary\nAir Kerma (mGy∙patient⁻¹)\n{way}")
 
     def XrRoom(self, e, nr, i):
         # Access frequently used keys
@@ -868,6 +871,12 @@ class dep_defs():
                             self.d[vsexroom_key].set(kvps[0])
 
                     data.trace_add("write", follow)
+        # a secondary air kerma 'Suggested' becomes 'At an angle' for a kVp, and back for a workload distribution
+        unairkerv = self.d.get(f"unairkerv {e}{nr}{i}")
+        if self.d[radiob_w_key].get() == 2 and unairkerv is not None and unairkerv.get() == 1:
+            self.unairk(e, nr, i)
+        else:
+            self.update_kerma_label(e, nr, i)
 
     def uns(self, e, nr, i):
         if self.d[f"radiob_w {e}{nr}{i}"].get() != 1:
@@ -1219,7 +1228,7 @@ class dep_defs():
         self.destroy_widgets([f"leak {e}{nr}{i}", f"side {e}{nr}{i}", f"forw {e}{nr}{i}", f"entk {e}{nr}{i}",
                               f"dbt1 {e}{nr}{i}", f"dbt2 {e}{nr}{i}", f"dbt3 {e}{nr}{i}", f"dbtlabel {e}{nr}{i}",
                               f"dbtbox {e}{nr}{i}", f"ffdm1 {e}{nr}{i}", f"ffdm2 {e}{nr}{i}", f"ffdm3 {e}{nr}{i}",
-                              f"fieldframe {e}{nr}{i}"])
+                              f"fieldframe {e}{nr}{i}", f"angleframe {e}{nr}{i}"])
         if f"radside {e}{nr}{i}" in self.d:
             self.destroy_widgets([f"radside {e}{nr}{i}", f"radforward {e}{nr}{i}", f"radleak {e}{nr}{i}"])
         unairkerv_key = f"unairkerv {e}{nr}{i}"
@@ -1232,7 +1241,10 @@ class dep_defs():
         name = distribution.get() if distribution is not None else None
         self.update_kerma_label(e, nr, i)
         frame = self.d[f"barrierf {e}{nr}"]
-        if self.d[unairkerv_key].get() == 1 and name == DBT:
+        given_kvp = self.d.get(f"vselxray {e}{nr}{i}") is not None and self.d[f"vselxray {e}{nr}{i}"].get() == 2
+        if self.d[unairkerv_key].get() == 1 and given_kvp:
+            self.angle_widgets(e, nr, i)  # a kVp: the scatter at an angle (NCRP 147 Appendix C)
+        elif self.d[unairkerv_key].get() == 1 and name == DBT:
             # Digital breast tomosynthesis (Yang et al. 2017): the scatter per patient of the mode
             self.d[f"dbtmode {e}{nr}{i}"] = IntVar(value=3)
             for k, text in ((1, "2D"), (2, "3D (tomosynthesis)"), (3, "2D + 3D")):
@@ -1310,6 +1322,38 @@ class dep_defs():
             self.d[radiob_leak_key].trace_add("write", lambda *args: self.field_widgets(e, nr, i))
         self.field_widgets(e, nr, i)
         self.refresh_distance(e, nr)
+
+    def angle_widgets(self, e, nr, i):
+        """A radiation type given by its kVp: the scattering angle, the leakage and the primary field that make its
+        unshielded secondary air kerma (NCRP 147 Appendix C, Eq. C.2 and C.6-C.9)."""
+        for name, default in (("angle", "90"), ("angleleak", 1), ("angleF", "1000"), ("angledF", "1")):
+            if self.d.get(f"{name} {e}{nr}{i}") is None:
+                self.d[f"{name} {e}{nr}{i}"] = IntVar(value=default) if name == "angleleak" else StringVar(value=default)
+        frame = ttk.Frame(self.d[f"barrierf {e}{nr}"])
+        frame.grid(row=i * 12 + 7, column=0, columnspan=6, padx=5, pady=6.5, sticky="w")
+        self.d[f"angleframe {e}{nr}{i}"] = frame
+        label = ttk.Label(frame, text="Scattering angle θ:")
+        label.pack(side=LEFT)
+        angle = ttk.Spinbox(frame, from_=ANGLES[0], to=ANGLES[1], increment=5, width=5,
+                            textvariable=self.d[f"angle {e}{nr}{i}"])
+        angle.pack(side=LEFT, padx=(6, 2))
+        self.d[f"angle_entry {e}{nr}{i}"] = angle
+        ttk.Label(frame, text="°", style="Muted.TLabel").pack(side=LEFT)
+        leak = ttk.Checkbutton(frame, text="with leakage", variable=self.d[f"angleleak {e}{nr}{i}"],
+                               command=lambda: self.refresh_distance(e, nr))
+        leak.pack(side=LEFT, padx=(14, 0))
+        field = ttk.Label(frame, text="Field size")
+        field.pack(side=LEFT, padx=(14, 0))
+        for name, unit in (("angleF", "cm² at"), ("angledF", "m")):
+            entry = ttk.Entry(frame, textvariable=self.d[f"{name} {e}{nr}{i}"], width=6)
+            entry.pack(side=LEFT, padx=(6, 2))
+            self.d[f"{name}_entry {e}{nr}{i}"] = entry
+            ttk.Label(frame, text=unit, style="Muted.TLabel").pack(side=LEFT)
+            tip(entry, "angle_field")
+        for widget in (label, angle):
+            tip(widget, "scatter_angle")
+        tip(leak, "angle_leakage")
+        tip(field, "angle_field")
 
     def field_widgets(self, e, nr, i):
         """The primary field that makes the scatter (NCRP 147 4.1.7.2, Eq. C.2). Suggested secondary air kerma with
@@ -1421,6 +1465,8 @@ class dep_defs():
             return "d_{P}"
         if value("radiob_w") != 2:
             return "d"
+        if value("unairkerv") == 1 and value("vselxray") == 2:  # a kVp at an angle: scatter, with leakage if ticked
+            return "d_{sec}" if value("angleleak") == 1 else "d_{S}"
         if value("unairkerv") == 1 and value("vsexroom") != DBT:
             if value("airkerv") == 1:
                 return "d_{L}" if value("radiob_leak") == 0 else "d_{sec}"

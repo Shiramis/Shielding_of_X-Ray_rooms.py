@@ -40,7 +40,7 @@ TIPS = {
     "ffdm_unit": "Scatter of the unit (Judge 2013), mGy/patient: GE 0.0248 · Hologic 0.018 · Philips 0.006.",
     "kvp_data_mammo": "Transmission data: NCRP 147, Mo/Mo, W/Al and W/Rh (Li 2012), W/Ag (Li 2013).\n"
                       "Write the air kerma yourself.",
-    "kvp": "A single tube voltage. Write the unshielded air kerma yourself.",
+    "kvp": "A single tube voltage. Primary: write the air kerma. Secondary: at an angle (NCRP 147), or write it.",
     "use_factor": "Fraction of the beam aimed at this barrier.\n"
                   "NCRP 147: floor 0.89 · cross-table wall 0.09 · wall No. 3 0.02 · chest bucky 1.",
     "primary_kerma": "Unshielded primary air kerma per patient at 1 m (mGy).\n"
@@ -59,6 +59,10 @@ TIPS = {
     "different_workload": "This radiation type has its own workload, not the room's.",
     "field_size": "Your field F (cm²) at d_{F} (m), e.g. the receptor at the SID.\n"
                   "The scatter is scaled from the field shown (NCRP 147 Table 4.7); the leakage is not.",
+    "scatter_angle": "Angle θ between the beam and the direction to the barrier, 20–140°: 90° side, 135° back.\n"
+                     "Scatter of NCRP 147 Fig. C.1 (W anode, 50–150 kVp), 2.5 mA·min per patient.",
+    "angle_leakage": "Adds the leakage of the tube at this kVp (NCRP 147 C.2).",
+    "angle_field": "The primary field F (cm²) at d_{F} (m), e.g. the receptor at the SID; the scatter grows with it.",
     "field_size_written": "Your field F (cm²) at d_{F} (m), and the field your value was given for.\n"
                           "The value is scaled by the ratio of the two (NCRP 147 Eq. C.2).",
 

@@ -264,6 +264,17 @@ app.choosetype(e, nr, t, notify=False)
 values["field"]["written"] = app.calc[(nr, e)]["distributions"][0]["K1"]
 select_barrier(t, e, scroll=0.0)
 shot("field_written.png", root, widget=inputs, height=820)
+# a secondary radiation type at 100 kVp: the scatter at 90 degrees with the leakage (NCRP 147 Appendix C)
+d[f"unairkerv {e}{nr}0"].set(1)
+d[f"vselxray {e}{nr}0"].set(2)
+app.XrRoom(e, nr, 0)
+d[f"vsexroom {e}{nr}0"].set(100)
+app.choosetype(e, nr, t, notify=False)
+values["angle"] = {"K1": app.calc[(nr, e)]["distributions"][0]["K1"], "kvp": 100,
+                   "theta": float(d[f"angle {e}{nr}0"].get()), "F": float(d[f"angleF {e}{nr}0"].get()),
+                   "dF": float(d[f"angledF {e}{nr}0"].get())}
+select_barrier(t, e, scroll=0.0)
+shot("angle_kvp.png", root, widget=inputs, height=820)
 app.open_example("mammography")
 t = next(iter(app.standalone))
 record("mammography", t, range(1, 8))

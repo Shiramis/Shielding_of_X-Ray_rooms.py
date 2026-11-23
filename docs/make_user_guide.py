@@ -614,6 +614,50 @@ def method():
                                          "patient for 1000 cm² at 1 m, and a 35 × 43 cm field at 1 m: "
                                          f"{written:.4f} mGy per patient.",
                     width=150 * mm, crop=(0, 235, 1175, 820))
+
+    # ----- the scatter at an angle, for a kVp: the method of NCRP 147 Appendix C, at one kVp -----
+    angle = VALUES["angle"]
+    v, theta, F, dF = angle["kvp"], angle["theta"], angle["F"], angle["dF"]
+    k_w = 1.222 - 5.664e-2 * v + 1.227e-3 * v ** 2 - 3.136e-6 * v ** 3
+    a_1 = 1.6e-2 * (v - 125) + 8.43 - 1.11e-1 * theta + 9.83e-4 * theta ** 2 - 1.74e-6 * theta ** 3
+    scatter = k_w * 2.5 * a_1 * 1e-6 * F / dF ** 2
+    leak = angle["K1"] - scatter
+    story += H2("Scatter at an angle, for a kVp")
+    story += [P("NCRP 147 makes the secondary air kerma of Table 4.7 from the scatter fraction <i>a</i><sub>1</sub>"
+                "(θ, kVp) (× 10<super>−6</super>): the scattered air kerma 1 m from the patient over the primary air kerma 1 m from the tube, "
+                "per cm² of primary field at 1 m (Appendix C.1). It comes from the measurements of Trout and Kelley "
+                "(1972) at 100, 125 and 150 kVp, reanalysed by Simpkin and Dixon (1998) at their mean plus one "
+                "standard deviation; below 100 kVp it falls linearly with the kVp (Dixon 1994). Figure C.1 draws it "
+                "for tungsten-anode beams with this fit, from 20° to 140° (θ from the direction of the beam to the "
+                "occupied point):")]
+    story += formula("<i>a</i><sub>1</sub> = 1.6 × 10<super>−2</super> (kVp − 125) + 8.43 − 1.11 × 10<super>−1</super>"
+                     " θ + 9.83 × 10<super>−4</super> θ<super>2</super> − 1.74 × 10<super>−6</super> θ<super>3</super>")
+    story += [P("With <b>Give kVp</b> a secondary radiation type has, instead of the suggested air kerma, <b>At an "
+                "angle (NCRP 147)</b>: you give the scattering angle θ, whether to add the leakage of the tube, and "
+                "the field <i>F</i> at <i>d</i><sub>F</sub> (at first 1000 cm² at 1 m). Per patient, with the 2.5 "
+                "mA·min the program takes for a kVp (NCRP 147 Rad Room), the scatter is that of Eq. C.2:")]
+    story += formula("<i>K</i><super>1</super><sub>S</sub> = <i>K</i><super>1</super><sub>W</sub>(kVp) · 2.5 · "
+                     "<i>a</i><sub>1</sub>(θ, kVp) · 10<super>−6</super> · <i>F</i> / <i>d</i><sub>F</sub>"
+                     "<super>2</super>")
+    story += [P("with <i>K</i><super>1</super><sub>W</sub> the primary air kerma at 1 m per mA·min of Figure B.1 "
+                "(1.222 − 5.664 × 10<super>−2</super> kVp + 1.227 × 10<super>−3</super> kVp<super>2</super> − 3.136 × "
+                "10<super>−6</super> kVp<super>3</super> mGy). The leakage is that of Appendix C.2: 0.876 mGy/h at "
+                "1 m at 150 kVp and 3.3 mA, which at a lower kVp falls with kVp² and with the transmission of the "
+                "2.32 mm lead of the housing (Eq. C.6-C.9). Summed over the workload distributions, the same "
+                "formulas give the values of Table 4.7 (Rad Room: leakage 5.3 × 10<super>−4</super>, side-scatter "
+                "0.033 against 0.034, forward/backscatter 0.048 mGy per patient). As in Table 4.7, the workload is "
+                "not reduced by the use factor of a primary beam on the same barrier (Eq. C.4), which is safe. "
+                "Figure C.1 has no formula for the Mo/Mo beams of mammography, only measured points, so in a "
+                "mammography room you write the air kerma.")]
+    close(angle["K1"], scatter + leak)
+    story += [P(f"For example, Wall 3 of the example X-ray room at {v:g} kVp and θ = {theta:g}°, with "
+                f"{F:g} cm² at {dF:g} m ({fig('angle_kvp.png')}): <i>K</i><super>1</super><sub>W</sub> = "
+                f"{k_w:.3f} mGy per mA·min, <i>a</i><sub>1</sub> = {a_1:.2f} × 10<super>−6</super>, so")]
+    story += formula(f"<i>K</i><super>1</super><sub>sec</sub> = {k_w:.3f} × 2.5 × {a_1:.2f} × 10<super>−6</super> "
+                     f"× {F:g} + {fmt(leak, 2)} = <b>{angle['K1']:.4f}</b> mGy per patient")
+    story += figure("angle_kvp.png", f"A secondary radiation type at {v:g} kVp: the scatter at {theta:g}° with "
+                                     "the leakage, for a field of 1000 cm² at 1 m.",
+                    width=150 * mm, crop=(0, 235, 1175, 820))
     return story
 
 
@@ -716,8 +760,10 @@ def xray_room():
                      "<b>Workload Distribution</b>: <b>X-Ray Room</b> and the room in the list (e.g. <i>Rad Room "
                      "(floor or other barriers)</i>), or <b>Give kVp</b> for a single-kVp transmission curve. The "
                      "list shows the NCRP 147 distributions first and, below a line, those of the literature, whose "
-                     "names end with their source (table in section 4.8). With kVp you must write the unshielded air "
-                     "kerma yourself; for a primary beam you also choose the transmission data, NCRP 147 or modern "
+                     "names end with their source (table in section 4.8). With kVp you write a primary air kerma "
+                     "yourself; a secondary one you write, or the program finds it at the scattering angle you give "
+                     f"(section {sec('Scatter at an angle, for a kVp')}). For a primary beam you also choose the "
+                     "transmission data, NCRP 147 or modern "
                      "digital radiography (section 4.9). Every radiation type needs it: it goes through the barrier "
                      "with these transmission data (section 2.2).",
                      "Primary radiation: <b>Use Factor</b> <i>U</i> (NCRP 147: floor 0.89, cross-table wall 0.09, "
@@ -1999,6 +2045,13 @@ def troubleshooting():
                                                                                      "the field it is for) is not "
                                                                                      "more than 0.",
                      "Type the fields and their distances, or untick Field size."],
+                    [f"<font color='{BAD}'>Missing: Scattering angle (20-140°)</font>", "A secondary radiation "
+                                                                                         "type at a kVp, at an angle "
+                                                                                         "outside Figure C.1.",
+                     "Type an angle from 20 to 140°."],
+                    [f"<font color='{BAD}'>Missing: Scatter at an angle: 50-150 kVp, not mammography</font>",
+                     "Figure C.1 gives the scatter of tungsten-anode beams of 50 to 150 kVp only.",
+                     "Choose such a kVp, or Write Unshielded Secondary Air Kerma."],
                     [f"<font color='{BAD}'>The ceiling needs shielding added to its slab ...</font>",
                      "The ceiling has its slab as existing shielding and needs more, but this wall stops below it.",
                      "Choose Up to the ceiling as the shielding height of the wall."],

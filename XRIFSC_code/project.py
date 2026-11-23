@@ -20,7 +20,8 @@ FILE_TYPES = [("Shielding project", "*.shield"), ("All files", "*.*")]
 # Inputs of one radiation type of an X-ray / mammography barrier (keys "<name> <e><nr><i>")
 RADIATION_KEYS = ["radiob_w", "entryd", "vselxray", "vsexroom", "use_ent", "entk", "preshvar", "radiob_pre",
                   "unairkerv", "airkerv", "radiob_leak", "oworkvar", "workv", "worentry", "numpapwe", "kvpdata",
-                  "dbtmode", "dbtbarrier", "ffdmunit", "fieldvar", "fieldF", "fielddF", "fieldF0", "fielddF0"]
+                  "dbtmode", "dbtbarrier", "ffdmunit", "fieldvar", "fieldF", "fielddF", "fieldF0", "fielddF0",
+                  "angle", "angleleak", "angleF", "angledF"]
 # The further area beyond a barrier (keys "<name> <e><nr>")
 FAR_KEYS = ["far", "fardist", "farloc", "farT", "fararea", "farP"]
 CT_KEYS = ["bp_var", "hp_var", "dlpb_var", "dlph_var", "kvp_var"]
@@ -289,6 +290,10 @@ class ProjectFile:
                         for name in ("fieldvar", "fieldF", "fielddF", "fieldF0", "fielddF0"):
                             self.write_input(key(name), saved.get(name))
                         self.field_widgets(e, nr, i)
+                elif saved.get("vselxray") == "2":  # a kVp: the scatter at an angle (NCRP 147 Appendix C)
+                    for name in ("angle", "angleleak", "angleF", "angledF"):
+                        self.write_input(key(name), saved.get(name))
+                    self.refresh_distance(e, nr)
                 elif any(saved.get(name) for name in ("dbtmode", "dbtbarrier", "ffdmunit")):
                     for name in ("dbtmode", "dbtbarrier", "ffdmunit"):  # DBT (Yang 2017, 2016), FFDM (Judge 2013)
                         if saved.get(name):
