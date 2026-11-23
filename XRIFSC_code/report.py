@@ -53,6 +53,9 @@ NOTES = [
               "scaled. An air kerma written is scaled whole, from the field it was written for."),
     ("angle", "Scatter at an angle: for a kVp, K¹ = K_W¹(kVp) · 2.5 mA·min · a₁(θ, kVp) · 10⁻⁶ · F / d_F² (NCRP 147 "
               "Eq. C.2, Figures B.1 and C.1), with the leakage of the tube at that kVp if ticked (Eq. C.6-C.9)."),
+    ("share", "Secondary × (1 − U): the secondary radiation of a workload counted only for the part (1 − U) of it "
+              "not aimed at the barrier, U being the use factor of its primary beam there (NCRP 147 Eq. C.4, C.8); K "
+              "of that radiation type includes it."),
     ("allowed", "Workload allowed: the workload at which the dose beyond the barrier as it will be built (planned "
                 "thicknesses and existing shielding) reaches P (NCRP 147 6.3.3, 6.4); every radiation type of the "
                 "barrier grows with it."),
@@ -243,6 +246,7 @@ def write_report(path, title, rooms):
            "field": any(", field " in (dist.get("k1_source") or "") for dist in distributions),
            "shared": any(rec.get("shared") for _, _, rec in records),
            "angle": any("(NCRP 147 Appendix C" in (dist.get("k1_source") or "") for dist in distributions),
+           "share": any("× (1 − " in (dist.get("k1_source") or "") for dist in distributions),
            "allowed": any(allowed_text(barrier.get("allowed")) for _, barrier, _ in records)}
     row += 1
     ws.write(row, 0, "Notes", f_title)

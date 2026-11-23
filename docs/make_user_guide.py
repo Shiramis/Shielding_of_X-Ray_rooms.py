@@ -646,7 +646,8 @@ def method():
                 "2.32 mm lead of the housing (Eq. C.6-C.9). Summed over the workload distributions, the same "
                 "formulas give the values of Table 4.7 (Rad Room: leakage 5.3 × 10<super>−4</super>, side-scatter "
                 "0.033 against 0.034, forward/backscatter 0.048 mGy per patient). As in Table 4.7, the workload is "
-                "not reduced by the use factor of a primary beam on the same barrier (Eq. C.4), which is safe. "
+                "not reduced by the use factor of a primary beam on the same barrier (Eq. C.4), unless you ask for "
+                f"it (section {sec('Secondary radiation and the use factor: (1 − U)')}). "
                 "Figure C.1 has no formula for the Mo/Mo beams of mammography, only measured points, so in a "
                 "mammography room you write the air kerma.")]
     close(angle["K1"], scatter + leak)
@@ -658,6 +659,37 @@ def method():
     story += figure("angle_kvp.png", f"A secondary radiation type at {v:g} kVp: the scatter at {theta:g}° with "
                                      "the leakage, for a field of 1000 cm² at 1 m.",
                     width=150 * mm, crop=(0, 235, 1175, 820))
+
+    # ----- secondary radiation x (1 - U) (NCRP 147 Eq. C.4, C.8) -----
+    share = VALUES["share"]
+    U = share["U"]
+    K_s = 0.023 * 125 / 2.0 ** 2  # NCRP 147 5.3.5: Rad Room (floor), leakage + side-scatter, 125 patients, 2 m
+    close(share["K"][1], K_s * (1 - U))
+    story += H2("Secondary radiation and the use factor: (1 − U)")
+    story += [P("When a fraction <i>U</i> of a workload aims the primary beam at a barrier, NCRP 147 says that the "
+                "scatter (Eq. C.4) and the leakage (Eq. C.8) that this workload sends to the same barrier should be "
+                "counted only for the rest of it, (1 − <i>U</i>) <i>W</i>: while the beam points at the barrier, its "
+                "primary radiation is far stronger and is shielded anyway. Table 4.7 and the examples of Section 5 do "
+                "not do it, which is safe, so the program does not either, unless you ask:")]
+    story += [bullets(["A barrier with both a primary and a secondary radiation type shows, under them, <b>Secondary "
+                       "radiation × (1 − U)</b>, unticked at first.",
+                       "Ticked, each secondary radiation type is paired with the primary ones of the <b>same workload "
+                       "distribution</b> (or the same kVp) and the <b>same workload</b> (the room's, or the same "
+                       "Different Workload): its <i>K</i> is multiplied by (1 − <i>U</i>), with <i>U</i> the sum of "
+                       "their use factors. A secondary type without such a pair stays as it is, e.g. the fluoroscopy "
+                       "tube under the table of an R&amp;F room, whose beam never aims at the floor.",
+                       "Use it only for the point of the barrier that the beam reaches: the part of a wall outside "
+                       "the beam (NCRP 147 5.3.3.2) is a barrier of its own, without it.",
+                       "The results and the report show it after the source of <i>K</i><super>1</super>, e.g. "
+                       f"<i>Leakage + side-scatter (NCRP 147) × (1 − {U:g})</i>."])]
+    story += [P(f"In the cross-table wall of NCRP 147 5.3.5 (the example 5.3, Wall 4; {fig('share_option.png')}) the "
+                f"radiographic tube aims {U:g} of its workload at the wall. Its secondary radiation, {K_s:.3f} "
+                f"mGy/week, becomes {K_s:.3f} × (1 − {U:g}) = <b>{K_s * (1 - U):.3f}</b> mGy/week, and the lead "
+                f"{share['before']:.3f} → <b>{share['after']:.3f} mm</b>. On the floor (<i>U</i> = 0.89) the "
+                "secondary radiation of the same tube drops to 11 %, but there the primary beam sets the thickness.")]
+    story += figure("share_option.png", "The cross-table wall of NCRP 147 5.3.5 with Secondary radiation × "
+                                        "(1 − U) ticked: the secondary radiation of the Rad Room (floor) workload "
+                                        f"counts for 1 − {U:g} of it.", width=150 * mm)
     return story
 
 

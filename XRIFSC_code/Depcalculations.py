@@ -518,12 +518,17 @@ class departprimsec():
             missing, fields = [], []
             distributions, components = [], []
             num = self.d[f"num_barriers_var {e}{nr}"].get()
+            shares = self.primary_shares(e, nr, num)
             for i in range(num):
                 K = self.calkerma(e, nr, i, t)
                 # Missing inputs of every radiation type count, not only those of the last one
                 prefix = f"Radiation Type #{i + 1}: " if num > 1 else ""
                 missing += [prefix + item for item in self.need]
                 fields += self.need_fields
+                if K is not None and i in shares:  # only the part of its workload not aimed at this barrier
+                    K *= 1 - shares[i]
+                    self.last_distribution.update(K=K, k1_source=(self.last_distribution["k1_source"] or "")
+                                                  + f" × (1 − {shares[i]:g})")
                 if K is not None:
                     Ktotal += K
                 distributions.append(dict(self.last_distribution))
@@ -962,6 +967,39 @@ class departprimsec():
             return "NCRP 147"
         primary = self.d[f"radiob_w {e}{nr}{i}"].get() == 1
         return var.get() if var.get() in (KVP_DATA if primary else MAMMO_KVP_DATA) else "NCRP 147"
+
+    def primary_shares(self, e, nr, num):
+        """With the option of the barrier on: for each secondary radiation type, the use factor U of the primary
+        radiation types of the same workload (the same workload distribution or kVp, and the same workload) aimed at
+        this barrier; its secondary radiation is then counted for (1 - U) of the workload (NCRP 147 Eq. C.4, C.8).
+        Returns {i: U} for the secondary types that have such a primary type."""
+        option = self.d.get(f"oneminusu {e}{nr}")
+        if option is None or option.get() != 1:
+            return {}
+
+        def value(name, i):
+            variable = self.d.get(f"{name} {e}{nr}{i}")
+            try:
+                return str(variable.get()) if variable is not None else None
+            except TclError:
+                return None
+
+        def workload(i):
+            """What the radiation type is and its workload: the room's, or its own one."""
+            beam = (value("vselxray", i), value("vsexroom", i))
+            if value("oworkvar", i) == "1":
+                return beam + ("own", value("workv", i), self.entry_number(f"worentry {e}{nr}{i}"),
+                               self.entry_number(f"numpapwe {e}{nr}{i}"))
+            return beam + ("room",)
+
+        aimed = {}
+        for i in range(num):
+            if value("radiob_w", i) == "1":
+                U = self.entry_number(f"use_ent {e}{nr}{i}")
+                if U is not None and U > 0:
+                    aimed[workload(i)] = aimed.get(workload(i), 0.0) + U
+        return {i: min(1.0, aimed[workload(i)]) for i in range(num)
+                if value("radiob_w", i) == "2" and workload(i) in aimed}
 
     def angle_kerma(self, e, nr, i, t):
         """Unshielded secondary air kerma per patient at 1 m of a radiation type given by its kVp (NCRP 147 Appendix

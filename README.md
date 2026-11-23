@@ -38,6 +38,8 @@ the thickness you plan to install.
   for.
 - **Scatter at an angle** for a single kVp: the scatter fraction of NCRP 147 Figure C.1 at the angle you give, with the
   leakage of the tube at that kVp (Appendix C).
+- **Secondary radiation × (1 − U)** (NCRP 147 Eq. C.4, C.8), an option of a barrier with a primary and a secondary
+  radiation type: the secondary radiation of a workload is counted only for the part not aimed at the barrier.
 - **Shielding height** of walls and doors (2.1 m, 2.5 m for a darkroom, or up to the ceiling; NCRP 147 §2.3.6, §5.8),
   in the report and the 3D view.
 - **Floor plan**: load the architect's drawing (PDF, PNG, JPG), trace the walls and doors, place the source and say what

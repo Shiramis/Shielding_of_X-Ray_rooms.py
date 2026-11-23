@@ -430,6 +430,21 @@ inputs, results = room_parts(t)
 select_barrier(t, 7)
 shot("ncrp_results.png", root, widget=results)
 
+# secondary radiation x (1 - U) on the cross-table wall of NCRP 147 5.3.5 (Wall 4: primary U = 0.09 and secondary)
+nr = d[f"nr {t}"]
+lead_before = dict(app.calc[(nr, 7)]["thickness"])["Lead"]
+d[f"oneminusu 7{nr}"].set(1)
+app.choosetype(7, nr, t, notify=False)
+rec = app.calc[(nr, 7)]
+values["share"] = {"before": lead_before, "after": dict(rec["thickness"])["Lead"],
+                   "K": [dist["K"] for dist in rec["distributions"]], "U": 0.09}
+frame = d[f"frame_1 {t}"]
+root.update()
+top = d[f"label_B 7{nr}1"].winfo_rooty() - frame.winfo_rooty()  # from radiation type #2 down
+frame.master.yview_moveto(max(0.0, (top - 10) / frame.winfo_height()))
+root.update()
+shot("share_option.png", root, widget=inputs, height=820)
+
 # ---------- department ----------
 app.open_example("department")
 info = app.departments[1]

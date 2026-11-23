@@ -85,6 +85,8 @@ TIPS = {
     "shielding_height": "How high the shielding goes (NCRP 147 2.3.6): 2.1 m · darkroom 2.5 m · to the ceiling "
                         "when the ceiling is shielded.",
     "check_patients": "How many patients (CT: procedures) per week the barrier allows as built (NCRP 147 6.3.3).",
+    "one_minus_u": "Secondary radiation of a workload × (1 − U) of its primary beam here (NCRP 147 Eq. C.4, C.8).\n"
+                   "Only where the beam hits the same point; NCRP 147 Table 4.7 and its examples do not use it.",
     "view_walls": "Materials: walls in the colours of their materials.\nDose beyond vs goal P: green met, red exceeded.",
     "view_radiation": "Weekly air kerma around the source (log scale); lines at 0.02 and 0.1 mGy/week.",
     "view_list": "Every barrier with its materials, thicknesses and dose beyond. Pick one to mark it on the plan.",

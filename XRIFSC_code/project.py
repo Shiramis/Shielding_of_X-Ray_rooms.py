@@ -75,6 +75,7 @@ class ProjectFile:
                            planned=[self.read_input(f"planned {e}{o}{nr}") for o in range(1, count + 1)],
                            checkplan=self.read_input(f"checkplan {e}{nr}"),
                            existing=self.existing_data(e, nr), checkpatients=self.read_input(f"checkpatients {e}{nr}"),
+                           oneminusu=self.read_input(f"oneminusu {e}{nr}"),
                            shared=self.shared_reference(t, e), height=self.read_input(f"height {e}{nr}"),
                            further={name: self.read_input(f"{name} {e}{nr}") for name in FAR_KEYS},
                            calculated=(nr, e) in self.calc, radiation=[])
@@ -244,6 +245,7 @@ class ProjectFile:
             self.restore_existing(t, e, nr, barrier.get("existing"))
             if barrier.get("checkpatients") in ("0", "1"):
                 self.write_input(f"checkpatients {e}{nr}", barrier["checkpatients"])
+            self.write_input(f"oneminusu {e}{nr}", barrier.get("oneminusu"))  # secondary x (1 - U)
             self.write_input(f"height {e}{nr}", barrier.get("height"))  # older files: 2.1 m
             further = barrier.get("further") or {}
             if any(further.values()):

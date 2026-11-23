@@ -663,6 +663,7 @@ class dep_defs():
 
         # Update the previous number of barriers
         self.d[f"prev_num_barriers {index}{room_number}"] = num_barriers
+        self.primary_share_widget(index, room_number)
 
     def barrier_sel(self, e, nr, t, i):
         radiob_w_key = f"radiob_w {e}{nr}{i}"
@@ -751,6 +752,33 @@ class dep_defs():
             self.d[f"unairkerv {e}{nr}{i}"].set(1)
             self.unairk(e, nr, i)
         self.refresh_distance(e, nr)  # dP or a secondary distance
+        self.primary_share_widget(e, nr)
+
+    def primary_share_widget(self, e, nr):
+        """Under the radiation types, when the barrier has both a primary and a secondary radiation type: the option to
+        count the secondary radiation of a workload only for the part (1 - U) not aimed at this barrier (NCRP 147
+        Eq. C.4, C.8). Off at first, as in NCRP 147 Table 4.7 and its examples."""
+        count = self.d[f"num_barriers_var {e}{nr}"].get()
+        kinds = set()
+        for i in range(count):
+            variable = self.d.get(f"radiob_w {e}{nr}{i}")
+            kinds.add(variable.get() if variable is not None else 0)
+        key = f"oneminusu_check {e}{nr}"
+        if {1, 2} <= kinds:
+            if self.d.get(f"oneminusu {e}{nr}") is None:
+                self.d[f"oneminusu {e}{nr}"] = IntVar(value=0)
+            if self.d.get(key) is None or not self.d[key].winfo_exists():
+                check = ttk.Checkbutton(self.d[f"barrierf {e}{nr}"], variable=self.d[f"oneminusu {e}{nr}"],
+                                        text="Secondary radiation × (1 − U): only the part of a workload not aimed "
+                                             "at this barrier")
+                check.grid(row=98, column=0, columnspan=6, padx=5, pady=6.5, sticky="w")
+                tip(check, "one_minus_u")
+                self.d[key] = check
+        else:  # no longer both: the option goes, and is off when it comes back
+            if self.d.get(key) is not None:
+                self.d[key].destroy()
+                self.d[key] = None
+            self.d.pop(f"oneminusu {e}{nr}", None)
 
     def room_type_of(self, nr):
         """The kind of room ('X-Ray room', 'CT Room', ...) whose barriers are keyed by nr."""
