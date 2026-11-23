@@ -20,7 +20,9 @@ FILE_TYPES = [("Shielding project", "*.shield"), ("All files", "*.*")]
 # Inputs of one radiation type of an X-ray / mammography barrier (keys "<name> <e><nr><i>")
 RADIATION_KEYS = ["radiob_w", "entryd", "vselxray", "vsexroom", "use_ent", "entk", "preshvar", "radiob_pre",
                   "unairkerv", "airkerv", "radiob_leak", "oworkvar", "workv", "worentry", "numpapwe", "kvpdata",
-                  "dbtmode", "dbtbarrier", "ffdmunit"]
+                  "dbtmode", "dbtbarrier", "ffdmunit", "fieldvar", "fieldF", "fielddF", "fieldF0", "fielddF0"]
+# The further area beyond a barrier (keys "<name> <e><nr>")
+FAR_KEYS = ["far", "fardist", "farloc", "farT", "fararea", "farP"]
 CT_KEYS = ["bp_var", "hp_var", "dlpb_var", "dlph_var", "kvp_var"]
 
 
@@ -71,6 +73,9 @@ class ProjectFile:
                            shares=[self.read_input(f"share {e}{o}{nr}") for o in range(1, count + 1)],
                            planned=[self.read_input(f"planned {e}{o}{nr}") for o in range(1, count + 1)],
                            checkplan=self.read_input(f"checkplan {e}{nr}"),
+                           existing=self.existing_data(e, nr), checkpatients=self.read_input(f"checkpatients {e}{nr}"),
+                           shared=self.shared_reference(t, e), height=self.read_input(f"height {e}{nr}"),
+                           further={name: self.read_input(f"{name} {e}{nr}") for name in FAR_KEYS},
                            calculated=(nr, e) in self.calc, radiation=[])
             if not ct:
                 for i in range(self.d[f"num_barriers_var {e}{nr}"].get()):
@@ -78,6 +83,53 @@ class ProjectFile:
                                                  for name in RADIATION_KEYS})
             data["barrier_data"].append(barrier)
         return data
+
+    def existing_data(self, e, nr):
+        """The existing shielding of barrier e: option, materials, thicknesses and where the new materials go."""
+        if self.d.get(f"existing {e}{nr}") is None:
+            return None
+        count = self.existing_count(e, nr)
+        data = {"on": self.read_input(f"existing {e}{nr}"), "count": str(count),
+                "materials": [self.read_input(f"existmat {e}{k}{nr}") for k in range(1, count + 1)],
+                "mm": [self.read_input(f"existmm {e}{k}{nr}") for k in range(1, count + 1)],
+                "side": self.read_input(f"addside {e}{nr}")}
+        untouched = (data["on"] != "1" and count == 1 and data["side"] == "outside"
+                     and data["materials"] == ["Select Material"] and data["mm"] == [""])
+        return None if untouched else data
+
+    def shared_reference(self, t, e):
+        """The barrier on the other side of a shared wall: its room (place in the department) and its number."""
+        partner = self.shared_partner(t, e)
+        if partner is None:
+            return None
+        rooms = self.departments[self.d[f"dep {t}"]]["rooms"]
+        return {"room": rooms.index(partner[0]), "barrier": partner[1]} if partner[0] in rooms else None
+
+    def restore_existing(self, t, e, nr, existing):
+        if not existing:
+            return
+        self.existing_vars(e, nr)
+        for key, value in ((f"existcount {e}{nr}", existing.get("count")), (f"addside {e}{nr}", existing.get("side")),
+                           (f"existing {e}{nr}", existing.get("on"))):
+            if value:
+                self.write_input(key, value)
+        for k, (material, x) in enumerate(zip(existing.get("materials") or [], existing.get("mm") or []), start=1):
+            self.write_input(f"existmat {e}{k}{nr}", material)
+            self.write_input(f"existmm {e}{k}{nr}", x)
+        self.update_material_panel(e, nr, t)
+
+    def restore_links(self, info, rooms):
+        """The walls shared by two rooms of a department, then their results together (both sides calculated)."""
+        links = []
+        for t, room in zip(info["rooms"], rooms):
+            for e, barrier in enumerate(room["data"]["barrier_data"] if room.get("designed") else [], start=1):
+                shared = barrier.get("shared")
+                if shared and 0 <= shared.get("room", -1) < len(info["rooms"]):
+                    links.append((t, e, info["rooms"][shared["room"]], shared.get("barrier")))
+        for t, e, t2, e2 in links:
+            if self.d.get(f"run {t2}") and isinstance(e2, int) and e2 <= self.d.get(f"x {t2}", 0):
+                self.d[f"shared {e}{self.d[f'nr {t}']}"] = (t2, e2)
+        self.recalculate([(t, e) for t, e, _, _ in links if self.shared_partner(t, e)])
 
     def plan_data(self, key, positions, images, index):
         plan = self.plans.get(key)
@@ -188,6 +240,16 @@ class ProjectFile:
             if check != self.read_input(f"checkplan {e}{nr}"):
                 self.write_input(f"checkplan {e}{nr}", check)
                 self.update_material_panel(e, nr, t)
+            self.restore_existing(t, e, nr, barrier.get("existing"))
+            if barrier.get("checkpatients") in ("0", "1"):
+                self.write_input(f"checkpatients {e}{nr}", barrier["checkpatients"])
+            self.write_input(f"height {e}{nr}", barrier.get("height"))  # older files: 2.1 m
+            further = barrier.get("further") or {}
+            if any(further.values()):
+                self.far_vars(e, nr)
+                for name in FAR_KEYS:
+                    self.write_input(f"{name} {e}{nr}", further.get(name))
+                self.update_far_panel(e, nr, t)
         for e, barrier in enumerate(data["barrier_data"], start=1):
             if barrier.get("calculated"):
                 self.choosetype(e, nr, t, notify=False)
@@ -223,6 +285,10 @@ class ProjectFile:
                 self.unairk(e, nr, i)
                 if saved["unairkerv"] == "2":
                     self.write_input(key("entk"), saved.get("entk"))
+                    if saved.get("fieldvar") == "1":  # the field, and the field the value written is for
+                        for name in ("fieldvar", "fieldF", "fielddF", "fieldF0", "fielddF0"):
+                            self.write_input(key(name), saved.get(name))
+                        self.field_widgets(e, nr, i)
                 elif any(saved.get(name) for name in ("dbtmode", "dbtbarrier", "ffdmunit")):
                     for name in ("dbtmode", "dbtbarrier", "ffdmunit"):  # DBT (Yang 2017, 2016), FFDM (Judge 2013)
                         if saved.get(name):
@@ -231,6 +297,10 @@ class ProjectFile:
                     self.write_input(key("airkerv"), saved["airkerv"])
                     self.leakage(e, nr, i)
                     self.write_input(key("radiob_leak"), saved.get("radiob_leak"))
+                    if saved.get("fieldvar") == "1":  # the field of the scatter (older files: that of the data)
+                        for name in ("fieldvar", "fieldF", "fielddF"):
+                            self.write_input(key(name), saved.get(name))
+                        self.field_widgets(e, nr, i)
             if saved.get("oworkvar") == "1":
                 self.write_input(key("oworkvar"), "1")
                 self.owork(e, nr, i)
@@ -316,6 +386,7 @@ class ProjectFile:
                     if room["designed"]:
                         self.desroom(t)
                         self.restore_room(t, room["data"], version)
+                self.restore_links(info, workspace["rooms"])
                 info["rooms_note"].select(0)
                 self.restore_plan(("dep", dep), workspace.get("plan"), dict(enumerate(info["rooms"])), archive)
             else:

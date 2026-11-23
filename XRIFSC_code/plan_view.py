@@ -19,7 +19,7 @@ from matplotlib.transforms import offset_copy
 from mpl_toolkits.mplot3d import proj3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-from Depcalculations import wb, archer_transmission, stack_transmission
+from Depcalculations import wb, archer_transmission, stack_transmission, barrier_stack, CEILING
 from Department_defs import OCCUPANCY_LOCATIONS, DESIGN_GOALS
 from barrier_names import DOOR_HEIGHT
 from tooltips import tip
@@ -822,11 +822,16 @@ SHARED = 0.3       # walls of two rooms closer than this (m) are one wall
 LAYER_GAP = 0.06   # distance between the layers of a wall in the 3D view (m)
 STRIPE = 0.4       # length of a stripe in the 3D view (m)
 PICKED = theme.NAVY  # the barrier picked in the list (not a material colour)
+BARE_WALL = "#b8bec6"  # a wall above the height of its shielding (3D view)
+
+
+EXISTING = "existing"  # the 'required' value of a row of existing shielding
 
 
 def material_rows(info):
     """[(label, material, required mm, planned mm)] of a barrier, from the room side out. Required: None when it
-    has no NCRP 147 data; planned: None when not given."""
+    has no NCRP 147 data, EXISTING for the shielding the barrier already has (its thickness as planned); planned:
+    None when not given."""
     rows, count = [], len(info["rows"])
     for k, (material, required, planned) in enumerate(info["rows"]):
         if info["layered"] and count > 1:
@@ -834,7 +839,8 @@ def material_rows(info):
         else:
             label = material if k == 0 else f"or {material}"  # each one alone: alternatives
         rows.append((label, material, required, planned))
-    return rows
+    existing = [(f"existing · {m}", m, EXISTING, x) for m, x in info.get("existing") or []]
+    return existing + rows if info.get("side", "outside") == "outside" else rows + existing
 
 
 def shown_layers(info):
@@ -849,21 +855,40 @@ def short_materials(info):
     names = [SHORT.get(m, m) for m in shown_layers(info)]
     if not names:
         return "no shielding needed"
-    return (" + " if info["together"] else " or ").join(names)
+    others = info.get("alternatives") or []
+    return (" + " if info["together"] else " or ").join(names) + (
+        f" (or {' or '.join(SHORT.get(m, m) for m in others)})" if others else "")
 
 
 def materials_text(info):
     """The materials of a barrier and their thicknesses on one line."""
     if info["state"] != "ok":
         return short_materials(info)
+    existing = info.get("existing") or []
     if info["planned"]:
+        if existing:
+            return " + ".join(layer_list(info["built"], existing, "g")) + " (planned)"
         return " + ".join(f"{m} {x:g}" for m, x in info["built"]) + " mm (planned)"
     known = [(m, x) for m, x in info["built"] if x is not None]
     if not known:
         return "no NCRP 147 data for its materials"
     if all(x == 0 for _, x in known):
         return "no shielding needed"
+    if existing:
+        others = info.get("alternatives") or []
+        return " + ".join(layer_list(known, existing, ".2f")) + (f" (or {' or '.join(others)})" if others else "")
     return (" + " if info["together"] else " or ").join(f"{m} {x:.2f}" for m, x in known) + " mm"
+
+
+def layer_list(items, existing, digits):
+    """['Concrete 100 mm (existing)', 'Lead 1 mm']: the layers [(material, mm)], the existing ones marked."""
+    parts, left = [], list(existing)
+    for m, x in items:
+        mark = (m, x) in left
+        if mark:
+            left.remove((m, x))
+        parts.append(f"{m} {x:{digits}} mm" + (" (existing)" if mark else ""))
+    return parts
 
 
 def check_text(check):
@@ -889,12 +914,19 @@ def barrier_lines(info, title):
         lines.append("Required, each material alone:")
     else:
         lines.append("Required:")
-    for label, _, required, _ in rows:
-        value = "no NCRP 147 data" if required is None else "none needed" if required == 0 else f"{required:.2f} mm"
+    for label, _, required, planned in rows:
+        value = (f"{planned:g} mm" if required == EXISTING else "no NCRP 147 data" if required is None
+                 else "none needed" if required == 0 else f"{required:.2f} mm")
         lines.append(f"    {label}: {value}")
     if info["planned"]:
         lines.append(("Planned, all together: " if len(info["built"]) > 1 else "Planned: ")
-                     + " + ".join(f"{m} {x:g} mm" for m, x in info["built"]))
+                     + " + ".join(layer_list(info["built"], info.get("existing") or [], "g")))
+    for key in ("far", "shared"):
+        if info.get(key):
+            lines.append(info[key])
+    if info.get("height") is not None:
+        lines.append("Shielding height: " + ("up to the ceiling" if info["height"] == CEILING
+                                             else f"{info['height']:g} m above the floor"))
     if info["check"]:
         lines.append("Beyond: " + check_text(info["check"]))
     return lines
@@ -1085,7 +1117,8 @@ class RoomViewer(Toplevel):
                                  open=iid not in closed)
                 self.items[iid] = (g, e)
                 for k, (label, material, required, planned) in enumerate(material_rows(info)):
-                    value = "–" if required is None else "none" if required == 0 else f"{required:.2f}"
+                    value = (EXISTING if required == EXISTING else "–" if required is None else "none" if required == 0
+                             else f"{required:.2f}")
                     self.tree.insert(iid, END, iid=f"{iid}|{k}", text=label, image=self.swatches.get(material, ""),
                                      values=(value, "" if planned is None else f"{planned:g}", ""))
                     self.items[f"{iid}|{k}"] = (g, e)
@@ -1389,9 +1422,18 @@ class RoomViewer(Toplevel):
             xs += [bounds[0] + 1.5, bounds[1] - 1.5]
             ys += [bounds[2] + 1.5, bounds[3] - 1.5]
 
-        def add_wall(g, e, a, b, inside, bottom, top, colors, together, alpha, edge=OUTLINE_COLOR, width=1.0):
-            for corners, color in wall_quads_3d(a, b, inside, bottom, top, colors, together):
+        bare = []  # walls drawn above their shielding height
+
+        def add_wall(g, e, a, b, inside, bottom, top, colors, together, alpha, edge=OUTLINE_COLOR, width=1.0,
+                     shielded=None):
+            """A wall (or door) in its materials up to the height of its shielding, bare above it."""
+            upper = top if shielded is None else max(bottom, min(shielded, top))
+            for corners, color in wall_quads_3d(a, b, inside, bottom, upper, colors, together):
                 ax.add_collection3d(Poly3DCollection([corners], facecolor=to_rgba(color, alpha), edgecolor="none"))
+            if upper < top - 1e-6:
+                ax.add_collection3d(Poly3DCollection([[(*a, upper), (*b, upper), (*b, top), (*a, top)]],
+                                                     facecolor=to_rgba(BARE_WALL, 0.35), edgecolor="none"))
+                bare.append(e)
             corners = [(*a, bottom), (*b, bottom), (*b, top), (*a, top)]
             ax.add_collection3d(Poly3DCollection([corners], facecolor=(0, 0, 0, 0), edgecolor=edge, linewidths=width))
             self.quads.append((g, e, corners))
@@ -1405,17 +1447,22 @@ class RoomViewer(Toplevel):
             ax.add_collection3d(Poly3DCollection([floor], facecolor="none" if radiation else floor_color,
                                                  edgecolor="#555555", alpha=0.55))
             self.quads.append((g, 1, floor))
+            heights = {e: info.get("height") for e, info in g["info"].items()}
             for e, a, b in g["walls"]:
                 colors, text, together = style(e, g)
                 alpha = 0.3 if colors == [NOT_CALCULATED] else (0.45 if radiation else 0.8)
-                add_wall(g, e, a, b, (cx, cy), 0, h, colors, together, alpha)
+                height = heights.get(e)
+                add_wall(g, e, a, b, (cx, cy), 0, h, colors, together, alpha,
+                         shielded=height if isinstance(height, (int, float)) else None)
                 ax.text((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, h + 0.15, f"{g['barriers'].get(e, '')}\n{text}",
                         fontsize=7, ha="center")
             for e, a, b in g["doors"]:
                 colors, text, together = style(e, g)
                 nx, ny = wall_normal(a, b, (cx, cy))
                 a2, b2 = (a[0] + nx * 0.03, a[1] + ny * 0.03), (b[0] + nx * 0.03, b[1] + ny * 0.03)
-                add_wall(g, e, a2, b2, (cx, cy), 0, min(DOOR_HEIGHT, h), colors, together, 1.0, DOOR_COLOR, 2)
+                height = heights.get(e)
+                door = h if height == CEILING else height if isinstance(height, (int, float)) else DOOR_HEIGHT
+                add_wall(g, e, a2, b2, (cx, cy), 0, min(door, h), colors, together, 1.0, DOOR_COLOR, 2)
             if self.show_ceiling.get():
                 ceiling = [(x, y, h) for x, y in g["outline"]]
                 ceiling_color = ROOM_FILL if mode == "materials" else style(2, g)[0][0]
@@ -1438,7 +1485,8 @@ class RoomViewer(Toplevel):
         ax.set_zlabel("m")
         ax.set_title(f"3D view: {title}" + ("  ·  radiation map on the floor" if radiation else "")
                      + " (drag to rotate)", fontsize=11)
-        figure.legend(handles=legend, loc="outside left lower", fontsize=8)
+        figure.legend(handles=legend + ([Patch(color=BARE_WALL, alpha=0.35, label="Wall above its shielding height")]
+                                        if bare else []), loc="outside left lower", fontsize=8)
         if radiation:
             figure.colorbar(ScalarMappable(norm=kerma_norm, cmap=KERMA_CMAP), ax=ax, shrink=0.55,
                             label="Weekly air kerma (mGy/week)")
@@ -1613,7 +1661,9 @@ class PlanViews:
         """What the 2D / 3D view shows about barrier e of room nr: its state, the required and planned thickness of
         each material, what the barrier is built of, the dose beyond it and the transmission through it."""
         info = {"state": "not calculated", "rows": [], "built": [], "together": False, "layered": False,
-                "planned": False, "check": None, "transmission": None, "missing": []}
+                "planned": False, "check": None, "transmission": None, "missing": [], "existing": [],
+                "side": "outside", "alternatives": [], "shared": None, "far": None,
+                "height": self.shielding_height(e, nr)}
         rec = self.calc.get((nr, e))
         if rec is None:
             return info
@@ -1623,12 +1673,24 @@ class PlanViews:
         planned = self.planned_layers(nr, e)
         planned_of = dict(planned)
         layered = bool(rec.get("layers"))
-        info.update(state="ok", layered=layered, check=self.dose_check(nr, e),
-                    rows=[(m, x, planned_of.get(m)) for m, x in rec.get("thickness") or []])
-        if planned:  # everything planned is installed together
-            info.update(built=planned, together=True, planned=True)
+        existing, side = self.existing_of(rec)
+        required = [(m, x) for m, x in rec.get("thickness") or []]
+        info.update(state="ok", layered=layered, check=self.dose_check(nr, e), existing=existing, side=side,
+                    rows=[(m, x, planned_of.get(m)) for m, x in required])
+        if rec.get("shared"):
+            info["shared"] = self.shared_text(rec["shared"])[0]
+        if rec.get("far"):
+            info["far"] = self.far_line(rec["far"])[0]
+        if planned:  # everything planned is installed together, with the existing shielding
+            info.update(built=barrier_stack(planned, existing, side), together=True, planned=True)
+        elif existing:  # the existing shielding and the required thickness (alone: the first material, or another)
+            new = [(m, x) for m, x in required if x is not None]
+            if not layered:
+                info["alternatives"] = [m for m, _ in new[1:]]
+                new = new[:1]
+            info.update(built=barrier_stack(new, existing, side), together=True)
         else:  # the required thicknesses: layers together, or each material alone (alternatives)
-            info.update(built=[(m, x) for m, x in rec.get("thickness") or []], together=layered)
+            info.update(built=required, together=layered)
         # transmission through the barrier, for the rays of the other rooms that cross it
         params = (rec.get("shield") or {}).get("params", {})
         usable = [(m, x) for m, x in info["built"] if x is not None and m in params]

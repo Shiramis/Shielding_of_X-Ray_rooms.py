@@ -28,6 +28,9 @@ wb = load_workbook(excel_path)
 
 # First column of each material's (alpha, beta, gamma) in the 'prim abc' / 'sec abc' sheets (0-based)
 MATERIAL_COLUMNS = {"Lead": 1, "Concrete": 4, "Gypsum Wallboard": 7, "Steel": 10, "Plate Glass": 13, "Wood": 16}
+EXISTING_MAX = 3  # materials the existing shielding of a barrier can have
+CEILING = "Up to the ceiling"  # the height of the shielding of a wall that goes up to the ceiling
+HEIGHTS = ("2.1", "2.5", CEILING)  # NCRP 147 2.3.6, 5.8: 2.1 m; a darkroom 2.5 m; to the ceiling when it is shielded
 # NCRP 147 unshielded primary air kerma per patient at 1 m (mGy/patient)
 PRIMARY_KERMA = {"Rad Room (chest bucky)": "2.3", "Rad Room (floor or other barriers)": "5.2",
                  "Rad Tube (R&F room)": "5.9", "Chest Room": "1.2"}
@@ -111,8 +114,45 @@ def thickness_for(dose, goal, high):
     return (low + high) / 2
 
 
-def thickness_alone(components, material, P):
-    """Thickness of one material, the only one of the barrier: sum of K B(x + preshielding) = P."""
+# ===================== shielding the barrier already has (existing), in front of or beyond the new materials ======
+def barrier_stack(new, existing=(), side="outside"):
+    """The layers [(material, mm)] of a barrier from the room side out: the new materials outside the existing
+    shielding (side 'outside'), or on the room side of it ('inside')."""
+    return list(existing) + list(new) if side == "outside" else list(new) + list(existing)
+
+
+def entry_transmission(c, first, layered):
+    """What the preshielding of radiation type c lets reach the first layer of the barrier (material first). Layers:
+    as calculated for them (c['start']). Each material alone: the preshielding in the material of the first layer,
+    as NCRP 147 Table 4.6 gives it (lead, concrete, steel); none for the other materials."""
+    if layered:
+        return c["start"]
+    pre = c["pre"].get(first)
+    return archer_transmission(c["params"][first], pre) if pre else 1.0
+
+
+def stacks_usable(components, stacks):
+    """Whether every radiation type has transmission data for every material of the stacks of layers."""
+    return all(has_data(c["params"], m) for c in components for stack in stacks for m, _ in stack)
+
+
+def stack_dose(components, layers, layered):
+    """Weekly air kerma beyond the layers [(material, mm)], from the room side out: the sum of K x transmission of
+    every radiation type, each after its preshielding."""
+    if not layers:
+        return sum(c["K"] * (c["start"] if layered else 1.0) for c in components)
+    return sum(c["K"] * through(c["params"], layers, entry_transmission(c, layers[0][0], layered))
+               for c in components)
+
+
+def thickness_alone(components, material, P, existing=(), side="outside"):
+    """Thickness of one material, the only new one of the barrier: sum of K B(x + preshielding) = P. existing: the
+    layers the barrier already has, the new material outside them (side 'outside') or on their room side."""
+    if existing:
+        dose = lambda x: stack_dose(components, barrier_stack([(material, x)], existing, side), False)
+        total = sum(c["K"] for c in components)
+        return thickness_for(dose, P, max(archer_thickness(c["params"][material], min(P / total, 1.0))
+                                          for c in components))
     if len(components) == 1:  # the Archer equation, minus the preshielding
         c = components[0]
         return max(archer_thickness(c["params"][material], P / c["K"]) - c["pre"].get(material, 0.0), 0.0)
@@ -123,9 +163,15 @@ def thickness_alone(components, material, P):
                                       for c in components))
 
 
-def thickness_layers(components, materials, fractions, P):
+def thickness_layers(components, materials, fractions, P, existing=(), side="outside"):
     """Layers of one barrier, from the inside out, each giving its fraction of the attenuation of the air kerma from
-    what the preshielding lets through down to P; every radiation type goes through all of them."""
+    what the preshielding lets through down to P; every radiation type goes through all of them. existing: the layers
+    the barrier already has; the new layers outside them (side 'outside': they start after them) or on their room
+    side ('inside')."""
+    if existing and side == "outside":  # what reaches the new layers has already gone through the existing ones
+        components = [dict(c, start=through(c["params"], existing, c["start"])) for c in components]
+    elif existing:
+        return layers_before(components, materials, fractions, P, existing)
     if len(components) == 1:
         c = components[0]
         return layered_thicknesses([c["params"][m] for m in materials], fractions, P / c["K"], c["start"])
@@ -142,6 +188,77 @@ def thickness_layers(components, materials, fractions, P):
     return [x for _, x in layers]
 
 
+def layers_before(components, materials, fractions, P, after):
+    """New layers on the room side of layers already there ('after', outside them): the new ones share the
+    attenuation in front of 'after' as their fractions say, so much that the air kerma beyond all of them is P."""
+    final = lambda xs: stack_dose(components, list(zip(materials, xs)) + list(after), True)
+    zero = [0.0] * len(materials)
+    if final(zero) <= P:
+        return zero
+    # the air kerma the new layers let through, exp(u), found so that 'after' brings it down to P
+    low, high = math.log(P) - 80.0, math.log(sum(c["K"] * c["start"] for c in components))
+    for _ in range(200):
+        middle = (low + high) / 2
+        if final(thickness_layers(components, materials, fractions, math.exp(middle))) > P:
+            high = middle
+        else:
+            low = middle
+        if high - low < 1e-11:
+            break
+    return thickness_layers(components, materials, fractions, math.exp(low))
+
+
+def required_thicknesses(components, P, materials, fractions=None, existing=(), side="outside"):
+    """The required thickness of each material (or why there is none): layers of one barrier when fractions are
+    given, else each material alone; existing: the layers the barrier already has (see barrier_stack)."""
+    usable = lambda material: all(has_data(c["params"], material) for c in components)
+    no_data = [m for m, _ in existing if not usable(m)]
+    if no_data:
+        return [f"No transmission data for {no_data[0]} (existing)"] * len(materials)
+    if fractions is not None:
+        no_data = [m for m in materials if not usable(m)]
+        if no_data:
+            return [f"No transmission data for {no_data[0]}"] * len(materials)
+        return thickness_layers(components, materials, fractions, P, existing, side)
+    result = []
+    for material in materials:
+        if material == "Select Material":
+            result.append("Select Material")
+        elif usable(material):  # 0: no additional shielding is needed
+            result.append(thickness_alone(components, material, P, existing, side))
+        else:
+            result.append(f"No transmission data for {material}")
+    return result
+
+
+def larger_thicknesses(own, needed, label):
+    """For each material the larger of two thicknesses (or why there is none), and which one it is: 'this' or
+    'other'. A thickness the other area cannot give (no data) is named after it (label)."""
+    combined, governs = [], []
+    for mine, theirs in zip(own, needed):
+        if isinstance(mine, float) and isinstance(theirs, float):
+            combined.append(max(mine, theirs))
+            governs.append("other" if theirs > mine + 1e-9 else "this")
+        elif isinstance(mine, float):  # the radiation of the other area has no data for this material
+            combined.append(f"{theirs} ({label})")
+            governs.append(None)
+        else:
+            combined.append(mine)
+            governs.append(None)
+    return combined, governs
+
+
+def other_side(materials, fractions, existing, side):
+    """The same barrier seen from the room on its other side: the layers in the reverse order, and the new
+    materials on the other side of the existing ones."""
+    if fractions is not None:
+        materials, fractions = list(materials)[::-1], list(fractions)[::-1]
+    return materials, fractions, list(existing)[::-1], "inside" if side == "outside" else "outside"
+
+
+# NCRP 147 Table 4.1: the occupancy factor T of each location
+OCCUPANCY_T = {row[0]: float(row[1]) for row in wb['Occupancy Factor ( T )'].iter_rows(min_row=2, max_col=2,
+                                                                                         values_only=True) if row[0]}
 # NCRP 147 total workload per patient Wnorm (mA·min/patient) of each workload distribution
 WORKLOAD_NORM = {row[0]: row[1] for row in wb['Workload'].iter_rows(max_col=2, values_only=True)
                  if row[0] and isinstance(row[1], (int, float))}
@@ -350,6 +467,15 @@ MISSING_HELP = {
     "Select Material": "choose the material(s) under 'Select Materials'.",
     "Material shares (must total 100 %)": "under 'Layers', give each material its share of the shielding; "
                                           "the shares must add up to 100 %.",
+    "Existing shielding (material and thickness)": "under the materials, choose each material the barrier already "
+                                                   "has and type its thickness in mm, or untick 'The barrier "
+                                                   "already has shielding'.",
+    "Further area (distance, T and P)": "under 'Also check an area further away' type how much further than the "
+                                        "person beyond the barrier it is (m, 0 or more), its occupancy factor T "
+                                        "(more than 0, at most 1) and its design goal P, or untick it.",
+    "Field size (F and d_F)": "beside 'Field size', type the primary field F (cm², e.g. the image receptor) and "
+                              "its distance d_{F} from the source (m, e.g. the SID), and for a written air kerma the "
+                              "field it was given for, all more than 0, or untick 'Field size'.",
     "Distance": "type the distance from the CT isocenter to the barrier in metres (or the whole distance to the "
                 "person beyond it, with 'Enter the whole distance' ticked).",
     "Procedures and DLP (body or head)": "at the top of the CT room type the weekly body and/or head "
@@ -358,8 +484,9 @@ MISSING_HELP = {
 
 class departprimsec():
 
-    def choosetype(self, e, nr, t, notify=True):
-        # notify: tell the user what is missing (the Calculate button); off for batch calculations
+    def choosetype(self, e, nr, t, notify=True, partner=True):
+        # notify: tell the user what is missing (the Calculate button); off for batch calculations.
+        # partner: a wall shared with a room of the department is calculated again on that side too
         if self.d["vselroom "+str(t)].get() == "CT Room":
             self.depCTcal(e, nr, t)
         else:
@@ -383,10 +510,12 @@ class departprimsec():
                         missing.append(prefix + problem)
                     elif K:
                         components.append({"K": K, "params": params, "pre": self.preshielding(e, nr, i)
-                                           if self.d[f"radiob_w {e}{nr}{i}"].get() == 1 else {}})
-            problems, layer_fields = self.layer_problems(e, nr)
-            missing += problems
-            fields += layer_fields
+                                           if self.d[f"radiob_w {e}{nr}{i}"].get() == 1 else {},
+                                           "d": self.last_distribution["d"]})
+            for problems, problem_fields in (self.layer_problems(e, nr), self.existing_problems(e, nr),
+                                             self.far_problems(e, nr)):
+                missing += problems
+                fields += problem_fields
             P = self.entry_number("dikeent " + str(e) + nr)
             if P is None:
                 missing.append("Shielding Design Goal (P)")
@@ -402,7 +531,8 @@ class departprimsec():
             self.record_barrier(e, nr, kind="xray", P=P, T=self.occupancy_factor(e, nr),
                                 K_total=Ktotal if not missing else None, B=self.B, distributions=distributions,
                                 beyond=self.beyond_distance(e, nr), whole=self.whole_distance(e, nr))
-            self.show_barrier_result(e, nr, t)
+        self.share_barrier(e, nr, t, partner)
+        self.show_barrier_result(e, nr, t)
         self.highlight_missing(e, nr, self.need_fields if self.calc[(nr, e)]["missing"] else [])
         if notify and self.calc[(nr, e)]["missing"]:
             barrier = self.barn[f"lab_bar {e}{nr}"].cget("text")
@@ -525,9 +655,17 @@ class departprimsec():
         if self.is_layered(e, nr):  # [(material, share %)] from the inside out
             layers = [(self.d[f"vmater {e}{o}{nr}"].get(), self.entry_number(f"share {e}{o}{nr}"))
                       for o in range(1, self.d[f"vnumbmat {e}{nr}"].get() + 1)]
+        existing, side = self.existing_shielding(e, nr)
+        shield = getattr(self, "last_shield", None)
+        far = self.far_area(e, nr)
+        if far and shield and result.get("T") and not self.need:
+            # the further area: every radiation type with its T and the person that much further away
+            far["components"] = [dict(c, K=c["K"] * far["T"] / result["T"] * (c["d"] / (c["d"] + far["delta"])) ** 2)
+                                 for c in shield["components"]]
         result.update(area=area if area != "Classify the area" else None, location=location,
                       thickness=thickness, missing=list(self.need), layers=layers,
-                      shield=getattr(self, "last_shield", None))
+                      existing={"layers": existing, "side": side} if existing else None,
+                      far=far if far and far.get("components") else None, shield=shield)
         self.calc[(nr, e)] = result
 
     def describe_distribution(self, e, nr, i):
@@ -550,6 +688,9 @@ class departprimsec():
             source = f"Primary ({origin})" if suggested else "Primary (entered)"
         elif value(f"unairkerv {e}{nr}{i}") == 2:
             source = "Secondary (entered)"
+            field = [self.entry_number(f"{name} {e}{nr}{i}") for name in ("fieldF", "fielddF", "fieldF0", "fielddF0")]
+            if value(f"fieldvar {e}{nr}{i}") == 1 and all(field):
+                source += f", field {field[0]:g} cm² at {field[1]:g} m (written for {field[2]:g} cm² at {field[3]:g} m)"
         elif value(f"unairkerv {e}{nr}{i}") == 1 and distribution == DBT:
             mode = {1: "2D", 2: "3D", 3: "2D + 3D"}.get(value(f"dbtmode {e}{nr}{i}"), "")
             source = f"DBT {mode} ({origin})" if mode else ""
@@ -566,6 +707,9 @@ class departprimsec():
             else:
                 source = {2: "Side-scatter", 3: "Forward/backscatter"}.get(value(f"airkerv {e}{nr}{i}"), "")
             source = f"{source} ({origin})" if source else ""
+            F, dF = self.entry_number(f"fieldF {e}{nr}{i}"), self.entry_number(f"fielddF {e}{nr}{i}")
+            if source and "catter" in source and value(f"fieldvar {e}{nr}{i}") == 1 and F and dF:
+                source += f", field {F:g} cm² at {dF:g} m"
         preshielding = ""
         if radiation == "Primary" and value(f"preshvar {e}{nr}{i}") == 1:
             preshielding = {1: "Bucky", 2: "Cross-table"}.get(value(f"radiob_pre {e}{nr}{i}"), "")
@@ -740,13 +884,26 @@ class departprimsec():
                 row = UNSHIELDED_SECONDARY.get(distribution)
                 if column is not None and row is not None:
                     K1 = float(row[column])
+                    scale = self.field_scale(e, nr, i, row)
+                    if scale is None:
+                        need.append("Field size (F and d_F)")
+                        fields += [f"fieldF_entry {e}{nr}{i}", f"fielddF_entry {e}{nr}{i}"]
+                    elif scale != 1.0 and column != 4:  # the scatter grows with the field, the leakage does not
+                        leakage = float(row[4]) if column in (6, 8) else 0.0
+                        K1 = leakage + scale * float(row[5] if column in (5, 6) else row[7])
                 else:
                     need.append("Unshielded Air Kerma")
-            elif source == 2:  # written by the user
+            elif source == 2:  # written by the user, for the field written with it
                 K1 = self.entry_number(f"entk {e}{nr}{i}")
                 if K1 is None:
                     need.append("Unshielded Air Kerma")
                     fields.append(f"entk {e}{nr}{i}")
+                scale = self.field_scale(e, nr, i)
+                if scale is None:
+                    need.append("Field size (F and d_F)")
+                    fields += [f"{name}_entry {e}{nr}{i}" for name in ("fieldF", "fielddF", "fieldF0", "fielddF0")]
+                elif K1 is not None:
+                    K1 *= scale  # the whole value: the scatter, which grows with the field, is most of it
             else:
                 need.append("Unshielded Air Kerma")
         else:
@@ -770,6 +927,27 @@ class departprimsec():
             return "NCRP 147"
         primary = self.d[f"radiob_w {e}{nr}{i}"].get() == 1
         return var.get() if var.get() in (KVP_DATA if primary else MAMMO_KVP_DATA) else "NCRP 147"
+
+    def field_scale(self, e, nr, i, row=None):
+        """How much the scatter of radiation type i grows with its primary field (NCRP 147 4.1.7.2, Eq. C.2):
+        (F / dF²) / (F0 / dF0²), with F0 at dF0 the field the suggested air kerma assumes (row: NCRP 147 Table 4.7, or
+        the data of the literature), or, for an air kerma written (row None), the field typed with it. 1 when the
+        option is off; None when the field given is not valid."""
+        option = self.d.get(f"fieldvar {e}{nr}{i}")
+        if option is None or option.get() != 1:
+            return 1.0
+        if row is None:
+            F0, dF0 = self.entry_number(f"fieldF0 {e}{nr}{i}"), self.entry_number(f"fielddF0 {e}{nr}{i}")
+        else:
+            try:
+                F0, dF0 = float(row[2]), float(row[3])
+            except (TypeError, ValueError):
+                return 1.0
+        F, dF = self.entry_number(f"fieldF {e}{nr}{i}"), self.entry_number(f"fielddF {e}{nr}{i}")
+        if any(v is None or v <= 0 for v in (F, dF, F0, dF0)):
+            return None
+        scale = (F / dF ** 2) / (F0 / dF0 ** 2)
+        return 1.0 if abs(scale - 1) < 1e-9 else scale
 
     def whole_distance(self, e, nr):
         """True when the distances of barrier e are typed all the way to the person beyond it (nothing added)."""
@@ -863,9 +1041,10 @@ class departprimsec():
         if T is None:
             self.need.append("Occupancy Factor (T)")
             self.need_fields.append(f"occupentry {e}{nr}")
-        problems, fields = self.layer_problems(e, nr)
-        self.need += problems
-        self.need_fields += fields
+        for problems, fields in (self.layer_problems(e, nr), self.existing_problems(e, nr),
+                                 self.far_problems(e, nr)):
+            self.need += problems
+            self.need_fields += fields
         K = B = None
         self.need = list(dict.fromkeys(self.need))
         if not self.need:
@@ -876,11 +1055,10 @@ class departprimsec():
         kvp_120 = number(f"kvp_var {t}") == 120
         ct_params = {"Lead": (2.246, 5.73, 0.547) if kvp_120 else (2.009, 3.99, 0.342),
                      "Concrete": (0.0383, 0.0142, 0.658) if kvp_120 else (0.0336, 0.0122, 0.519)}
-        self.material_thicknesses(e, nr, [{"K": K, "params": ct_params, "pre": {}}] if K else [], P)
+        self.material_thicknesses(e, nr, [{"K": K, "params": ct_params, "pre": {}, "d": d}] if K else [], P)
         self.record_barrier(e, nr, kind="ct", P=P or None, T=T, K_total=K, B=B, d=d if K else None,
                             kvp=int(number(f"kvp_var {t}")) or None, beyond=beyond, scans=scans,
                             whole=self.whole_distance(e, nr), D=D if K else None)
-        self.show_barrier_result(e, nr, t)
 
     # ===================== material thicknesses: each alone, or layers =====================
     def is_layered(self, e, nr):
@@ -901,17 +1079,27 @@ class departprimsec():
             fields += [f"share_entry {e}{o}{nr}" for o in range(1, count + 1)]
         return problems, fields
 
+    def layer_fractions(self, e, nr):
+        """The share of each layer as a fraction, from the inside out; None for 'Each one alone'."""
+        if not self.is_layered(e, nr):
+            return None
+        shares = [self.entry_number(f"share {e}{o}{nr}") for o in range(1, self.d[f"vnumbmat {e}{nr}"].get() + 1)]
+        return [share / sum(shares) for share in shares]
+
     def material_thicknesses(self, e, nr, components, P):
         """Thickness of every material of the barrier (self.thm), or the list of what is missing.
         components: the radiation types, each with its air kerma K, its transmission data and its preshielding; each
         goes through the barrier on its own (NCRP 147 Sections 5.3.5, 5.4.2), so the thickness gives
         sum of K B(x + preshielding) = P.
-        Each alone: the thickness of each material if it were the only one.
+        Each alone: the thickness of each material if it were the only new one.
         Layers: from the room side outwards, each material takes its share of the attenuation; a layer starts at the
         equivalent thickness of what is already in front of it (NCRP 147 treats preshielding the same way), so the
-        hardening of the beam and the order of the layers count."""
+        hardening of the beam and the order of the layers count.
+        Existing shielding: the barrier already has it; the new materials go outside it or on its room side, and
+        give what it does not."""
         count = self.d[f"vnumbmat {e}{nr}"].get()
         materials = [self.d[f"vmater {e}{o}{nr}"].get() for o in range(1, count + 1)]
+        existing, side = self.existing_shielding(e, nr)
         usable = lambda material: all(has_data(c["params"], material) for c in components)
         self.last_shield = None  # transmission data of this barrier, for the dose check and the views
         if not self.need and not components:
@@ -920,33 +1108,193 @@ class departprimsec():
             for c in components:
                 c["start"] = preshielding_transmission(c["params"], c["pre"])
             main = max(components, key=lambda c: c["K"])  # the views show the other rooms' rays through it
-            self.last_shield = {"components": components, "params": {m: main["params"][m] for m in set(materials)
+            names = set(materials) | {m for m, _ in existing}
+            self.last_shield = {"components": components, "params": {m: main["params"][m] for m in names
                                                                       if usable(m)}}
         if self.need:
             if "Select Material" in materials:
                 self.need.append("Select Material")
             self.need = list(dict.fromkeys(self.need))
             thicknesses = ["\n".join(self.need)] * count
-        elif self.is_layered(e, nr):
-            no_data = [m for m in materials if not usable(m)]
-            if no_data:
-                thicknesses = [f"No transmission data for {no_data[0]}"] * count
-            else:
-                shares = [self.entry_number(f"share {e}{o}{nr}") for o in range(1, count + 1)]
-                fractions = [share / sum(shares) for share in shares]
-                thicknesses = thickness_layers(components, materials, fractions, P)
         else:
-            thicknesses = []
-            for material in materials:
-                if material == "Select Material":
-                    thicknesses.append("Select Material")
-                elif usable(material):  # 0: no additional shielding is needed
-                    thicknesses.append(thickness_alone(components, material, P))
-                else:
-                    thicknesses.append(f"No transmission data for {material}")
+            thicknesses = required_thicknesses(components, P, materials, self.layer_fractions(e, nr), existing, side)
         for o, value in enumerate(thicknesses, start=1):
             self.thm[f"xbar {e}{o}{nr}"] = value
 
+    # ===================== the shielding the barrier already has =====================
+    def existing_count(self, e, nr):
+        variable = self.d.get(f"existcount {e}{nr}")
+        try:
+            return min(max(int(variable.get()), 1), EXISTING_MAX) if variable is not None else 1
+        except (TclError, ValueError):
+            return 1
+
+    def existing_on(self, e, nr):
+        option = self.d.get(f"existing {e}{nr}")
+        return option is not None and option.get() == 1
+
+    def existing_shielding(self, e, nr):
+        """The shielding the barrier already has, [(material, mm)] from the room side out, and where the new materials
+        go: 'outside' it or 'inside' (on its room side). No layers when the option is off or not filled in."""
+        variable = self.d.get(f"addside {e}{nr}")
+        side = variable.get() if variable is not None and variable.get() in ("inside", "outside") else "outside"
+        if not self.existing_on(e, nr):
+            return [], side
+        layers = []
+        for k in range(1, self.existing_count(e, nr) + 1):
+            material = self.d[f"existmat {e}{k}{nr}"].get() if f"existmat {e}{k}{nr}" in self.d else ""
+            x = self.entry_number(f"existmm {e}{k}{nr}")
+            if material not in MATERIAL_COLUMNS or x is None or x < 0:
+                return [], side  # existing_problems says what is missing
+            layers.append((material, x))
+        return layers, side
+
+    def existing_problems(self, e, nr):
+        """What stops the existing shielding from being used, and the entries to highlight."""
+        if not self.existing_on(e, nr):
+            return [], []
+        incomplete, fields = False, []
+        for k in range(1, self.existing_count(e, nr) + 1):
+            material = self.d[f"existmat {e}{k}{nr}"].get() if f"existmat {e}{k}{nr}" in self.d else ""
+            x = self.entry_number(f"existmm {e}{k}{nr}")
+            if material not in MATERIAL_COLUMNS:
+                incomplete = True
+            if x is None or x < 0:
+                incomplete = True
+                fields.append(f"existmm_entry {e}{k}{nr}")
+        return (["Existing shielding (material and thickness)"], fields) if incomplete else ([], [])
+
+    # ===================== a further area beyond the barrier (NCRP 147 4.1.3) =====================
+    def far_on(self, e, nr):
+        option = self.d.get(f"far {e}{nr}")
+        return option is not None and option.get() == 1
+
+    def far_area(self, e, nr):
+        """The further area beyond barrier e: how much further than the person beyond the barrier it is (m), its
+        occupancy factor T and its design goal P. None when the option is off or not filled in."""
+        if not self.far_on(e, nr):
+            return None
+        delta, T, P = (self.entry_number(f"{name} {e}{nr}") for name in ("fardist", "farT", "farP"))
+        if delta is None or delta < 0 or T is None or not 0 < T <= 1 or P is None or P <= 0:
+            return None
+        location = self.d.get(f"farloc {e}{nr}")
+        location = location.get() if location is not None and location.get() in OCCUPANCY_T else None
+        return {"delta": delta, "T": T, "P": P, "location": location}
+
+    def far_problems(self, e, nr):
+        """What stops the further area from being used, and the entries to highlight."""
+        if not self.far_on(e, nr):
+            return [], []
+        checks = (("fardist", lambda v: v >= 0), ("farT", lambda v: 0 < v <= 1), ("farP", lambda v: v > 0))
+        fields = [f"{name}_entry {e}{nr}" for name, ok in checks
+                  if self.entry_number(f"{name} {e}{nr}") is None or not ok(self.entry_number(f"{name} {e}{nr}"))]
+        return (["Further area (distance, T and P)"], fields) if fields else ([], [])
+
+    def far_text(self, far):
+        """'the area 2 m further (Administrative or clerical offices, T 1, P 0.02)'."""
+        where = f"{far['location']}, " if far.get("location") else ""
+        return f"the area {far['delta']:g} m further ({where}T {far['T']:g}, P {far['P']:g})"
+
+    @staticmethod
+    def layers_text(layers, existing=()):
+        """'Concrete 100 mm (existing) + Lead 1 mm': layers from the room side out."""
+        existing = list(existing)
+        parts = []
+        for material, x in layers:
+            mark = (material, x) in existing
+            if mark:
+                existing.remove((material, x))
+            parts.append(f"{material} {x:g} mm" + (" (existing)" if mark else ""))
+        return " + ".join(parts)
+
+    # ===================== a wall shared by two rooms of a department =====================
+    def share_barrier(self, e, nr, t, partner=True):
+        """The other areas the barrier protects: a further area beyond it, and on a wall (or door) shared with another
+        room of the department the areas of that room. For each material the barrier gets the largest thickness they
+        need. partner: the other room's side is calculated again first, if it has been calculated."""
+        rec = self.calc[(nr, e)]
+        rec.pop("shared", None)
+        self.combine_far(e, nr)
+        link = self.shared_partner(t, e)
+        if link is None:
+            return
+        t2, e2 = link
+        nr2 = self.d[f"nr {t2}"]
+        if partner and (nr2, e2) in self.calc:
+            state = (self.need, self.need_fields, getattr(self, "last_shield", None), getattr(self, "B", None))
+            self.choosetype(e2, nr2, t2, notify=False, partner=False)
+            self.need, self.need_fields, self.last_shield, self.B = state
+        self.combine_shared(e, nr, t2, e2)
+
+    def barrier_build(self, e, nr):
+        """The materials of barrier e, their shares as fractions (None: each alone) and its existing shielding."""
+        count = self.d[f"vnumbmat {e}{nr}"].get()
+        materials = [self.d[f"vmater {e}{o}{nr}"].get() for o in range(1, count + 1)]
+        existing, side = self.existing_shielding(e, nr)
+        return materials, self.layer_fractions(e, nr), existing, side
+
+    def set_thicknesses(self, e, nr, values):
+        """The thickness of each material of barrier e, in the results and in its record."""
+        materials = self.barrier_build(e, nr)[0]
+        for o, value in enumerate(values, start=1):
+            self.thm[f"xbar {e}{o}{nr}"] = value
+        self.calc[(nr, e)]["thickness"] = [(m, x if isinstance(x, float) else None) for m, x in zip(materials, values)
+                                           if m != "Select Material"]
+
+    def combine_far(self, e, nr):
+        """The further area beyond the barrier (NCRP 147 4.1.3): its thickness of each material, the same barrier for
+        a farther person with another T and P, and for each material the larger of the two areas."""
+        rec = self.calc[(nr, e)]
+        far = rec.get("far")
+        if rec["missing"] or not far:
+            return
+        materials, fractions, existing, side = self.barrier_build(e, nr)
+        near = [self.thm.get(f"xbar {e}{o}{nr}") for o in range(1, len(materials) + 1)]
+        needed = required_thicknesses(far["components"], far["P"], materials, fractions, existing, side)
+        combined, governs = larger_thicknesses(near, needed, "further area")
+        far.update(near=near, far=needed, governs=governs)
+        self.set_thicknesses(e, nr, combined)
+
+    def combine_shared(self, e, nr, t2, e2):
+        """The materials of this barrier as the room on its other side needs them (the same wall seen from there: the
+        layers in the reverse order; its further area too), and for each material the larger thickness of the two
+        rooms."""
+        rec, nr2 = self.calc[(nr, e)], self.d[f"nr {t2}"]
+        other = self.calc.get((nr2, e2))
+        info = {"room": self.room_name(t2), "barrier": self.barrier_name(e2, nr2), "key": (t2, e2)}
+        rec["shared"] = info
+        if rec["missing"]:
+            info["state"] = "this side"
+            return
+        if other is None:
+            info["state"] = "not calculated"
+            return
+        if other["missing"] or not other.get("shield") or not other.get("P"):
+            info["state"] = "missing"
+            return
+        materials, fractions, existing, side = self.barrier_build(e, nr)
+        seen_from_there = other_side(materials, fractions, existing, side)
+        theirs = None
+        for components, P in [(other["shield"]["components"], other["P"])] + (
+                [(other["far"]["components"], other["far"]["P"])] if other.get("far") else []):
+            needed = required_thicknesses(components, P, *seen_from_there)
+            if fractions is not None:
+                needed = needed[::-1]
+            theirs = needed if theirs is None else larger_thicknesses(theirs, needed, info["room"])[0]
+        own = [self.thm.get(f"xbar {e}{o}{nr}") for o in range(1, len(materials) + 1)]
+        combined, governs = larger_thicknesses(own, theirs, info["room"])
+        info.update(state="ok", own=own, other=theirs, governs=governs)
+        self.set_thicknesses(e, nr, combined)
+
+    def shared_other(self, rec):
+        """The calculation of the room on the other side of a shared barrier, when both sides are calculated."""
+        shared = rec.get("shared") or {}
+        if shared.get("state") != "ok":
+            return None
+        t2, e2 = shared["key"]
+        return self.calc.get((self.d[f"nr {t2}"], e2))
+
+    # ===================== the dose beyond the barrier, and how many patients it allows =====================
     def planned_thicknesses(self, e, nr):
         """[(material, planned thickness in mm or None)] in the order of the materials; all None unless
         'Check the dose beyond the barrier with a planned thickness' is ticked."""
@@ -961,28 +1309,213 @@ class departprimsec():
         params = (rec.get("shield") or {}).get("params", {})
         return [(m, x) for m, x in self.planned_thicknesses(e, nr) if x is not None and m in params]
 
+    @staticmethod
+    def existing_of(rec):
+        existing = rec.get("existing") or {}
+        return existing.get("layers") or [], existing.get("side") or "outside"
+
+    def built_stacks(self, nr, e, rec):
+        """The barrier as it will be built, from the room side out: [layers] with the planned thicknesses (one stack),
+        or with the required ones (layers: one stack; each material alone: one stack per material), the existing
+        shielding in its place. (stacks, planned)."""
+        existing, side = self.existing_of(rec)
+        planned = self.planned_layers(nr, e)
+        if planned:
+            return [barrier_stack(planned, existing, side)], True
+        required = [(m, x) for m, x in rec.get("thickness") or [] if x is not None]
+        if rec.get("layers"):
+            stacks = [barrier_stack(required, existing, side)] if len(required) == len(rec["layers"]) else []
+        else:
+            stacks = [barrier_stack([(m, x)], existing, side) for m, x in required]
+        return stacks, False
+
     def dose_check(self, nr, e):
         """Weekly air kerma beyond the barrier (x T, like P) with the planned thicknesses (every material given,
-        one after the other, as all of them cut the radiation), or with the required thickness when none is
-        planned, and whether it meets the shielding design goal P. None if not calculated."""
+        one after the other, as all of them cut the radiation) and the existing shielding, or with the required
+        thickness when none is planned, and whether it meets the shielding design goal P. The other areas the
+        barrier protects are checked too: a further area ('far') and, on a wall shared with another room, that room's
+        side ('other') and its further area ('other_far'). None if not calculated."""
         rec = self.calc.get((nr, e))
         if not rec or rec["missing"] or not rec.get("K_total") or not rec.get("P") or not rec.get("shield"):
             return None
         K, P, shield = rec["K_total"], rec["P"], rec["shield"]
-        planned = self.planned_layers(nr, e)
+        layered = bool(rec.get("layers"))
+        existing, _ = self.existing_of(rec)
+        other = self.shared_other(rec)
+        stacks, planned = self.built_stacks(nr, e, rec)
+        if not stacks_usable(shield["components"], stacks):  # e.g. existing steel in a CT room: no data
+            return None
         if planned:
-            first = planned[0][0]
-            # each radiation type through its preshielding, as in the calculation of the required thickness, then
-            # through every planned layer
-            start = (lambda c: c["start"]) if rec.get("layers") else \
-                (lambda c: archer_transmission(c["params"][first], c["pre"].get(first, 0.0)))
-            transmission = sum(c["K"] * through(c["params"], planned, start(c)) for c in shield["components"]) / K
-            basis = "planned " + " + ".join(f"{m} {x:g} mm" for m, x in planned)
+            dose = stack_dose(shield["components"], stacks[0], layered)
+            basis = "planned " + self.layers_text(stacks[0], existing)
+        elif (existing or other or rec.get("far")) and stacks:  # the least protective material, with what is there
+            dose = max(stack_dose(shield["components"], stack, layered) for stack in stacks)
+            basis = "required thickness"
         else:
-            transmission, basis = min(1.0, P / K), "required thickness"
-        dose = K * transmission
-        return {"K": K, "P": P, "dose": dose, "ok": dose <= P * 1.0001, "basis": basis,
-                "transmission": transmission}
+            dose, basis = min(K, P), "required thickness"
+        result = {"K": K, "P": P, "dose": dose, "ok": dose <= P * 1.0001, "basis": basis, "transmission": dose / K}
+        areas = [("far", "further area", rec.get("far"), False)]
+        if other is not None:  # the same wall, from the other room: the layers in the reverse order
+            areas += [("other", rec["shared"]["room"], {"components": other["shield"]["components"], "P": other["P"]},
+                       True),
+                      ("other_far", f"{rec['shared']['room']}, further area", other.get("far"), True)]
+        for key, label, area, mirrored in areas:
+            if not area or not stacks or not stacks_usable(area["components"], stacks):
+                continue
+            dose2 = max(stack_dose(area["components"], stack[::-1] if mirrored else stack, layered)
+                        for stack in stacks)
+            result[key] = {"room": label, "dose": dose2, "P": area["P"], "ok": dose2 <= area["P"] * 1.0001}
+            result["ok"] = result["ok"] and result[key]["ok"]
+        return result
+
+    def room_key(self, nr):
+        """The room (t) whose barriers are keyed by nr."""
+        for key, value in self.d.items():
+            if key.startswith("nr ") and value == nr:
+                return key[3:]
+        return None
+
+    def workload_allowed(self, t, factor):
+        """'up to 470 patients/week (×3.9 the present workload)': the workload of room t times factor."""
+        if factor >= 1000:
+            return "more than 1000 × the present workload"
+        times = f"×{factor:.2g} the present workload" if factor < 10 else f"×{factor:.0f} the present workload"
+        if self.d[f"vselroom {t}"].get() == "CT Room":
+            body, head = self.entry_number(f"bp_var {t}") or 0, self.entry_number(f"hp_var {t}") or 0
+            parts = [f"{factor * n:.0f} {kind}" for n, kind in ((body, "body"), (head, "head")) if n]
+            return f"up to {' + '.join(parts)} procedures/week ({times})" if parts else times
+        mode = self.d.get(f"vrawork {t}")
+        try:
+            mode = mode.get() if mode is not None else 0
+        except TclError:
+            mode = 0
+        if mode == 2 and self.entry_number(f"numpapwe {t}"):
+            return f"up to {factor * self.entry_number(f'numpapwe {t}'):.0f} patients/week ({times})"
+        if mode == 1 and self.entry_number(f"worentry {t}"):
+            return f"up to {factor * self.entry_number(f'worentry {t}'):.4g} mA·min/week ({times})"
+        return times
+
+    def allowed_workload(self, nr, e):
+        """How far the workload may grow before the dose beyond the barrier reaches P (NCRP 147 6.3.3), with the barrier
+        as it will be built: the planned thicknesses and the existing shielding, or the existing shielding alone; in
+        every area the barrier protects (a further area too). A shared wall: also the workload of the room on its
+        other side. None if the barrier is not calculated."""
+        rec = self.calc.get((nr, e))
+        if not rec or rec["missing"] or not rec.get("shield") or not rec.get("P") or not rec.get("K_total"):
+            return None
+        existing, side = self.existing_of(rec)
+        planned = self.planned_layers(nr, e)
+        if not planned and not existing:
+            return {"state": "nothing"}
+        stack = barrier_stack(planned, existing, side)
+        layered = bool(rec.get("layers"))
+        if not stacks_usable(rec["shield"]["components"], [stack]):
+            return {"state": "no data"}
+        sides = [(self.room_key(nr), rec, stack, "this room")]
+        other = self.shared_other(rec)
+        if other is not None and stacks_usable(other["shield"]["components"], [stack]):  # the wall from there
+            sides.append((rec["shared"]["key"][0], other, stack[::-1], rec["shared"]["room"]))
+        rows = []
+        for t, side_rec, layers, name in sides:
+            # the area beyond the barrier, and the further one: the workload is that of the more demanding
+            areas = [(side_rec["shield"]["components"], side_rec["P"], None)]
+            if side_rec.get("far") and stacks_usable(side_rec["far"]["components"], [layers]):
+                areas.append((side_rec["far"]["components"], side_rec["far"]["P"], "the further area"))
+            limits = []
+            for components, P, label in areas:
+                dose = stack_dose(components, layers, layered)
+                limits.append((P / dose if dose > 0 else float("inf"), label))
+            factor, label = min(limits, key=lambda item: item[0])
+            text = self.workload_allowed(t, factor) + (f", {label} limits it" if label and len(limits) > 1 else "")
+            rows.append({"room": name, "factor": factor, "text": text})
+        basis = (f"the planned {self.layers_text(stack, existing)}" if planned
+                 else f"the existing {self.layers_text(existing)} alone")
+        return {"state": "ok", "basis": basis, "rows": rows}
+
+    def patients_lines(self, nr, e):
+        """The lines of 'Check how many patients per week the barrier allows': [(text, style)]."""
+        allowed = self.allowed_workload(nr, e)
+        if allowed is None:
+            return [("Press Calculate: the barrier is not calculated yet, or something is missing.", "Muted.TLabel")]
+        if allowed["state"] == "nothing":
+            return [("Give the existing shielding, or tick 'Check the dose beyond the barrier with a planned "
+                     "thickness' and type it: the check uses what the barrier will have.", "Muted.TLabel")]
+        if allowed["state"] == "no data":
+            return [("The existing shielding has a material without transmission data for this radiation.",
+                     "RL.TLabel")]
+        style = "OK.TLabel" if all(row["factor"] >= 1 for row in allowed["rows"]) else "RL.TLabel"
+        if len(allowed["rows"]) == 1:
+            return [(f"With {allowed['basis']}: {allowed['rows'][0]['text']}", style)]
+        return [(f"With {allowed['basis']}:", style)] + [(f"   {row['room']}: {row['text']}", style)
+                                                          for row in allowed["rows"]]
+
+    def show_patients(self, e, nr, t):
+        """The result of 'Check how many patients per week the barrier allows', under it in the barrier tab."""
+        label, option = self.d.get(f"patientsres {e}{nr}"), self.d.get(f"checkpatients {e}{nr}")
+        if label is None or not label.winfo_exists():
+            return
+        if option is None or option.get() != 1:
+            label.grid_remove()
+            return
+        lines = self.patients_lines(nr, e)
+        label.configure(text="\n".join(text for text, _ in lines), style=lines[0][1])
+        label.grid()
+
+    # ===================== the height of the shielding of walls and doors (NCRP 147 2.3.6, 5.8) =====================
+    def shielding_height(self, e, nr):
+        """How high above the floor the shielding of wall or door e goes: metres, CEILING, or None (the floor and the
+        ceiling, or a height that is not a number)."""
+        variable = self.d.get(f"height {e}{nr}")
+        if variable is None or self.barrier_kind(e, nr) not in ("wall", "door"):
+            return None
+        text = variable.get().strip()
+        if text == CEILING:
+            return CEILING
+        value = self.entry_number(f"height {e}{nr}")
+        return value if value is not None and value > 0 else None
+
+    def height_text(self, e, nr):
+        height = self.shielding_height(e, nr)
+        if height is None:
+            return None
+        return "up to the ceiling" if height == CEILING else f"{height:g} m above the floor"
+
+    def height_note(self, e, nr):
+        """A wall whose shielding stops below the ceiling when the ceiling needs shielding added to its slab:
+        NCRP 147 asks the wall shielding to reach the ceiling shielding (2.3.6, 5.8)."""
+        height = self.shielding_height(e, nr)
+        ceiling = self.calc.get((nr, 2))
+        if height is None or height == CEILING or self.barrier_kind(e, nr) != "wall" or not ceiling \
+                or ceiling["missing"] or not ceiling.get("existing"):
+            return None
+        added = [x for _, x in ceiling.get("thickness") or [] if x is not None]
+        if added and min(added) > 0:
+            return ("The ceiling needs shielding added to its slab: take the shielding of this wall up to it "
+                    "(NCRP 147 2.3.6, 5.8).")
+        return None
+
+    def far_line(self, far):
+        """The line of the further area in the results: (text, style)."""
+        text = f"Also {self.far_text(far)}"
+        governs = {g for g in far.get("governs") or [] if g}
+        if governs:
+            text += (": it governs." if governs == {"other"} else ": the area just beyond governs." if governs == {"this"}
+                     else ": each material, the larger of the two.")
+        return text, "Muted.TLabel"
+
+    def shared_text(self, shared):
+        """The line of a shared wall in the results: (text, style)."""
+        name = f"Shared with {shared['room']} · {shared['barrier']}"
+        if shared["state"] == "not calculated":
+            return f"{name}: press Calculate there too, to add the radiation of that room.", "RL.TLabel"
+        if shared["state"] == "missing":
+            return f"{name}: it has missing data, so only the radiation of this room is counted.", "RL.TLabel"
+        if shared["state"] != "ok":
+            return name, "Muted.TLabel"
+        governs = {g for g in shared["governs"] if g}
+        who = (shared["room"] if governs == {"other"} else "this room" if governs == {"this"}
+               else "each material: the larger")
+        return f"{name}: the larger thickness of the two rooms ({who} governs).", "Muted.TLabel"
 
     def show_barrier_result(self, e, nr, t):
         """One row per barrier in the results tab, in barrier order: the thickness of each material,
@@ -997,9 +1530,12 @@ class departprimsec():
         self.d[f"resname {e}{nr}"] = ttk.Label(row, text=self.barn[f"lab_bar {e}{nr}"].cget("text"), style="BL2.TLabel",
                                                width=10, wraplength=theme.px(100))
         self.d[f"resname {e}{nr}"].grid(row=0, column=0, sticky="nw")
-        if self.need:
-            ttk.Label(row, text="Missing: " + "; ".join(self.need), style="RL.TLabel", wraplength=theme.px(420),
+        rec = self.calc.get((nr, e))
+        need = rec["missing"] if rec is not None else self.need
+        if need:
+            ttk.Label(row, text="Missing: " + "; ".join(need), style="RL.TLabel", wraplength=theme.px(420),
                       justify=LEFT).grid(row=0, column=1, columnspan=2, sticky="w")
+            self.show_patients(e, nr, t)
             return
         count = self.d[f"vnumbmat {e}{nr}"].get()
         layered = self.is_layered(e, nr) and count > 1
@@ -1022,9 +1558,33 @@ class departprimsec():
         if layered:
             ttk.Label(row, text="Layers of one barrier", style="Muted.TLabel").grid(row=count, column=1, columnspan=2,
                                                                                     sticky="w")
+        lines = []
+        existing, side = self.existing_of(rec or {})
+        if existing:
+            where = "outside it" if side == "outside" else "on its room side"
+            lines.append((f"In addition to the existing {self.layers_text(existing)} (the new materials {where})",
+                          "Muted.TLabel"))
+        if (rec or {}).get("far"):
+            lines.append(self.far_line(rec["far"]))
+        if (rec or {}).get("shared"):
+            lines.append(self.shared_text(rec["shared"]))
+        height_note = self.height_note(e, nr)
+        if height_note:
+            lines.append((height_note, "RL.TLabel"))
         check = self.dose_check(nr, e)
         if check and check["basis"].startswith("planned"):  # with the planned thickness: is the goal met?
             text = (f"{check['basis'][0].upper() + check['basis'][1:]} → {check['dose']:.3g} mGy/wk beyond, "
-                    f"P {check['P']:g}  " + ("✓ met" if check["ok"] else "✗ exceeded"))
-            ttk.Label(row, text=text, style="OK.TLabel" if check["ok"] else "RL.TLabel",
-                      wraplength=theme.px(380), justify=LEFT).grid(row=count + 1, column=1, columnspan=2, sticky="w")
+                    f"P {check['P']:g}  " + ("✓ met" if check["dose"] <= check["P"] * 1.0001 else "✗ exceeded"))
+            for key in ("far", "other", "other_far"):  # the other areas the barrier protects
+                area = check.get(key)
+                if area:
+                    text += (f";  {'toward ' if key != 'far' else ''}{area['room']}: {area['dose']:.3g}, "
+                             f"P {area['P']:g}  " + ("✓ met" if area["ok"] else "✗ exceeded"))
+            lines.append((text, "OK.TLabel" if check["ok"] else "RL.TLabel"))
+        option = self.d.get(f"checkpatients {e}{nr}")
+        if option is not None and option.get() == 1:
+            lines += self.patients_lines(nr, e)
+        for k, (text, style) in enumerate(lines):
+            ttk.Label(row, text=text, style=style, wraplength=theme.px(380),
+                      justify=LEFT).grid(row=count + 1 + k, column=1, columnspan=2, sticky="w")
+        self.show_patients(e, nr, t)

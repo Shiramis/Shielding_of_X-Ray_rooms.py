@@ -89,10 +89,8 @@ example("Yang 2017 - DBT room", "Yang et al. 2017: digital breast tomosynthesis 
              {4: barrier(4, ["Gypsum Wallboard"], [suggested(DBT, 2.0, dbtmode=3)], location=OFFICE,
                          name="Office wall")},
              patients=100),
-        "100 patients per week, every exam a 2D + 3D screening of both breasts (2 CC and 1 oblique view toward and 1 "
-        "away from the barrier, in 2D and in 3D), a fully occupied office (T = 1, P = 0.02 mGy/week) 2 m from the "
-        "gantry. The air kerma per view at 1 m is that of their table 9, the transmission that of their table 8 "
-        "(both in the program as 'Digital Breast Tomosynthesis – Yang 2017').",
+        "100 patients per week, each a 2D + 3D screening, an office (T = 1, P = 0.02 mGy/week) 2 m from the unit; "
+        "their tables 8 and 9.",
         [("Yang 2017: DBT room", "Office wall", "K", "mGy/week", 2.62, 0.01,
           "K = [200 (6.07 + 7.85)×10⁻³ + 100 (4.83×10⁻² + 1.43×10⁻² + 6.49×10⁻³ + 7.89×10⁻³)] / 2² = 2.62 mGy/week"),
          ("Yang 2017: DBT room", "Office wall", "B", "", 7.6e-3, 0.05e-3, "B = 0.02 / 2.62 = 7.6×10⁻³"),
@@ -103,12 +101,8 @@ yang2016 = secondary(None, 1.2, written="0.307", kvp=40)  # K1sec of their table
 yang2016["kvpdata"] = "W/Al (Li 2012)"
 example("Yang 2016 - DBT floor", "Yang et al. 2016: the floor of a DBT room", "Yang 2016",
         room("Mammography Room", "Yang 2016: DBT room", {1: barrier(1, ["Concrete"], [yang2016], T=1)}, patients=100),
-        "100 patients per week, the scatter toward the floor at the high technique (35 kVp W/Ag for 2D and 40 kVp W/Al "
-        "for 3D): K¹_{sec} = 3.07×10⁻¹ mGy per patient at 1 m (their table V), a fully occupied area below at the "
-        "shortest distance, 1.2 m, P = 0.02 mGy/week. As the article, the transmission is that of the 40 kVp W/Al beam "
-        "of Li et al. 2012 ('Give kVp': 40, W/Al (Li 2012)), and K¹_{sec} is written. In the program the same air "
-        "kerma is the choice 'Floor, high technique' of the workload distribution 'Digital Breast Tomosynthesis – Li "
-        "2013', which uses the transmission of the DBT workload of Li et al. 2013 instead.",
+        "100 patients per week, the scatter toward the floor at the high technique (their table V), a fully occupied "
+        "area 1.2 m below, with the 40 kVp W/Al transmission of Li et al. 2012.",
         [("Yang 2016: DBT room", "Floor", "K", "mGy/week", 21.3, 0.05, "K = 3.07×10⁻¹ / 1.2² × 100 = 21.3 mGy/week (Eq. 8)"),
          ("Yang 2016: DBT room", "Floor", "B", "", 9.4e-4, 0.05e-4, "B = 0.02 / 21.3 = 9.4×10⁻⁴ (Eq. 9)"),
          ("Yang 2016: DBT room", "Floor", "Concrete", "mm", 35, ("approximately", 3.5),
@@ -134,12 +128,8 @@ for k, (unit, ais, B, (gypsum, glass, wood)) in enumerate(JUDGE_TABLE, start=1):
                      (room_name, unit, "Wood", "mm", wood, 1.0, "wood, table 1")]
 example("Judge 2013 - FFDM room", "Judge et al. 2013: three full-field digital mammography units", "Judge 2013",
         room("Mammography Room", "Judge 2013: FFDM room", judge_walls, patients=10000 / WEEKS),
-        "Their table 1: the barrier at 1 m from each unit for a member of the public (0.3 mGy a year, T = 1), with the "
-        "maximum scatter at 1 m of one exposure × 40 000 exposures a year (40 patients a day, 4 exposures each, 5 days "
-        "a week, 50 weeks). In the program: the workload distribution 'Digital Mammography (FFDM) – Judge 2013' with "
-        "the unit of each wall (K¹_{sec} = 4 exposures × the maximum scatter), 10 000 / 52 patients a week, P = 0.3 / 52 "
-        "mGy/week. Judge et al. used Simpkin's Mo/Mo transmission without stating its kVp: 30 kVp reproduces their GE "
-        "and Hologic values and 35 kVp their Philips values, which the program uses.",
+        "Their table 1: a barrier 1 m from each unit, for a member of the public (0.3 mGy a year, T = 1), 40 000 "
+        "exposures a year.",
         judge_checks)
 
 # Biondi et al. 2024: table 1 (procedures in 2023), table 2 (workload), table 4 with their Eq. 4 (the NCRP 147
@@ -169,11 +159,8 @@ for name, patients, kerma, lead in BIONDI_ROOMS:
 example("Biondi 2024 - interventional rooms", "Biondi et al. 2024: five interventional rooms", "Biondi 2024",
         department("Biondi 2024: interventional rooms",
                    [biondi_room(name, patients) for name, patients, _, _ in BIONDI_ROOMS]),
-        "Their table 4, Eq. 4 (the shielding without the output of the tube): the patients of 2023 (table 1), the "
-        "workload per patient (table 2), the NCRP 147 secondary air kerma per patient of cardiac (electrophysiology, "
-        "haemodynamics: 3.8 mGy) or peripheral angiography (the others: 0.95 mGy, leakage + forward/backscatter), "
-        "times Wsite / Wnorm, a fully occupied uncontrolled area 2 m from the isocenter, 1 mSv a year (P = 1/52 mGy "
-        "per week, T = 1), lead with their table 3 transmission. The program works per week: patients / 52.",
+        "Their table 4: five rooms, a fully occupied area 2 m from the isocenter, 1 mSv a year, lead with their "
+        "table 3 transmission.",
         biondi_checks)
 
 # Li et al. 2024, section 3: the lead for a transmission of 0.001 at each kVp, for both filtrations (tables 1 and 2)
@@ -196,10 +183,8 @@ li_checks = [(f"Li 2024: {data.split(', ', 1)[1].replace(' (Li 2024)', '')}", f"
              for data, leads in LI_LEAD.items() for kvp, lead in zip(LI_KVP, leads)]
 example("Li 2024 - DR 600 lead", "Li et al. 2024: lead for a transmission of 0.001", "Li 2024",
         department("Li 2024: DR 600", [li_room(data) for data in LI_LEAD]),
-        "The lead that lets 0.001 of the primary beam through at 60 to 120 kV, for the DR 600 with its default "
-        "filtration and with 1 mm Al + 0.1 mm Cu added (their section 3, from tables 1 and 2). Each wall is one kVp "
-        "('Give kVp' with the DR 600 data): K = 20 mGy/week (1 patient, U = 1, K¹ = 20 mGy at 1 m), P = 0.02, so "
-        "B = 0.001.",
+        "The lead for B = 0.001 of the primary beam at 60 to 120 kV, with the two filtrations of the DR 600 (their "
+        "tables 1 and 2); each wall is one kVp.",
         li_checks)
 
 
@@ -336,6 +321,8 @@ def main():
         rooms = {app.room_name(t): t for t in app.standalone} if app.standalone else \
             {app.room_name(t): t for t in app.departments[1]["rooms"]}
         lines = []
+        by_room = len({check[0] for check in item["checks"]}) > 1  # the room, in a department
+        by_barrier = len({check[1] for check in item["checks"]}) > 1 or not by_room  # the barrier where they differ
         for room_name, barrier_name, quantity, unit, paper, tolerance, how in item["checks"]:
             t = rooms[room_name]
             nr = app.d[f"nr {t}"]
@@ -349,8 +336,9 @@ def main():
             if not ok:
                 failed.append((item["file"], room_name, barrier_name, quantity, paper, value))
             shown = f"{value:.3g}" if quantity in ("B",) else f"{value:.2f}"
-            lines.append(f"• {room_name.split(': ', 1)[1]}, {barrier_name}, {quantity}: paper {paper:g} {unit}, "
-                         f"program {shown} {unit}. {how[0].upper() + how[1:]}.")
+            where = ", ".join([room_name.split(": ", 1)[1]] * by_room + [barrier_name] * by_barrier)
+            lines.append(f"• {where[0].upper() + where[1:]}, {quantity}: paper {paper:g}, program {shown} {unit}".rstrip()
+                         + (" (not compared)." if tolerance is None else "."))
             rows.append({"paper": item["paper"], "example": item["title"].split(": ", 1)[1],
                          "room": room_name.split(": ", 1)[1], "barrier": barrier_name, "quantity": quantity,
                          "unit": unit, "paper_value": paper, "program": value, "compared": tolerance is not None,
@@ -360,7 +348,8 @@ def main():
                   f"program {value:.4g}" + ("" if tolerance is not None else "   (not compared)"))
         project, _ = app.collect_project()
         project.update(title=item["title"], description="\n\n".join(
-            [item["about"], "\n".join(lines), REFERENCES[item["paper"]]]))
+            [item["about"], "\n".join(lines), REFERENCES[item["paper"]] + f"\nEach value in detail: {COMPARISON}, "
+                                                                          "in this folder."]))
         path = os.path.join(FOLDER, item["file"] + ".shield")
         with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("project.json", json.dumps(project, indent=1, ensure_ascii=False))

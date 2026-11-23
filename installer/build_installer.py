@@ -14,7 +14,7 @@ import sys
 
 from PIL import Image, ImageDraw, ImageFont
 
-VERSION = "2.0.0"  # also shown in Apps & features; raise it for every new release
+VERSION = "2.1.0"  # also shown in Apps & features; raise it for every new release
 NAME = "Shielding of X-ray Rooms"
 
 HERE = os.path.dirname(os.path.abspath(__file__))

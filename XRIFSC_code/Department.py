@@ -123,9 +123,14 @@ class ddepartment():
                 self.d[key].destroy()
             # If room has been run, destroy its tabs too
             if self.d[f"run {t}"]:
+                # its walls shared with other rooms: those are calculated again without it
+                unshared = [self.shared_partner(t, e) for e in range(1, self.d[f"x {t}"] + 1)]
+                for e in range(1, self.d[f"x {t}"] + 1):
+                    self.unlink(t, e)
                 self.d[f"newroomf {t}"].destroy()
                 self.d[f"resframe {t}"].destroy()
                 self.d[f"run {t}"] = False
+                self.recalculate([partner for partner in unshared if partner])
     def desroom(self, t):
         room_type = self.d[f"vselroom {t}"].get()
         info = self.departments[self.d[f"dep {t}"]]

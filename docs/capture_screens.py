@@ -71,6 +71,13 @@ def capture(window, settle=True):
     gdi32.DeleteDC(mem)
     user32.ReleaseDC(hwnd, hdc)
     image = Image.frombuffer("RGBA", (w, h), buffer, "raw", "BGRA", 0, 1).convert("RGB")
+    # only what is seen of the window: without the invisible resize borders, which PrintWindow paints black
+    seen = ctypes.wintypes.RECT()
+    if ctypes.windll.dwmapi.DwmGetWindowAttribute(hwnd, 9, ctypes.byref(seen), ctypes.sizeof(seen)) == 0 and \
+            rect.left <= seen.left < seen.right <= rect.right and rect.top <= seen.top < seen.bottom <= rect.bottom:
+        image = image.crop((seen.left - rect.left, seen.top - rect.top, seen.right - rect.left,
+                            seen.bottom - rect.top))
+        return image, (seen.left, seen.top)
     return image, (rect.left, rect.top)
 
 
@@ -134,6 +141,7 @@ def record(key, t, barriers):
                              for c in shield.get("components", [])]
         rec["preshielding"] = next((c["pre"] for c in shield.get("components", []) if c["pre"]), {})
         rec["check"] = app.dose_check(nr, e)
+        rec["allowed"] = app.allowed_workload(nr, e)
         rows[app.barn[f"lab_bar {e}{nr}"].cget("text")] = rec
     values[key] = rows
 
@@ -153,7 +161,7 @@ shot("xray_floor.png", root, widget=inputs)
 shot("xray_results.png", root, widget=results)
 select_barrier(t, 5)
 shot("xray_secondary.png", root, widget=inputs)
-select_barrier(t, 5, scroll=1.0)
+select_barrier(t, 6, scroll=1.0)  # Wall 3: one gypsum board planned, and the check of the patients under Calculate
 shot("xray_area.png", root, widget=inputs)
 select_barrier(t, 7, scroll=0.42)
 shot("xray_layers.png", root, widget=inputs)
@@ -191,6 +199,71 @@ t = next(iter(app.standalone))
 record("ct", t, range(1, 8))
 inputs, results = room_parts(t)
 shot("ct_room.png", root, box=without_title_bar(root), height=720)
+
+# existing shielding: the floor of the CT room is a concrete slab of 100 mm; how much lead must be added to it
+nr = d[f"nr {t}"]
+e = 1
+app.existing_vars(e, nr)
+d[f"existing {e}{nr}"].set(1)
+d[f"existmat {e}1{nr}"].set("Concrete")
+d[f"existmm {e}1{nr}"].set("100")
+values["existing"] = {}
+for side in ("outside", "inside"):
+    d[f"addside {e}{nr}"].set(side)
+    app.update_material_panel(e, nr, t)
+    app.choosetype(e, nr, t, notify=False)
+    rec = app.calc[(nr, e)]
+    values["existing"][side] = {"thickness": rec["thickness"], "K_total": rec["K_total"], "P": rec["P"],
+                                "d": rec["d"], "params": rec["shield"]["params"]}
+select_barrier(t, e, scroll=0.0)
+shot("existing_floor.png", root, widget=inputs, height=820)
+
+# a further area: Wall 3 of the X-ray room has a corridor beyond it (T = 1/5) and an office across it, 2 m further
+app.open_example("xray")
+t = next(iter(app.standalone))
+nr = d[f"nr {t}"]
+inputs, results = room_parts(t)
+e = 6
+app.choosetype(e, nr, t, notify=False)
+near = app.calc[(nr, e)]
+values["further"] = {"near": {"thickness": near["thickness"], "K": near["K_total"], "T": near["T"], "P": near["P"],
+                              "d": near["distributions"][0]["d"], "params": near["shield"]["params"]}}
+d[f"far {e}{nr}"].set(1)
+app.update_far_panel(e, nr, t)
+d[f"fardist {e}{nr}"].set("2")
+app.choosetype(e, nr, t, notify=False)
+rec = app.calc[(nr, e)]
+values["further"]["far"] = {"thickness": rec["thickness"], "K": rec["far"]["components"][0]["K"],
+                            "T": rec["far"]["T"], "P": rec["far"]["P"], "delta": rec["far"]["delta"],
+                            "governs": rec["far"]["governs"], "check": app.dose_check(nr, e),
+                            "allowed": app.allowed_workload(nr, e)}
+select_barrier(t, e, scroll=1.0)
+shot("further_area.png", root, widget=inputs, height=640)
+
+# the field of the scatter: the same wall with a 35 x 43 cm field at 1 m instead of NCRP 147's 1000 cm²
+d[f"far {e}{nr}"].set(0)
+app.update_far_panel(e, nr, t)
+d[f"fieldvar {e}{nr}0"].set(1)
+app.field_widgets(e, nr, 0)
+d[f"fieldF {e}{nr}0"].set("1505")
+app.choosetype(e, nr, t, notify=False)
+rec = app.calc[(nr, e)]
+values["field"] = {"K1": rec["distributions"][0]["K1"], "K": rec["K_total"], "thickness": rec["thickness"],
+                   "params": rec["shield"]["params"], "d": rec["distributions"][0]["d"], "T": rec["T"],
+                   "P": rec["P"], "N": rec["distributions"][0]["N"]}
+select_barrier(t, e, scroll=0.0)
+shot("field_size.png", root, widget=inputs, height=820)
+# an air kerma written, for the field of NCRP 147 (1000 cm² at 1 m), scaled to the same 35 x 43 cm field
+d[f"unairkerv {e}{nr}0"].set(2)
+app.unairk(e, nr, 0)
+d[f"entk {e}{nr}0"].insert(0, "0.0345")
+d[f"fieldvar {e}{nr}0"].set(1)
+app.field_widgets(e, nr, 0)
+d[f"fieldF {e}{nr}0"].set("1505")
+app.choosetype(e, nr, t, notify=False)
+values["field"]["written"] = app.calc[(nr, e)]["distributions"][0]["K1"]
+select_barrier(t, e, scroll=0.0)
+shot("field_written.png", root, widget=inputs, height=820)
 app.open_example("mammography")
 t = next(iter(app.standalone))
 record("mammography", t, range(1, 8))
@@ -355,6 +428,25 @@ shot("department_rooms.png", root, box=without_title_bar(root), height=520)
 t = info["rooms"][1]
 info["rooms_note"].select(d[f"newroomf {t}"])
 shot("department_room.png", root)
+
+# the wall shared by the CT room (Wall 2) and the mammography room (Wall 4)
+ct, mammo = info["rooms"][1], info["rooms"][2]
+values["shared"] = {}
+for room, e in ((ct, 5), (mammo, 7)):
+    nr = d[f"nr {room}"]
+    rec = app.calc[(nr, e)]
+    component = rec["shield"]["components"][0]
+    values["shared"][app.room_name(room)] = {
+        "barrier": app.barrier_name(e, nr), "K": component["K"], "P": rec["P"], "T": rec["T"],
+        "params": component["params"], "own": rec["shared"]["own"], "other": rec["shared"]["other"],
+        "thickness": rec["thickness"], "check": app.dose_check(nr, e)}
+nr = d[f"nr {ct}"]
+d[f"noteb {ct}{nr}"].select(d[f"barrierf 5{nr}"])
+root.update()
+window = app.barrier_dialog(ct, 5, near=d[f"noteb {ct}{nr}"])
+shot("shared_dialog.png", window)
+window.destroy()
+shot("shared_results.png", root, widget=d[f"resframe {ct}"], height=560)
 
 # ---------- floor plan ----------
 editor = plan_view.PlanEditor(app, ("dep", 1), "Example Radiology Department", app.workspace_rooms(("dep", 1)),

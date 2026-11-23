@@ -37,7 +37,66 @@ NOTES = [
     ("alone", "'Each material alone': the thickness of each material if it were the only one."),
     ("layers", "'Layers': all materials together; from the inside out each takes its share of the attenuation, "
                "every layer starting at the equivalent thickness of the layers (and preshielding) in front of it."),
+    ("existing", "Existing shielding: what the barrier already has (e.g. a floor slab, NCRP 147 2.3.5); the thicknesses "
+                 "of the materials are those to add to it, outside it or on its room side, each layer starting at "
+                 "the equivalent thickness of what is in front of it."),
+    ("shared", "Shared with: the same wall as one of another room of the department; each material has the larger "
+               "thickness of the two rooms (from the other room the layers are in the reverse order), and the dose "
+               "beyond is checked on both sides."),
+    ("far", "Further area: an area further away than the one just beyond the barrier, with its own T and P (NCRP 147 "
+            "4.1.3); every radiation type reaches it that much further away, and each material has the larger "
+            "thickness of the two areas."),
+    ("height", "Shielding height: how high above the floor the shielding of a wall or door goes (NCRP 147 2.3.6, "
+               "5.8); it does not change the thickness."),
+    ("field", "Field: the scatter of a radiation type scaled to the primary field given, (F / d_F²) / (F₀ / d_F₀²) "
+              "with F₀ at d_F₀ the field of NCRP 147 Table 4.7 (NCRP 147 4.1.7.2, Eq. C.2); the leakage is not "
+              "scaled. An air kerma written is scaled whole, from the field it was written for."),
+    ("allowed", "Workload allowed: the workload at which the dose beyond the barrier as it will be built (planned "
+                "thicknesses and existing shielding) reaches P (NCRP 147 6.3.3, 6.4); every radiation type of the "
+                "barrier grows with it."),
 ]
+
+
+def existing_text(rec):
+    existing = rec.get("existing")
+    if not existing:
+        return None
+    layers = " + ".join(f"{m} {x:g} mm" for m, x in existing["layers"])
+    return layers + (" (new materials outside it)" if existing["side"] == "outside" else
+                     " (new materials on its room side)")
+
+
+def far_text(rec):
+    far = rec.get("far")
+    if not far:
+        return None
+    text = (f"{far['delta']:g} m further" + (f", {far['location']}" if far.get("location") else "")
+            + f", T {far['T']:g}, P {far['P']:g}")
+    governs = {g for g in far.get("governs") or [] if g}
+    return text + (" (governs)" if governs == {"other"} else " (the area just beyond governs)"
+                   if governs == {"this"} else "")
+
+
+def shared_text(rec):
+    shared = rec.get("shared")
+    if not shared:
+        return None
+    text = f"{shared['room']} · {shared['barrier']}"
+    if shared["state"] == "ok":
+        governs = {g for g in shared["governs"] if g}
+        who = shared["room"] if governs == {"other"} else "this room" if governs == {"this"} else "per material"
+        return text + f" (the larger of the two rooms: {who})"
+    return text + (" (not calculated there yet)" if shared["state"] == "not calculated" else
+                   " (missing data there)" if shared["state"] == "missing" else "")
+
+
+def allowed_text(allowed):
+    if not allowed or allowed.get("state") != "ok":
+        return None
+    rows = allowed["rows"]
+    if len(rows) == 1:
+        return f"{rows[0]['text']}, with {allowed['basis']}"
+    return "; ".join(f"{row['room']}: {row['text']}" for row in rows) + f", with {allowed['basis']}"
 
 
 def write_report(path, title, rooms):
@@ -125,7 +184,10 @@ def write_report(path, title, rooms):
                 ("P (mGy/week)", 9, f_num, False), ("ΣK (mGy/week)", 10, f_sci, False), ("B", 10, f_sci, False)]
                + [(f"{m} (mm)", 9, f_mm, True) for m in materials]
                + [("Dose beyond (mGy/week)", 11, f_sci, False), ("Goal P", 26, f_text, False),
-                  ("Materials", 30, f_text, False), ("Status", 40, f_text, True)])
+                  ("Materials", 30, f_text, False), ("Shielding height", 14, f_text, False),
+                  ("Existing shielding", 26, f_text, False), ("Further area", 28, f_text, False),
+                  ("Shared with", 26, f_text, False), ("Workload allowed", 34, f_text, False),
+                  ("Status", 40, f_text, True)])
     rows = []
     for room in rooms:
         for barrier in room["barriers"]:
@@ -139,11 +201,20 @@ def write_report(path, title, rooms):
             layers = rec.get("layers")
             row += [rec.get("area"), rec.get("location"), rec.get("T"), rec.get("P"), rec.get("K_total"), rec.get("B")]
             row += [thickness.get(material) for material in materials]
-            row += [check["dose"] if check else None,
-                    (("met" if check["ok"] else "EXCEEDED") + f" ({check['basis']})", f_ok if check["ok"] else f_bad)
-                    if check else None,
+            goal = None
+            if check:
+                goal = ("met" if check["dose"] <= check["P"] * 1.0001 else "EXCEEDED") + f" ({check['basis']})"
+                for key in ("far", "other", "other_far"):  # the other areas the barrier protects
+                    area = check.get(key)
+                    if area:
+                        goal += (f"; {'toward ' if key != 'far' else ''}{area['room']}: {area['dose']:.3g} mGy/week, "
+                                 + ("met" if area["ok"] else "EXCEEDED"))
+                goal = (goal, f_ok if check["ok"] else f_bad)
+            row += [check["dose"] if check else None, goal,
                     ("Layers, inside → outside: " + ", ".join(f"{m} {share:g} %" for m, share in layers))
-                    if layers else "Each material alone" if thickness else None]
+                    if layers else "Each material alone" if thickness else None,
+                    barrier.get("height"), existing_text(rec), far_text(rec), shared_text(rec),
+                    allowed_text(barrier.get("allowed"))]
             if rec.get("missing"):
                 row.append(("Missing: " + "; ".join(rec["missing"]), f_bad))
             elif not thickness:
@@ -163,7 +234,13 @@ def write_report(path, title, rooms):
            "none needed": any(x == 0 for _, _, rec in records for _, x in rec.get("thickness", [])),
            "check": any(barrier.get("check") for _, barrier, _ in records),
            "layers": any(rec.get("layers") for _, _, rec in records),
-           "alone": any(not rec.get("layers") and len(rec.get("thickness", [])) > 1 for _, _, rec in records)}
+           "alone": any(not rec.get("layers") and len(rec.get("thickness", [])) > 1 for _, _, rec in records),
+           "existing": any(rec.get("existing") for _, _, rec in records),
+           "far": any(rec.get("far") for _, _, rec in records),
+           "height": any(barrier.get("height") for _, barrier, _ in records),
+           "field": any(", field " in (dist.get("k1_source") or "") for dist in distributions),
+           "shared": any(rec.get("shared") for _, _, rec in records),
+           "allowed": any(allowed_text(barrier.get("allowed")) for _, barrier, _ in records)}
     row += 1
     ws.write(row, 0, "Notes", f_title)
     for about, note in NOTES:
@@ -235,8 +312,12 @@ class ReportExport:
         elif value(f"vrawork {t}") == 2 and value(f"numpapwe {t}"):
             info["workload"] = f"{value(f'numpapwe {t}')} patients/week"
         for e in range(1, self.d[f"x {t}"] + 1):
+            option = self.d.get(f"checkpatients {e}{nr}")
             info["barriers"].append({"name": self.barn[f"lab_bar {e}{nr}"].cget("text"),
-                                     "record": self.calc.get((nr, e)), "check": self.dose_check(nr, e)})
+                                     "record": self.calc.get((nr, e)), "check": self.dose_check(nr, e),
+                                     "allowed": self.allowed_workload(nr, e)
+                                     if option is not None and option.get() == 1 else None,
+                                     "height": self.height_text(e, nr)})
         return info
 
     def export_report(self, title, rooms):

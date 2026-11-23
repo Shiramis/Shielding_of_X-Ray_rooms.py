@@ -39,6 +39,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.03994,
@@ -105,6 +107,17 @@
     "ok": true,
     "basis": "planned Concrete 100 mm",
     "transmission": 3.085965356166474e-05
+   },
+   "allowed": {
+    "state": "ok",
+    "basis": "the planned Concrete 100 mm",
+    "rows": [
+     {
+      "room": "this room",
+      "factor": 6.1733375620665765,
+      "text": "up to 741 patients/week (\u00d76.2 the present workload)"
+     }
+    ]
    }
   },
   "Ceiling": {
@@ -146,6 +159,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.0361,
@@ -204,6 +219,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.10629251700680271
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Door 1": {
@@ -241,6 +259,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Lead": [
      2.298,
@@ -290,10 +310,13 @@
    "check": {
     "K": 0.03588289511640833,
     "P": 0.02,
-    "dose": 0.019999999999999997,
+    "dose": 0.02,
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.5573686274509804
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 1": {
@@ -350,6 +373,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.03994,
@@ -452,6 +477,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.10411686586985391
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 2": {
@@ -493,6 +521,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Gypsum Wallboard": [
      0.0138,
@@ -551,6 +581,17 @@
     "ok": true,
     "basis": "planned Lead 0.5 mm",
     "transmission": 0.02475276766895759
+   },
+   "allowed": {
+    "state": "ok",
+    "basis": "the planned Lead 0.5 mm",
+    "rows": [
+     {
+      "room": "this room",
+      "factor": 18.308509196656185,
+      "text": "up to 2197 patients/week (\u00d718 the present workload)"
+     }
+    ]
    }
   },
   "Wall 3": {
@@ -592,6 +633,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Gypsum Wallboard": [
      0.0138,
@@ -650,6 +693,17 @@
     "ok": false,
     "basis": "planned Gypsum Wallboard 15.9 mm",
     "transmission": 0.42396492551873105
+   },
+   "allowed": {
+    "state": "ok",
+    "basis": "the planned Gypsum Wallboard 15.9 mm",
+    "rows": [
+     {
+      "room": "this room",
+      "factor": 0.45323764108549675,
+      "text": "up to 54 patients/week (\u00d70.45 the present workload)"
+     }
+    ]
    }
   },
   "Wall 4": {
@@ -715,6 +769,8 @@
      50.0
     ]
    ],
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.03552,
@@ -817,6 +873,17 @@
     "ok": true,
     "basis": "planned Concrete 100 mm + Lead 1 mm",
     "transmission": 2.1076047169001584e-05
+   },
+   "allowed": {
+    "state": "ok",
+    "basis": "the planned Concrete 100 mm + Lead 1 mm",
+    "rows": [
+     {
+      "room": "this room",
+      "factor": 17.92315283226967,
+      "text": "up to 2151 patients/week (\u00d718 the present workload)"
+     }
+    ]
    }
   }
  },
@@ -837,6 +904,8 @@
    "Dose beyond (mGy/week)",
    "Goal P",
    "Materials",
+   "Shielding height",
+   "Workload allowed",
    "Status"
   ],
   "rows": [
@@ -856,6 +925,8 @@
     0.003239738601513447,
     "met (planned Concrete 100 mm)",
     "Each material alone",
+    null,
+    null,
     "OK"
    ],
    [
@@ -874,6 +945,8 @@
     0.02,
     "met (required thickness)",
     "Each material alone",
+    null,
+    null,
     "OK"
    ],
    [
@@ -892,6 +965,8 @@
     0.02,
     "met (required thickness)",
     "Each material alone",
+    "2.1 m above the floor",
+    null,
     "OK"
    ],
    [
@@ -910,6 +985,8 @@
     0.02,
     "met (required thickness)",
     "Each material alone",
+    "2.1 m above the floor",
+    null,
     "OK"
    ],
    [
@@ -928,6 +1005,8 @@
     0.005461941162214547,
     "met (planned Lead 0.5 mm)",
     "Each material alone",
+    "2.1 m above the floor",
+    null,
     "OK"
    ],
    [
@@ -946,6 +1025,8 @@
     0.04412696163562304,
     "EXCEEDED (planned Gypsum Wallboard 15.9 mm)",
     "Each material alone",
+    "2.1 m above the floor",
+    "up to 54 patients/week (\u00d70.45 the present workload), with the planned Gypsum Wallboard 15.9 mm",
     "OK"
    ],
    [
@@ -964,6 +1045,8 @@
     0.001115875102286194,
     "met (planned Concrete 100 mm + Lead 1 mm)",
     "Layers, inside \u2192 outside: Concrete 50 %, Lead 50 %",
+    "2.1 m above the floor",
+    null,
     "OK"
    ]
   ]
@@ -998,6 +1081,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.0383,
@@ -1036,6 +1121,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.002998866213151927
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Ceiling": {
@@ -1067,6 +1155,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.0383,
@@ -1105,6 +1195,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.017715419501133783
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Door 1": {
@@ -1132,6 +1225,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Lead": [
      2.246,
@@ -1165,6 +1260,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.04163673469387755
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 1": {
@@ -1196,6 +1294,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.0383,
@@ -1234,6 +1334,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.17777777777777773
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 2": {
@@ -1265,6 +1368,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.0383,
@@ -1303,6 +1408,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.0081859410430839
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 3": {
@@ -1334,6 +1442,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.0383,
@@ -1372,6 +1482,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.022222222222222216
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 4": {
@@ -1403,6 +1516,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.0383,
@@ -1441,8 +1556,173 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.0409297052154195
+   },
+   "allowed": {
+    "state": "nothing"
    }
   }
+ },
+ "existing": {
+  "outside": {
+   "thickness": [
+    [
+     "Lead",
+     0.5860581195637151
+    ],
+    [
+     "Concrete",
+     39.49134163314096
+    ]
+   ],
+   "K_total": 6.6691871455576575,
+   "P": 0.02,
+   "d": 2.3,
+   "params": {
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ]
+   }
+  },
+  "inside": {
+   "thickness": [
+    [
+     "Lead",
+     0.32204319714342355
+    ],
+    [
+     "Concrete",
+     39.49134163314096
+    ]
+   ],
+   "K_total": 6.6691871455576575,
+   "P": 0.02,
+   "d": 2.3,
+   "params": {
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
+    ],
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ]
+   }
+  }
+ },
+ "further": {
+  "near": {
+   "thickness": [
+    [
+     "Lead",
+     0.13252416045057483
+    ],
+    [
+     "Gypsum Wallboard",
+     38.639433749154286
+    ]
+   ],
+   "K": 0.10408163265306125,
+   "T": 0.2,
+   "P": 0.02,
+   "d": 2.8,
+   "params": {
+    "Gypsum Wallboard": [
+     0.0138,
+     0.057,
+     0.7937
+    ],
+    "Lead": [
+     2.298,
+     17.38,
+     0.6193
+    ]
+   }
+  },
+  "far": {
+   "thickness": [
+    [
+     "Lead",
+     0.20248078697547636
+    ],
+    [
+     "Gypsum Wallboard",
+     58.86921987181966
+    ]
+   ],
+   "K": 0.17708333333333343,
+   "T": 1.0,
+   "P": 0.02,
+   "delta": 2.0,
+   "governs": [
+    "other",
+    "other"
+   ],
+   "check": {
+    "K": 0.10408163265306125,
+    "P": 0.02,
+    "dose": 0.04412696163562304,
+    "ok": false,
+    "basis": "planned Gypsum Wallboard 15.9 mm",
+    "transmission": 0.42396492551873105,
+    "far": {
+     "room": "further area",
+     "dose": 0.07507712222727533,
+     "P": 0.02,
+     "ok": false
+    }
+   },
+   "allowed": {
+    "state": "ok",
+    "basis": "the planned Gypsum Wallboard 15.9 mm",
+    "rows": [
+     {
+      "room": "this room",
+      "factor": 0.26639273598494495,
+      "text": "up to 32 patients/week (\u00d70.27 the present workload), the further area limits it"
+     }
+    ]
+   }
+  }
+ },
+ "field": {
+  "K1": 0.0517,
+  "K": 0.15826530612244902,
+  "thickness": [
+   [
+    "Lead",
+    0.18633857436938525
+   ],
+   [
+    "Gypsum Wallboard",
+    54.25652018487783
+   ]
+  ],
+  "params": {
+   "Gypsum Wallboard": [
+    0.0138,
+    0.057,
+    0.7937
+   ],
+   "Lead": [
+    2.298,
+    17.38,
+    0.6193
+   ]
+  },
+  "d": 2.8,
+  "T": 0.2,
+  "P": 0.02,
+  "N": 120.0,
+  "written": 0.0519225
  },
  "mammography": {
   "Floor": {
@@ -1484,6 +1764,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.2539,
@@ -1542,6 +1824,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.026989795918367344
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Ceiling": {
@@ -1583,6 +1868,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.2539,
@@ -1641,6 +1928,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.15943877551020408
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Door 1": {
@@ -1682,6 +1972,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Wood": [
      0.01888,
@@ -1740,6 +2032,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 1.0
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 1": {
@@ -1781,6 +2076,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Gypsum Wallboard": [
      0.0883,
@@ -1839,6 +2136,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 1.0
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 2": {
@@ -1880,6 +2180,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Gypsum Wallboard": [
      0.0883,
@@ -1938,6 +2240,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.12022727272727272
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 3": {
@@ -1979,6 +2284,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Gypsum Wallboard": [
      0.0883,
@@ -2037,6 +2344,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 1.0
+   },
+   "allowed": {
+    "state": "nothing"
    }
   },
   "Wall 4": {
@@ -2078,6 +2388,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Gypsum Wallboard": [
      0.0883,
@@ -2136,6 +2448,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.12022727272727272
+   },
+   "allowed": {
+    "state": "nothing"
    }
   }
  },
@@ -2175,6 +2490,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Gypsum Wallboard": [
      0.0629,
@@ -2228,6 +2545,9 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.0076321312726578905
+   },
+   "allowed": {
+    "state": "nothing"
    }
   }
  },
@@ -2477,6 +2797,8 @@
    ],
    "missing": [],
    "layers": null,
+   "existing": null,
+   "far": null,
    "params": {
     "Concrete": [
      0.038,
@@ -2535,6 +2857,131 @@
     "ok": true,
     "basis": "required thickness",
     "transmission": 0.002900744921618918
+   },
+   "allowed": {
+    "state": "nothing"
+   }
+  }
+ },
+ "shared": {
+  "CT Scanner": {
+   "barrier": "Wall 2",
+   "K": 2.443213296398892,
+   "P": 0.02,
+   "T": 1.0,
+   "params": {
+    "Lead": [
+     2.246,
+     5.73,
+     0.547
+    ],
+    "Concrete": [
+     0.0383,
+     0.0142,
+     0.658
+    ]
+   },
+   "own": [
+    1.2455750700909773,
+    113.57012631050895
+   ],
+   "other": [
+    0.013692774570692465,
+    1.4644863838323146
+   ],
+   "thickness": [
+    [
+     "Lead",
+     1.2455750700909773
+    ],
+    [
+     "Concrete",
+     113.57012631050895
+    ]
+   ],
+   "check": {
+    "K": 2.443213296398892,
+    "P": 0.02,
+    "dose": 0.020000000000000004,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 0.008185941043083901,
+    "other": {
+     "room": "Mammography",
+     "dose": 2.302918532538947e-16,
+     "P": 0.02,
+     "ok": true
+    }
+   }
+  },
+  "Mammography": {
+   "barrier": "Wall 4",
+   "K": 0.166351606805293,
+   "P": 0.02,
+   "T": 1.0,
+   "params": {
+    "Lead": [
+     29.91,
+     184.4,
+     0.355
+    ],
+    "Concrete": [
+     0.2539,
+     1.8411,
+     0.3924
+    ],
+    "Gypsum Wallboard": [
+     0.0883,
+     0.7526,
+     0.3786
+    ],
+    "Steel": [
+     5.798,
+     44.12,
+     0.4124
+    ],
+    "Plate Glass": [
+     0.2404,
+     1.709,
+     0.3918
+    ],
+    "Wood": [
+     0.01888,
+     0.04172,
+     0.2903
+    ]
+   },
+   "own": [
+    0.013692774570692465,
+    1.4644863838323146
+   ],
+   "other": [
+    1.2455750700909773,
+    113.57012631050895
+   ],
+   "thickness": [
+    [
+     "Lead",
+     1.2455750700909773
+    ],
+    [
+     "Concrete",
+     113.57012631050895
+    ]
+   ],
+   "check": {
+    "K": 0.166351606805293,
+    "P": 0.02,
+    "dose": 2.302918532538947e-16,
+    "ok": true,
+    "basis": "required thickness",
+    "transmission": 1.3843680724012534e-15,
+    "other": {
+     "room": "CT Scanner",
+     "dose": 0.020000000000000004,
+     "P": 0.02,
+     "ok": true
+    }
    }
   }
  }

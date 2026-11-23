@@ -9,6 +9,8 @@ import theme
 KIND_NAMES = {"floor": "Floor", "ceiling": "Ceiling", "wall": "Wall", "door": "Door"}
 NAME_LENGTH = 40
 DOOR_HEIGHT = 2.1  # m, as the floor plan and the 2D / 3D view draw a door
+NOT_SHARED = "— no other room —"
+KEEP = object()  # given to on_done when the dialog has no 'Shared with': the shared wall stays as it is
 
 
 def default_kind(e):
@@ -59,9 +61,11 @@ class BarrierDialog(Toplevel):
     """The kind (wall or door) and the name of a barrier: of a new one (e None), or of barrier e. state() gives, as
     the room is now, the number the barrier has (a new one: the next) and [(barrier, kind, name)] of the others, so
     that several dialogs can be open together. on_done(kind, name) gets the name typed, or the default name when it
-    is left empty."""
+    is left empty. sharing (a room of a department): {"choices": [(label, key)], "current": key or None}, the walls
+    and doors of its other rooms; on_done then also gets shared=key of the one chosen, or None."""
 
-    def __init__(self, master, e, kind, name, state, room_type, on_done, new=False, near=None, offset=0):
+    def __init__(self, master, e, kind, name, state, room_type, on_done, new=False, near=None, offset=0,
+                 sharing=None):
         super().__init__(master)
         self.e, self.state, self.on_done, self.room_type, self.new = e, state, on_done, room_type, new
         self.title("Add a barrier" if new else "Barrier")
@@ -88,8 +92,24 @@ class BarrierDialog(Toplevel):
         self.hint.grid(row=4, column=1, columnspan=2, sticky="w", pady=(2, 0))
         self.error = ttk.Label(box, style="RL.TLabel", wraplength=theme.px(380), justify="left")
         self.error.grid(row=5, column=0, columnspan=3, sticky="w", pady=(4, 0))
+        self.shared = None
+        if sharing is not None:  # a room of a department: the same wall (or door) as one of another room
+            self.choices = dict(sharing["choices"])
+            current = next((label for label, key in sharing["choices"] if key == sharing["current"]), NOT_SHARED)
+            ttk.Label(box, text="Shared with:").grid(row=6, column=0, sticky="w", padx=(0, 8), pady=(10, 0))
+            self.shared = StringVar(value=current)
+            self.shared_box = ttk.Combobox(box, textvariable=self.shared, state="readonly", width=32,
+                                           values=[NOT_SHARED] + [label for label, _ in sharing["choices"]])
+            self.shared_box.grid(row=6, column=1, columnspan=2, sticky="w", pady=(10, 0))
+            note = ("The same wall (or door) as one of another room of the department: its thickness is calculated "
+                    "for the radiation of both rooms, the larger of the two." if sharing["choices"] else
+                    "Design another room of the department to say that this wall is also one of its walls.")
+            ttk.Label(box, text=note, style="Muted.TLabel", wraplength=theme.px(380),
+                      justify="left").grid(row=7, column=0, columnspan=3, sticky="w", pady=(4, 0))
+            if not sharing["choices"]:
+                self.shared_box.state(["disabled"])
         buttons = ttk.Frame(box)
-        buttons.grid(row=6, column=0, columnspan=3, sticky="e", pady=(10, 0))
+        buttons.grid(row=8, column=0, columnspan=3, sticky="e", pady=(10, 0))
         self.ok_button = ttk.Button(buttons, text="Add" if new else "OK", style="Accent.TButton", command=self.ok)
         self.ok_button.pack(side="left", padx=(0, 6))
         ttk.Button(buttons, text="Cancel", command=self.destroy).pack(side="left")
@@ -133,8 +153,12 @@ class BarrierDialog(Toplevel):
             self.bell()
             return
         kind, name = self.kind.get(), self.name.get().strip() or self.default()
+        shared = self.choices.get(self.shared.get()) if self.shared is not None else KEEP
         self.destroy()
-        self.on_done(kind, name)
+        if shared is KEEP:
+            self.on_done(kind, name)
+        else:
+            self.on_done(kind, name, shared=shared)
 
     def place_near(self, widget, offset=0):
         """Under the widget that opened it (offset: down and right, when other dialogs are open), inside the

@@ -11,7 +11,8 @@ the thickness you plan to install.
 ## What it does
 
 - **Room types**: X-ray rooms (radiography, chest, modern digital radiography), fluoroscopy rooms (R&F, cardiac and
-  peripheral angiography, interventional rooms), CT rooms (from the DLP, with the scans or phases per procedure) and
+  peripheral angiography, interventional rooms; also the radiographic workload of NCRP 147 for patients who have only
+  radiographs there), CT rooms (from the DLP, with the scans or phases per procedure) and
   mammography rooms, including digital breast tomosynthesis.
   You can also design **departments**, with several rooms on one floor plan.
 - **Walls and doors**: a room has a floor, a ceiling and as many walls and doors as you add, each with its own name
@@ -22,8 +23,21 @@ the thickness you plan to install.
   parameters.
 - **Several materials in one barrier**: each material on its own (alternatives), or layers of one barrier. For layers
   you set each material's share of the shielding and the order from the room side outwards.
-- **Planned thickness check**: the weekly dose beyond the barrier with the thicknesses you plan to install, compared
-  with the design goal *P*.
+- **Existing shielding**: give what a barrier already has (a floor slab, a concrete or brick wall, lead put in
+  earlier) and the program calculates what must be added, outside it or on its room side.
+- **Planned thickness check**: the weekly dose beyond the barrier with the thicknesses you plan to install (and the
+  existing shielding), compared with the design goal *P*.
+- **How many patients a barrier allows**: a check of its own, under Calculate: the workload at which the dose beyond
+  the barrier as it will be built reaches *P* (NCRP 147 §6.3.3).
+- **Walls shared by two rooms** of a department (double-click the tab: *Shared with*): the wall gets the larger
+  thickness of the two rooms, each with its own radiation, distances, occupancy and design goal.
+- **A further area** beyond a barrier, e.g. an office across a corridor, with its own *T* and *P* (NCRP 147 §4.1.3):
+  the barrier gets the larger thickness of the two areas.
+- **Field size**: the scatter of the suggested secondary air kerma scaled to the field you use (NCRP 147 §4.1.7.2,
+  Eq. C.2), instead of the field of NCRP 147 Table 4.7; an air kerma you write is scaled from the field it was given
+  for.
+- **Shielding height** of walls and doors (2.1 m, 2.5 m for a darkroom, or up to the ceiling; NCRP 147 §2.3.6, §5.8),
+  in the report and the 3D view.
 - **Floor plan**: load the architect's drawing (PDF, PNG, JPG), trace the walls and doors, place the source and say what
   lies beyond each of them. The program measures the distances and suggests *T* and *P*.
 - **2D / 3D view**: every wall in the colours of its materials, the dose beyond each barrier and a radiation map.
@@ -34,7 +48,7 @@ the thickness you plan to install.
   examples**). Each opens with a note that gives the result of NCRP 147 next to that of the program; the User Guide
   (section 11.9) and `Examples/NCRP 147/NCRP 147 examples - comparison.xlsx` compare them all, with the difference
   and, in the sheet *Distances*, the distance of every radiation type.
-- A **note on every field** says what to enter, with the NCRP 147 typical values.
+- A short **note on every field** says what to enter, with the main NCRP 147 values.
 
 ![2D view with the radiation map](docs/images/viewer_goal.png)
 

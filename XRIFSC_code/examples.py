@@ -37,17 +37,18 @@ def secondary(distribution, scatter):
             "unairkerv": "1", "airkerv": kind, "radiob_leak": leak, "oworkvar": "0"}
 
 
-def barrier(distance, location, area, materials, radiation=(), ct=False, shares=None, planned=None):
+def barrier(distance, location, area, materials, radiation=(), ct=False, shares=None, planned=None, patients=False):
     """One barrier: what is beyond it (NCRP 147 Table 4.1 location -> T, area -> P) and its radiation types.
     shares (%): the materials are layers of one barrier, from the room side outwards.
-    planned (mm, one per material, "" for none): the thickness to install, to check the dose beyond it."""
+    planned (mm, one per material, "" for none): the thickness to install, to check the dose beyond it.
+    patients: check how many patients per week it allows (with the planned thickness)."""
     for item in radiation:
         item["entryd"] = distance
     return {"area": area, "vraoccup": "2", "occupentry": None, "vselocation": location,
             "dikeent": DESIGN_GOAL[area], "dist_var": distance if ct else None, "materials": list(materials),
             "matmode": "combined" if shares else "separate", "shares": list(shares or []),
             "planned": list(planned or []), "checkplan": "1" if any(planned or []) else "0",
-            "calculated": True, "radiation": list(radiation)}
+            "checkpatients": "1" if patients else "0", "calculated": True, "radiation": list(radiation)}
 
 
 def room_geometry(rect, source, door):
@@ -106,9 +107,10 @@ def xray_room(x=0.0):
                 [primary(rad_floor, "0.09", "5.2", "cross-table"), secondary(rad_all, "leakage + side-scatter")]),
         barrier(right, *CONTROL_ROOM, ["Lead", "Gypsum Wallboard"],
                 [secondary(rad_all, "leakage + side-scatter")], planned=["0.5", ""]),
-        # Wall 3: one standard gypsum board (15.9 mm) is planned, but 38.6 mm are needed: goal exceeded
+        # Wall 3: one standard gypsum board (15.9 mm) is planned, but 38.6 mm are needed: goal exceeded, and it
+        # allows only some of the 120 patients a week
         barrier(bottom, *CORRIDOR, ["Lead", "Gypsum Wallboard"],
-                [secondary(rad_all, "leakage + side-scatter")], planned=["", "15.9"]),
+                [secondary(rad_all, "leakage + side-scatter")], planned=["", "15.9"], patients=True),
         # Wall 4: chest bucky wall, primary (U = 1, K = 2.3) plus secondary; one wall of concrete (room side)
         # and lead (outside), each giving half of the shielding
         barrier(left, *OFFICES, ["Concrete", "Lead"],
@@ -183,41 +185,41 @@ def department():
     # One floor: X-ray room (0-6 m), control room (6-8 m), CT room (8-15 m), mammography room (15-19 m), corridor below
     rooms = [("Rad Room 1", "X-Ray room", xray_room(0)), ("CT Scanner", "CT Room", ct_room(8)),
              ("Mammography", "Mammography Room", mammography_room(15))]
+    # The wall between the CT room (its Wall 2, barrier 5) and the mammography room (its Wall 4, barrier 7) is one
+    # wall: shared, of the same materials, its thickness covers the radiation of both rooms
+    ct_wall, mammo_wall = rooms[1][2][0]["barrier_data"][4], rooms[2][2][0]["barrier_data"][6]
+    ct_wall["shared"], mammo_wall["shared"] = {"room": 2, "barrier": 7}, {"room": 1, "barrier": 5}
+    mammo_wall["materials"] = list(ct_wall["materials"])
     return project({"kind": "department", "name": "Example Radiology Department",
                     "rooms": [{"name": name, "type": kind, "designed": True, "data": built[0]}
                               for name, kind, built in rooms],
                     "plan": plan([built[1] for _, _, built in rooms])})
 
 
-NOTE = ("\n\nAll values are NCRP 147 typical values, already calculated. Hover over any field for guidance, "
-        "change a value and press Calculate, open 'Floor Plan' or '2D / 3D View', or 'Export to Excel'.")
+NOTE = ("\n\nNCRP 147 typical values, already calculated. Change a value and press Calculate, or open the 2D / 3D "
+        "View.")
 
 EXAMPLES = {
     "department": ("Radiology department", department,
-                   "A department with three rooms on one floor plan: a radiographic room, a CT room and a "
-                   "mammography room, with a shared control room and a corridor.\n"
-                   "Shared walls between rooms are 'Adjacent x-ray rooms'; the control room is a controlled area "
-                   "(P = 0.1 mGy/week), everything else is uncontrolled (P = 0.02 mGy/week)."),
+                   "An X-ray, a CT and a mammography room on one floor plan, with a control room (P = 0.1) and a "
+                   "corridor (P = 0.02 mGy/week).\n"
+                   "CT Wall 2 and mammography Wall 4 are one shared wall (double-click its tab): it gets the larger "
+                   "thickness, here that of the CT room."),
     "xray": ("X-Ray room", lambda: standalone("X-Ray room", "Example Rad Room", xray_room),
-             "Radiographic room, 120 patients/week (NCRP 147 average).\n"
-             "• Floor: primary beam, U = 0.89, K = 5.2 mGy/patient, with bucky preshielding.\n"
-             "• Wall 1 (outside wall): cross-table primary, U = 0.09, behind grid and cassette, plus secondary "
-             "radiation, which does not pass through them: each goes through the wall with its own transmission.\n"
-             "• Wall 4: chest bucky wall, primary U = 1, K = 2.3 mGy/patient, plus secondary. Its materials are "
-             "'Layers of one barrier': concrete on the room side and lead outside, half of the shielding each.\n"
-             "• Wall 2: control room (controlled area). Door 1 and Wall 3: corridor.\n"
-             "• Planned thicknesses (under the materials) for the floor and Walls 2, 3 and 4: open the 2D / 3D View, "
-             "choose 'Dose beyond vs goal P' and tick 'Radiation map'. Wall 3 plans one gypsum board, which is not "
-             "enough: the goal is exceeded (red)."),
+             "Radiographic room, 120 patients/week.\n"
+             "• Floor: primary, with bucky preshielding.\n"
+             "• Wall 1: cross-table primary plus secondary.\n"
+             "• Wall 4: chest bucky wall, concrete and lead layers.\n"
+             "• Wall 2: control room. Door 1, Wall 3: corridor.\n"
+             "• Wall 3 plans one gypsum board, which is not enough (red in the 2D / 3D View); under its Calculate, "
+             "how many patients it allows."),
     "ct": ("CT room", lambda: standalone("CT Room", "Example CT Room", ct_room),
-           "CT room, 100 body and 50 head procedures/week, DLP 550 and 1200 mGy·cm per procedure "
-           "(NCRP 147 typical values), 120 kVp.\n"
-           "Distances are measured from the isocenter; T comes from the location beyond each barrier."),
+           "CT room, 100 body and 50 head procedures/week (DLP 550 and 1200 mGy·cm), 120 kVp. Distances from the "
+           "isocenter."),
     "mammography": ("Mammography room", lambda: standalone("Mammography Room", "Example Mammography Room",
                                                             mammography_room),
-                    "Mammography room, total workload 536 mA·min/week (80 patients × 6.7 mA·min/patient, NCRP 147 "
-                    "average).\nEvery barrier is secondary (the image receptor stops the primary beam); walls use "
-                    "leakage + side-scatter, floor and ceiling leakage + forward/backscatter."),
+                    "Mammography room, 80 patients/week. Every barrier is secondary: walls leakage + side-scatter, "
+                    "floor and ceiling leakage + forward/backscatter."),
 }
 
 

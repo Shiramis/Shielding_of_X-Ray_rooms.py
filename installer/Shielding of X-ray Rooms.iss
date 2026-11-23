@@ -3,7 +3,7 @@
 ; The script first packs the program with PyInstaller into build\dist, then compiles this file.
 
 #ifndef AppVersion
-  #define AppVersion "2.0.0"
+  #define AppVersion "2.1.0"
 #endif
 #ifndef SourceDir
   #define SourceDir "build\dist\Shielding of X-ray Rooms"
