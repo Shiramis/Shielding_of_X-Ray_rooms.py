@@ -32,6 +32,7 @@ SCATTER = {"leakage + side-scatter": ("1", "1"), "leakage + forward/backscatter"
 RAD_ALL, RAD_FLOOR = "Rad Room (all barriers)", "Rad Room (floor or other barriers)"
 # Barriers of the examples that are not walls of the room: their own names in the files
 AWAY, PASSBOX, CASSETTES = "Floor away from the table", "Film passbox", "Cassettes behind control wall"
+AT_30 = "Wall 2, scatter at 30°"
 CHEST_BUCKY, FLUORO, RAD_TUBE = "Rad Room (chest bucky)", "Fluoroscopy Tube (R&F room)", "Rad Tube (R&F room)"
 FOOTER = (f"Distances as NCRP 147 gives them, to the person beyond the barrier. Each calculation in detail: "
           f"{COMPARISON}, in this folder.")
@@ -40,6 +41,7 @@ LABELS = {("5.1", "Wall 1"): "office, secondary",
           ("5.2", "Wall 1"): "behind the chest bucky, primary", ("5.2", "Wall 2"): "adjacent wall, secondary",
           ("5.3", "Floor"): "under the table, primary", ("5.3", "Ceiling"): "secondary",
           ("5.3", "Wall 1"): "chest bucky wall, primary", ("5.3", "Wall 2"): "the same wall, secondary",
+          ("5.3", AT_30): "chest scatter at 30°",
           ("5.3", "Wall 3"): "darkroom", ("5.3", "Wall 4"): "cross-table wall", ("5.3", "Wall 5"): "control wall",
           ("5.3", AWAY): "secondary", ("5.3", PASSBOX): "25 patients in a day",
           ("5.3", CASSETTES): "25 patients in a day",
@@ -54,9 +56,10 @@ def number(value):
 
 # ===================== building blocks, in the format of the project files =====================
 def radiation(kind, distribution, d, *, use=None, kerma=None, preshielding=None, scatter=None, written=None,
-              patients=None, kvp=None):
+              patients=None, kvp=None, angle=None):
     """One radiation type of a barrier. d: NCRP 147 distance from the source to the occupied point (m).
-    patients: its own number of patients per week ('Different Workload')."""
+    patients: its own number of patients per week ('Different Workload'). angle: the scatter at that angle, made from
+    the kVp spectrum of the distribution ('At an angle')."""
     primary = kind == "primary"
     item = {"radiob_w": "1" if primary else "2", "d": d,
             "vselxray": "2" if kvp else "1", "vsexroom": str(kvp) if kvp else distribution,
@@ -70,6 +73,8 @@ def radiation(kind, distribution, d, *, use=None, kerma=None, preshielding=None,
         else:
             item["unairkerv"] = "1"
             item["airkerv"], item["radiob_leak"] = SCATTER[scatter]
+            if angle is not None:
+                item.update(angleon="1", angle=number(angle))
     if patients is not None:
         item.update(oworkvar="1", workv="2", numpapwe=number(patients))
     return item
@@ -170,6 +175,10 @@ example("5.3 Radiographic room", "NCRP 147 §5.3: Radiographic room (Figures 5.1
                         P=5e-4, name=PASSBOX),
             11: barrier(11, ["Lead"], [secondary(RAD_ALL, 1.8, "leakage + side-scatter", patients=25)], T=1,
                         P=5e-4, area=CONTROLLED, name=CASSETTES),
+            12: barrier(12, ["Lead"], [secondary(RAD_FLOOR, 4.5, "leakage + side-scatter"),
+                                       secondary(CHEST_BUCKY, 0.8, "side-scatter", angle=30),
+                                       secondary(CHEST_BUCKY, 2.5, "leakage")], location="Staff rest rooms",
+                        name=AT_30),
         }, patients=125),
         "125 patients per week, the room of Figures 5.1 and 5.2: each barrier is one calculation of Section 5.3.",
         [("Floor", "Concrete", "5.3.1.1, under the table: primary Rad Room (floor), U = 1 (instead of 0.89, to be "
@@ -186,6 +195,10 @@ example("5.3 Radiographic room", "NCRP 147 §5.3: Radiographic room (Figures 5.1
           0.35, "K = 0.14 + 0.96 + 0.008 = 1.1 mGy/week, B = 9.1×10⁻² (P/T = 0.1); with the chest bucky "
           "transmission for all of them, to be simple and safe, 0.35 mm lead (with each source's own workload "
           "distribution and place, and 30° scatter from the chest patient: 0.3 mm)", 0.02),
+         (AT_30, "Lead", "5.3.3.2, the same as Wall 2 with the side-scatter of the chest patient at 30° (At an "
+          "angle: from the kVp spectrum of Rad Room (chest bucky), each kVp through its own transmission)",
+          0.3, "the more realistic calculation, each source at its place with its workload distribution and the "
+          "chest patient's scatter at 30°: 0.3 mm lead", 0.02),
          ("Wall 3", "Lead", "5.3.4, darkroom wall: secondary, d_{sec} = 2 m, T = 1, P = 0.025 mGy/week for the "
           "stored film", 0.53, "K = 1.1 mGy/week, B = 2.3×10⁻²: 0.53 mm lead (Figure C.2)", 0.03),
          ("Wall 4", "Lead", "5.3.5, cross-table wall: primary Rad Room (floor), U = 0.09, d_{P} = 2.8 m, behind "

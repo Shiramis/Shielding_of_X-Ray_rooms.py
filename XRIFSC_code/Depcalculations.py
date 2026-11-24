@@ -418,6 +418,7 @@ ANGLES, ANGLE_KVP, KVP_WNORM = (20, 140), (50, 150), 2.5
 # with kVp² and the transmission of that housing (Eq. C.6-C.9)
 LEAK_RATE, LEAK_KVP, LEAK_MA, HOUSING = 0.876 / 60, 150, 3.3, 2.32
 ANGLE_OUT_OF_RANGE = "Scatter at an angle: 50-150 kVp, not mammography"
+ANGLE_NO_SPECTRUM = "Scatter at an angle: no kVp spectrum for this workload distribution"
 
 
 def kerma_per_workload(kvp):
@@ -428,6 +429,64 @@ def kerma_per_workload(kvp):
 def scatter_fraction(theta, kvp):
     """a1 (× 10⁻⁶, per cm² of primary field at 1 m) at the scattering angle theta (degrees), NCRP 147 Figure C.1."""
     return 1.6e-2 * (kvp - 125) + 8.43 - 1.11e-1 * theta + 9.83e-4 * theta ** 2 - 1.74e-6 * theta ** 3
+
+
+# Table A.1: the transmission of the primary beam at each kVp (sheet 'prim abc', every 5 kVp from 25 to 150)
+KVP_PRIMARY = {int(_row[0]): {m: tuple(float(_row[c + k] or 0) for k in range(3)) for m, c in MATERIAL_COLUMNS.items()}
+               for _row in wb["prim abc"].iter_rows(min_row=3, values_only=True)
+               if isinstance(_row[0], (int, float))}
+
+
+def table_a1(kvp, material):
+    """(alpha, beta, gamma) of Table A.1 at kvp; between two kVp, or where a material has no data (40, 45 kVp), the next
+    higher kVp, which is harder; above 150 kVp, 150."""
+    for v in sorted(k for k in KVP_PRIMARY if k >= min(kvp, 150)):
+        params = KVP_PRIMARY[v][material]
+        if params[0] and params[2]:
+            return params
+    return None
+
+
+# The workload of each kVp (mA min per patient) of the workload distributions that have one: NCRP 147 Table 4.2 (sheet
+# 'W kVp', tungsten anode; not the mammography room), Kirby et al. 2023 (table 3) and Chen et al. 2013 (table 1). Their
+# scatter at any angle is made from it with Eq. C.2 and C.5, as NCRP 147 made Table 4.7.
+SPECTRA = {}
+_columns = {"Rad Room (all barriers)": 1, "Rad Room (chest bucky)": 2, "Rad Room (floor or other barriers)": 3,
+            "Fluoroscopy Tube (R&F room)": 4, "Rad Tube (R&F room)": 5, "Chest Room": 6, "Cardiac Angiography": 8,
+            "Peripheral Angiography": 9}
+_rows = [r for r in wb["W kVp"].iter_rows(min_row=2, values_only=True) if isinstance(r[0], (int, float))]
+for _name, _column in _columns.items():
+    SPECTRA[_name] = {int(r[0]): float(r[_column] or 0) for r in _rows}
+_rows = [r for r in wb["Kirby 2023"].iter_rows(min_row=3, values_only=True) if isinstance(r[0], (int, float))]
+_header = [c for c in next(wb["Kirby 2023"].iter_rows(min_row=2, max_row=2, values_only=True))]
+for _name in KIRBY:
+    _base = _name.split(" – ")[0]
+    _parts = [_base] if _base in _header else \
+        [h for h in _header if h and h.split(" (")[0] == _base.split(" (")[0]]  # 'all barriers': the three together
+    SPECTRA[_name] = {int(r[0]): sum(float(r[_header.index(h)] or 0) for h in _parts) for r in _rows}
+_rows = [r for r in wb["Chen 2013"].iter_rows(min_row=3, values_only=True) if isinstance(r[0], (int, float))]
+for _name in CHEN:
+    _column = 1 if "(floor)" in _name else 2 if "(chest bucky)" in _name else 3
+    SPECTRA[_name] = {int(r[0]): float(r[_column] or 0) for r in _rows}
+
+
+def spectrum_parts(spectrum, theta, field, leakage):
+    """Per patient at 1 m, kVp by kVp: [(K1, transmission data per material)] of the scatter at theta (Eq. C.2, C.5;
+    field = F / dF², cm² at 1 m), and of the leakage if asked (Eq. C.6-C.9). The scatter goes through the primary
+    transmission of its kVp (Eq. C.3); the leakage, already hardened by the housing, by its high-attenuation HVL
+    (alpha, i.e. beta = 0 in the Archer equation)."""
+    parts = []
+    lead_max = archer_transmission(table_a1(LEAK_KVP, "Lead"), HOUSING)
+    for v, w in sorted(spectrum.items()):
+        if w <= 0:
+            continue
+        params = {m: table_a1(v, m) for m in MATERIAL_COLUMNS}
+        parts.append((kerma_per_workload(v) * w * scatter_fraction(theta, v) * 1e-6 * field, params))
+        if leakage:
+            leak = LEAK_RATE * v ** 2 * archer_transmission(params["Lead"], HOUSING) * w / (
+                LEAK_KVP ** 2 * lead_max * LEAK_MA)
+            parts.append((leak, {m: (p[0], 0.0, 1.0) for m, p in params.items()}))
+    return parts
 
 
 # What to do for each missing input, shown in the "Missing data" window
@@ -497,6 +556,9 @@ MISSING_HELP = {
                                   "to 140 degrees (NCRP 147 Figure C.1).",
     ANGLE_OUT_OF_RANGE: "the scatter fraction of NCRP 147 Figure C.1 is for tungsten-anode beams of 50 to 150 kVp: "
                         "choose such a kVp, or write the unshielded secondary air kerma.",
+    ANGLE_NO_SPECTRUM: "the scatter at an angle is made from the workload of each kVp, which NCRP 147 (Table 4.2), "
+                       "Kirby et al. 2023 and Chen et al. 2013 give: choose such a workload distribution, or untick "
+                       "'At an angle'.",
     "Field size (F and d_F)": "beside 'Field size', type the primary field F (cm², e.g. the image receptor) and "
                               "its distance d_{F} from the source (m, e.g. the SID), and for a written air kerma the "
                               "field it was given for, all more than 0, or untick 'Field size'.",
@@ -532,8 +594,13 @@ class departprimsec():
                 if K is not None:
                     Ktotal += K
                 distributions.append(dict(self.last_distribution))
+                parts = self.last_parts
+                if parts and K:  # made kVp by kVp (at an angle): each kVp with its own transmission (NCRP 147 C.3)
+                    total = sum(k for k, _ in parts)
+                    components += [{"K": K * k / total, "params": params, "pre": {}, "d": self.last_distribution["d"]}
+                                   for k, params in parts if k > 0]
                 # it goes through the barrier with the transmission data of its own workload distribution or kVp
-                if self.d[f"radiob_w {e}{nr}{i}"].get() in (1, 2):
+                elif self.d[f"radiob_w {e}{nr}{i}"].get() in (1, 2):
                     params, problem = self.radiation_transmission(e, nr, i)
                     if problem:
                         missing.append(prefix + problem)
@@ -742,7 +809,13 @@ class departprimsec():
                           0: "Leakage only"}.get(value(f"radiob_leak {e}{nr}{i}"), "")
             else:
                 source = {2: "Side-scatter", 3: "Forward/backscatter"}.get(value(f"airkerv {e}{nr}{i}"), "")
-            source = f"{source} ({origin})" if source else ""
+            theta = self.entry_number(f"angle {e}{nr}{i}")
+            if source and "catter" in source and self.angle_on(e, nr, i) and theta is not None:
+                # at an angle: from the kVp spectrum of the distribution (NCRP 147 Appendix C)
+                source = ("Leakage + scatter" if source.startswith("Leakage") else "Scatter") + \
+                    f" at {theta:g}° ({origin}, NCRP 147 Appendix C, from the kVp spectrum)"
+            else:
+                source = f"{source} ({origin})" if source else ""
             F, dF = self.entry_number(f"fieldF {e}{nr}{i}"), self.entry_number(f"fielddF {e}{nr}{i}")
             if source and "catter" in source and value(f"fieldvar {e}{nr}{i}") == 1 and F and dF:
                 source += f", field {F:g} cm² at {dF:g} m"
@@ -836,6 +909,7 @@ class departprimsec():
         # Air kerma K = N·U·T·K1/d² of one radiation type; self.need lists what is missing,
         # self.need_fields the entries to highlight
         need, fields = [], []
+        self.last_parts = None  # the air kerma kVp by kVp, when it is made from a spectrum (at an angle)
         radiation = self.d[f"radiob_w {e}{nr}{i}"].get()
         barrier = self.barn[f"lab_bar {e}{nr}"].cget("text")
         # ======== Distance: from the source to the barrier, plus beyond it to the occupied point ===========
@@ -931,6 +1005,12 @@ class departprimsec():
                     elif scale != 1.0 and column != 4:  # the scatter grows with the field, the leakage does not
                         leakage = float(row[4]) if column in (6, 8) else 0.0
                         K1 = leakage + scale * float(row[5] if column in (5, 6) else row[7])
+                    if column != 4 and self.angle_on(e, nr, i):  # at an angle: from the kVp spectrum
+                        K1, missing, marked = self.spectrum_kerma(e, nr, i, t, distribution, row, column in (6, 8))
+                        need += missing
+                        fields += marked
+                        if K1 is None and not missing and scale is not None:
+                            need.append("Field size (F and d_F)")
                 else:
                     need.append("Unshielded Air Kerma")
             elif source == 2:  # written by the user, for the field written with it
@@ -1024,14 +1104,38 @@ class departprimsec():
             fields += [f"angleF_entry {e}{nr}{i}", f"angledF_entry {e}{nr}{i}"]
         if need:
             return None, need, fields
-        K1 = kerma_per_workload(kvp) * KVP_WNORM * scatter_fraction(theta, kvp) * 1e-6 * F / dF ** 2
         leak = self.d.get(f"angleleak {e}{nr}{i}")
-        if leak is not None and leak.get() == 1:
-            # the housing at the kVp of Table A.1 (every 5 kVp; between two, the higher, which is harder)
-            lead = lambda v: archer_transmission(
-                self.transmission_params("prim abc", min(150, 5 * math.ceil(v / 5)))["Lead"], HOUSING)
-            K1 += LEAK_RATE * kvp ** 2 * lead(kvp) * KVP_WNORM / (LEAK_KVP ** 2 * lead(LEAK_KVP) * LEAK_MA)
-        return K1, [], []
+        self.last_parts = spectrum_parts({kvp: KVP_WNORM}, theta, F / dF ** 2, leak is not None and leak.get() == 1)
+        return sum(k for k, _ in self.last_parts), [], []
+
+    def spectrum_kerma(self, e, nr, i, t, distribution, row, leakage):
+        """The suggested secondary air kerma at the angle given ('At an angle', under 'Field size'): made from the kVp
+        spectrum of the workload distribution as NCRP 147 made Table 4.7 (Eq. C.2, C.5, C.9), for its field of Table
+        4.7 or the one given. Each kVp then goes through the barrier with its own transmission (self.last_parts).
+        Returns (K1 or None, what is missing, the entries to mark)."""
+        spectrum = SPECTRA.get(distribution)
+        if spectrum is None or self.d[f"vselroom {t}"].get() == "Mammography Room":
+            return None, [ANGLE_NO_SPECTRUM], []
+        theta = self.entry_number(f"angle {e}{nr}{i}")
+        if theta is None or not ANGLES[0] <= theta <= ANGLES[1]:
+            return None, ["Scattering angle (20-140°)"], [f"angle_entry {e}{nr}{i}"]
+        option = self.d.get(f"fieldvar {e}{nr}{i}")
+        if option is not None and option.get() == 1:
+            F, dF = self.entry_number(f"fieldF {e}{nr}{i}"), self.entry_number(f"fielddF {e}{nr}{i}")
+        else:
+            F, dF = float(row[2]), float(row[3])
+        if F is None or dF is None or F <= 0 or dF <= 0:
+            return None, [], []  # already missing: 'Field size (F and d_F)'
+        self.last_parts = spectrum_parts(spectrum, theta, F / dF ** 2, leakage)
+        return sum(k for k, _ in self.last_parts), [], []
+
+    def angle_on(self, e, nr, i):
+        """'At an angle' is ticked under 'Field size' (a suggested secondary air kerma with scatter)."""
+        variable = self.d.get(f"angleon {e}{nr}{i}")
+        try:
+            return variable is not None and variable.get() == 1
+        except TclError:
+            return False
 
     def field_scale(self, e, nr, i, row=None):
         """How much the scatter of radiation type i grows with its primary field (NCRP 147 4.1.7.2, Eq. C.2):

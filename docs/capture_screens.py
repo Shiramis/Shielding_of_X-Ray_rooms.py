@@ -444,6 +444,16 @@ top = d[f"label_B 7{nr}1"].winfo_rooty() - frame.winfo_rooty()  # from radiation
 frame.master.yview_moveto(max(0.0, (top - 10) / frame.winfo_height()))
 root.update()
 shot("share_option.png", root, widget=inputs, height=820)
+d[f"oneminusu 7{nr}"].set(0)
+app.choosetype(7, nr, t, notify=False)
+
+# NCRP 147 5.3.3.2 with the side-scatter of the chest patient at 30 degrees ('At an angle', under 'Field size')
+e = next(k for k in range(1, d[f"x {t}"] + 1) if app.barrier_name(k, nr) == "Wall 2, scatter at 30°")
+select_barrier(t, e)
+top = d[f"label_B {e}{nr}1"].winfo_rooty() - frame.winfo_rooty()  # from radiation type #2 down
+frame.master.yview_moveto(max(0.0, (top - 10) / frame.winfo_height()))
+root.update()
+shot("angle_option.png", root, widget=inputs, height=560)
 
 # ---------- department ----------
 app.open_example("department")

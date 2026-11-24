@@ -21,7 +21,7 @@ FILE_TYPES = [("Shielding project", "*.shield"), ("All files", "*.*")]
 RADIATION_KEYS = ["radiob_w", "entryd", "vselxray", "vsexroom", "use_ent", "entk", "preshvar", "radiob_pre",
                   "unairkerv", "airkerv", "radiob_leak", "oworkvar", "workv", "worentry", "numpapwe", "kvpdata",
                   "dbtmode", "dbtbarrier", "ffdmunit", "fieldvar", "fieldF", "fielddF", "fieldF0", "fielddF0",
-                  "angle", "angleleak", "angleF", "angledF"]
+                  "angle", "angleleak", "angleF", "angledF", "angleon"]
 # The further area beyond a barrier (keys "<name> <e><nr>")
 FAR_KEYS = ["far", "fardist", "farloc", "farT", "fararea", "farP"]
 CT_KEYS = ["bp_var", "hp_var", "dlpb_var", "dlph_var", "kvp_var"]
@@ -306,6 +306,10 @@ class ProjectFile:
                     self.write_input(key("radiob_leak"), saved.get("radiob_leak"))
                     if saved.get("fieldvar") == "1":  # the field of the scatter (older files: that of the data)
                         for name in ("fieldvar", "fieldF", "fielddF"):
+                            self.write_input(key(name), saved.get(name))
+                        self.field_widgets(e, nr, i)
+                    if saved.get("angleon") == "1":  # the scatter at an angle, from the kVp spectrum
+                        for name in ("angleon", "angle"):
                             self.write_input(key(name), saved.get(name))
                         self.field_widgets(e, nr, i)
             if saved.get("oworkvar") == "1":

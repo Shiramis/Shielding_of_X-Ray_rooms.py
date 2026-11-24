@@ -622,7 +622,7 @@ def method():
     a_1 = 1.6e-2 * (v - 125) + 8.43 - 1.11e-1 * theta + 9.83e-4 * theta ** 2 - 1.74e-6 * theta ** 3
     scatter = k_w * 2.5 * a_1 * 1e-6 * F / dF ** 2
     leak = angle["K1"] - scatter
-    story += H2("Scatter at an angle, for a kVp")
+    story += H2("Scatter at an angle")
     story += [P("NCRP 147 makes the secondary air kerma of Table 4.7 from the scatter fraction <i>a</i><sub>1</sub>"
                 "(θ, kVp) (× 10<super>−6</super>): the scattered air kerma 1 m from the patient over the primary air kerma 1 m from the tube, "
                 "per cm² of primary field at 1 m (Appendix C.1). It comes from the measurements of Trout and Kelley "
@@ -659,6 +659,33 @@ def method():
     story += figure("angle_kvp.png", f"A secondary radiation type at {v:g} kVp: the scatter at {theta:g}° with "
                                      "the leakage, for a field of 1000 cm² at 1 m.",
                     width=150 * mm, crop=(0, 235, 1175, 820))
+
+    # ----- the same for a workload distribution, from its kVp spectrum ('At an angle' under 'Field size') -----
+    rows = {(r["section"], r["barrier"]): r for r in json.load(open(os.path.join(IMAGES, "ncrp147_examples.json"),
+                                                                    encoding="utf-8"))}
+    wall_2, at_30 = rows[("5.3", "Wall 2")]["program"], rows[("5.3", "Wall 2, scatter at 30°")]["program"]
+    ratio = (8.43 - 1.11e-1 * 30 + 9.83e-4 * 900 - 1.74e-6 * 27000) / (8.43 - 1.11e-1 * 90 + 9.83e-4 * 8100
+                                                                    - 1.74e-6 * 729000)
+    story += [P("A workload distribution with the workload of each kVp (NCRP 147 Table 4.2, and Kirby et al. 2023 and "
+                "Chen et al. 2013) has, under <b>Field size</b> of the suggested air kerma, <b>At an angle θ</b> "
+                f"({fig('angle_option.png')}). Ticked, its scatter is made as NCRP 147 made Table 4.7, at the "
+                "angle you give instead of 90° (side-scatter) or 135° (forward/backscatter), summed over its kVp "
+                "(Eq. C.5), for its field of Table 4.7 or the one you give; where the choice has leakage, that of "
+                "each kVp is added (Eq. C.9):")]
+    story += formula("<i>K</i><super>1</super><sub>S</sub>(θ) = Σ<sub>kVp</sub> <i>K</i><super>1</super><sub>W</sub>"
+                     "(kVp) · <i>W</i>(kVp) · <i>a</i><sub>1</sub>(θ, kVp) · 10<super>−6</super> · <i>F</i> / "
+                     "<i>d</i><sub>F</sub><super>2</super>")
+    story += [P("Each kVp then goes through the barrier on its own: its scatter with the transmission of the primary "
+                "beam at that kVp (Table A.1, Eq. C.3), its leakage, already hardened by the housing, by its HVL "
+                "(Eq. C.8), instead of the one curve of Table C.1, which mixes scatter and leakage 1 m away. At 90° "
+                "this gives Table 4.7 again (Rad Room, all barriers: 0.0339 against 0.034 mGy per patient).")]
+    story += [P("It is the more realistic calculation of NCRP 147 5.3.3.2, the chest bucky wall outside the beam: the "
+                "side-scatter of the chest patient 0.8 m away is scatter at about 30°. Its own transmission lets it "
+                f"through more easily than the curve of Table C.1, and <i>a</i><sub>1</sub>(30°) is {100 * (ratio - 1):.0f} % "
+                f"larger than <i>a</i><sub>1</sub>(90°): the lead goes from {wall_2:.2f} mm to <b>{at_30:.2f} mm</b>, the "
+                "0.3 mm of NCRP 147 (the example 5.3 has both, as Wall 2 and Wall 2, scatter at 30°).")]
+    story += figure("angle_option.png", "NCRP 147 5.3.3.2 with the side-scatter of the chest patient at 30° (At an "
+                                        "angle θ, under Field size).", width=150 * mm)
 
     # ----- secondary radiation x (1 - U) (NCRP 147 Eq. C.4, C.8) -----
     share = VALUES["share"]
@@ -794,7 +821,7 @@ def xray_room():
                      "list shows the NCRP 147 distributions first and, below a line, those of the literature, whose "
                      "names end with their source (table in section 4.8). With kVp you write a primary air kerma "
                      "yourself; a secondary one you write, or the program finds it at the scattering angle you give "
-                     f"(section {sec('Scatter at an angle, for a kVp')}). For a primary beam you also choose the "
+                     f"(section {sec('Scatter at an angle')}). For a primary beam you also choose the "
                      "transmission data, NCRP 147 or modern "
                      "digital radiography (section 4.9). Every radiation type needs it: it goes through the barrier "
                      "with these transmission data (section 2.2).",
@@ -825,6 +852,9 @@ def xray_room():
                        f"scatter is scaled to it, the leakage is not ({fig('field_size.png')}, section "
                        f"{sec('Scatter and the size of the field')}). It is there only when the air kerma has scatter "
                        "in it.",
+                       "<b>At an angle θ</b>, under Field size: the scatter at the angle you give (20–140°) instead of "
+                       "90° or 135°, made from the workload of each kVp of the distribution (NCRP 147, Kirby et al. "
+                       f"2023, Chen et al. 2013; section {sec('Scatter at an angle')}).",
                        "<b>Write Unshielded Secondary Air Kerma</b>: your own <i>K</i><super>1</super><sub>sec</sub> "
                        "in mGy per patient at 1 m. Its <b>Field size</b>, under it, scales the whole value from the "
                        "field it was given for to yours (section "
@@ -1880,7 +1910,9 @@ def ncrp_examples():
         table_rows.append([row["section"], example, row["barrier"], ncrp, program, difference])
     story += table(table_rows, [12, 46, 29, 38, 22, 23])
     story += [P("* With all the sources of the room; for the two sources of the example the report shows that "
-                "0.8 mm is enough (below). The same comparison, with the difference in %, the dose with the "
+                "0.8 mm is enough (below). Wall 2 is the simple calculation of 5.3.3.2, Wall 2, scatter at 30° its "
+                f"more realistic one, with the chest patient's scatter at 30° (section {sec('Scatter at an angle')}). "
+                "The same comparison, with the difference in %, the dose with the "
                 "thicknesses the report tries and, in the sheet <i>Distances</i>, the distance of every radiation "
                 "type (NCRP 147, entered, added beyond the barrier, d), is the Excel file <b>NCRP 147 examples - "
                 "comparison.xlsx</b> in <b>Examples\\NCRP 147</b>.", "small"), Spacer(1, 4)]

@@ -61,6 +61,8 @@ TIPS = {
                   "The scatter is scaled from the field shown (NCRP 147 Table 4.7); the leakage is not.",
     "scatter_angle": "Angle θ between the beam and the direction to the barrier, 20–140°: 90° side, 135° back.\n"
                      "Scatter of NCRP 147 Fig. C.1 (W anode, 50–150 kVp), 2.5 mA·min per patient.",
+    "angle_option": "The scatter at the angle θ (20–140°) instead of 90° (side) or 135° (back), from the kVp\n"
+                    "spectrum of the distribution (NCRP 147 Eq. C.5); each kVp through its own transmission.",
     "angle_leakage": "Adds the leakage of the tube at this kVp (NCRP 147 C.2).",
     "angle_field": "The primary field F (cm²) at d_{F} (m), e.g. the receptor at the SID; the scatter grows with it.",
     "field_size_written": "Your field F (cm²) at d_{F} (m), and the field your value was given for.\n"

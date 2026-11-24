@@ -51,8 +51,10 @@ NOTES = [
     ("field", "Field: the scatter of a radiation type scaled to the primary field given, (F / d_F²) / (F₀ / d_F₀²) "
               "with F₀ at d_F₀ the field of NCRP 147 Table 4.7 (NCRP 147 4.1.7.2, Eq. C.2); the leakage is not "
               "scaled. An air kerma written is scaled whole, from the field it was written for."),
-    ("angle", "Scatter at an angle: for a kVp, K¹ = K_W¹(kVp) · 2.5 mA·min · a₁(θ, kVp) · 10⁻⁶ · F / d_F² (NCRP 147 "
-              "Eq. C.2, Figures B.1 and C.1), with the leakage of the tube at that kVp if ticked (Eq. C.6-C.9)."),
+    ("angle", "Scatter at an angle: K¹ = Σ K_W¹(kVp) · W(kVp) · a₁(θ, kVp) · 10⁻⁶ · F / d_F² over the kVp of the "
+              "workload distribution (for a single kVp, W = 2.5 mA·min), with the leakage at each kVp where chosen "
+              "(NCRP 147 Eq. C.2, C.5, C.9; Figures B.1 and C.1); each kVp goes through the barrier with its own "
+              "transmission (Table A.1; the leakage by its HVL)."),
     ("share", "Secondary × (1 − U): the secondary radiation of a workload counted only for the part (1 − U) of it "
               "not aimed at the barrier, U being the use factor of its primary beam there (NCRP 147 Eq. C.4, C.8); K "
               "of that radiation type includes it."),

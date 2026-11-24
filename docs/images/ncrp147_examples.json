@@ -114,6 +114,22 @@
  {
   "section": "5.3",
   "example": "Radiographic room (Figures 5.1 and 5.2)",
+  "barrier": "Wall 2, scatter at 30°",
+  "material": "Lead",
+  "setup": "5.3.3.2, the same as Wall 2 with the side-scatter of the chest patient at 30° (At an angle: from the kVp spectrum of Rad Room (chest bucky), each kVp through its own transmission)",
+  "ncrp_text": "the more realistic calculation, each source at its place with its workload distribution and the chest patient's scatter at 30°: 0.3 mm lead",
+  "ncrp": 0.3,
+  "bound": null,
+  "program": 0.2974830059510324,
+  "planned": null,
+  "planned_dose": null,
+  "ncrp_planned_dose": null,
+  "K": 0.2523109425841775,
+  "B": 0.07926727154660554
+ },
+ {
+  "section": "5.3",
+  "example": "Radiographic room (Figures 5.1 and 5.2)",
   "barrier": "Wall 3",
   "material": "Lead",
   "setup": "5.3.4, darkroom wall: secondary, d_{sec} = 2 m, T = 1, P = 0.025 mGy/week for the stored film",
