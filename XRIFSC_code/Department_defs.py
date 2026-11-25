@@ -6,7 +6,7 @@ import theme
 from tooltips import tip
 from Depcalculations import (wb, PRIMARY_KERMA, KVP_DATA, DBT, SOURCES, KIRBY, BIONDI, LI_ORTHOPEDIC, YANG2016_KERMA,
                              DBT_LI2013, JUDGE_FFDM, JUDGE_UNITS, CHEN, KERMA_SOURCES, MAMMO_KVP_DATA, MAMMO_KVPS,
-                             EXISTING_MAX, UNSHIELDED_SECONDARY, OCCUPANCY_T, HEIGHTS, ANGLES, SPECTRA)
+                             EXISTING_MAX, UNSHIELDED_SECONDARY, OCCUPANCY_T, HEIGHTS, ANGLES, SPECTRA, TUBE_KVP)
 from barrier_names import BarrierDialog, KEEP, default_kind, default_name, door_material
 
 MATERIALS = ("Lead", "Concrete", "Gypsum Wallboard", "Steel", "Plate Glass", "Wood")
@@ -645,7 +645,8 @@ class dep_defs():
                     f"beyondentry {index}{room_number}{i}", f"dtotal {index}{room_number}{i}",
                     f"dbt1 {index}{room_number}{i}", f"dbt2 {index}{room_number}{i}", f"dbt3 {index}{room_number}{i}",
                     f"dbt4 {index}{room_number}{i}", f"dbtbox {index}{room_number}{i}", f"fieldframe {index}{room_number}{i}",
-                    f"angleframe {index}{room_number}{i}", f"angleopt {index}{room_number}{i}"]
+                    f"angleframe {index}{room_number}{i}", f"angleopt {index}{room_number}{i}",
+                    f"tubeopt {index}{room_number}{i}"]
                 vars_to_delete = [f"vselxray {index}{room_number}{i}", f"preshvar {index}{room_number}{i}",
                     f"oworkvar {index}{room_number}{i}", f"radiob_pre {index}{room_number}{i}",
                     f"workv {index}{room_number}{i}", f"vsexroom {index}{room_number}{i}",
@@ -672,7 +673,7 @@ class dep_defs():
                     f"lau {e}{nr}{i}", f"use_ent {e}{nr}{i}", f"presh {e}{nr}{i}",f"radbucky {e}{nr}{i}", 
                     f"radcross {e}{nr}{i}", f"laks {e}{nr}{i}", f"entk {e}{nr}{i}",f"radside {e}{nr}{i}",
                     f"radforward {e}{nr}{i}",f"radleak {e}{nr}{i}",f"airkncrp {e}{nr}{i}", f"fieldframe {e}{nr}{i}",
-                    f"angleframe {e}{nr}{i}", f"angleopt {e}{nr}{i}",
+                    f"angleframe {e}{nr}{i}", f"angleopt {e}{nr}{i}", f"tubeopt {e}{nr}{i}",
                     f"unairk {e}{nr}{i}",f"othwork {e}{nr}{i}", f"radworkl {e}{nr}{i}",f"radnumb {e}{nr}{i}",
                     f"worentry {e}{nr}{i}",f"numpapwe {e}{nr}{i}", f"selxroom {e}{nr}{i}"]
         # ===== Workload Distribution =====
@@ -1256,7 +1257,8 @@ class dep_defs():
         self.destroy_widgets([f"leak {e}{nr}{i}", f"side {e}{nr}{i}", f"forw {e}{nr}{i}", f"entk {e}{nr}{i}",
                               f"dbt1 {e}{nr}{i}", f"dbt2 {e}{nr}{i}", f"dbt3 {e}{nr}{i}", f"dbtlabel {e}{nr}{i}",
                               f"dbtbox {e}{nr}{i}", f"ffdm1 {e}{nr}{i}", f"ffdm2 {e}{nr}{i}", f"ffdm3 {e}{nr}{i}",
-                              f"fieldframe {e}{nr}{i}", f"angleframe {e}{nr}{i}", f"angleopt {e}{nr}{i}"])
+                              f"fieldframe {e}{nr}{i}", f"angleframe {e}{nr}{i}", f"angleopt {e}{nr}{i}",
+                              f"tubeopt {e}{nr}{i}"])
         if f"radside {e}{nr}{i}" in self.d:
             self.destroy_widgets([f"radside {e}{nr}{i}", f"radforward {e}{nr}{i}", f"radleak {e}{nr}{i}"])
         unairkerv_key = f"unairkerv {e}{nr}{i}"
@@ -1269,6 +1271,7 @@ class dep_defs():
         kvp_given = self.d.get(f"vselxray {e}{nr}{i}") is not None and self.d[f"vselxray {e}{nr}{i}"].get() == 2
         if self.d[unairkerv_key].get() != 1 or kvp_given:
             self.d.pop(f"angleon {e}{nr}{i}", None)
+            self.d.pop(f"tubeon {e}{nr}{i}", None)
         if self.d[unairkerv_key].get() != 1:
             self.d.pop(f"angle {e}{nr}{i}", None)
 
@@ -1396,7 +1399,7 @@ class dep_defs():
         literature), and another field scales the scatter, not the leakage. Air kerma written: under it, with the
         field the value was given for; another field scales the whole value."""
         key = f"fieldframe {e}{nr}{i}"
-        for frame_key in (key, f"angleopt {e}{nr}{i}"):
+        for frame_key in (key, f"angleopt {e}{nr}{i}", f"tubeopt {e}{nr}{i}"):
             if self.d.get(frame_key) is not None:
                 self.d[frame_key].destroy()
                 self.d[frame_key] = None
@@ -1446,6 +1449,35 @@ class dep_defs():
         tip(check, tip_key)
         if not written and value("vsexroom") in SPECTRA and self.room_type_of(nr) != "Mammography Room":
             self.angle_option(e, nr, i)
+        if not written and value("vsexroom") in BIONDI:
+            self.tube_option(e, nr, i)
+            if value("tubeon") == 1:  # their Eq. 3 has its own fraction of scatter: no field
+                for widget in [check] + [self.d[f"{name}_entry {e}{nr}{i}"] for name in names]:
+                    widget.state(["disabled"])
+
+    def tube_option(self, e, nr, i):
+        """Under 'Field size', for the workload distributions of Biondi et al. 2024: their Eq. 3, the air kerma from the
+        output of the tube (µGy/mAs at 1 m) at 50, 70, 100 and 125 kVp and their workload of each range of kVp."""
+        if self.d.get(f"tubeon {e}{nr}{i}") is None:
+            self.d[f"tubeon {e}{nr}{i}"] = IntVar(value=0)
+        for v in TUBE_KVP:
+            if self.d.get(f"tube{v} {e}{nr}{i}") is None:
+                self.d[f"tube{v} {e}{nr}{i}"] = StringVar()
+        frame = ttk.Frame(self.d[f"barrierf {e}{nr}"])
+        frame.grid(row=i * 12 + 8, column=3, columnspan=3, padx=5, pady=6.5, sticky="w")
+        self.d[f"tubeopt {e}{nr}{i}"] = frame
+        check = ttk.Checkbutton(frame, text="Tube output", variable=self.d[f"tubeon {e}{nr}{i}"],
+                                command=lambda: self.field_widgets(e, nr, i))
+        check.pack(side=LEFT)
+        state = ["!disabled"] if self.d[f"tubeon {e}{nr}{i}"].get() == 1 else ["disabled"]
+        for v in TUBE_KVP:
+            entry = ttk.Entry(frame, textvariable=self.d[f"tube{v} {e}{nr}{i}"], width=5)
+            entry.pack(side=LEFT, padx=(6, 0))
+            entry.state(state)
+            self.d[f"tube{v}_entry {e}{nr}{i}"] = entry
+            tip(entry, "tube_output")
+        ttk.Label(frame, text="µGy/mAs at 50/70/100/125 kVp", style="Muted.TLabel").pack(side=LEFT, padx=(4, 0))
+        tip(check, "tube_output")
 
     def angle_option(self, e, nr, i):
         """Under 'Field size': the scatter of the suggested air kerma at the angle given, made from the kVp spectrum of

@@ -20,7 +20,8 @@ TIPS = {
     "workload": "Weekly workload of the room, for every barrier without 'Different Workload'.",
     "workload_total": "Total workload, mA·min/week; N = Wtot / Wnorm.\n"
                       "Wnorm (NCRP 147): Rad Room 2.5 · Chest Room 0.22 · Mammography 6.7 · Cardiac 160.",
-    "workload_patients": "Patients per week. NCRP 147 average / busy:\n"
+    "workload_patients": "Patients per week, a whole number (an average goes in the total workload). NCRP 147 "
+                         "average / busy:\n"
                          "Rad Room 120 / 160 · Chest Room 200 / 400 · Mammography 80 / 160 · Angio 20 / 30.",
 
     # ===== Barrier: radiation =====
@@ -63,6 +64,8 @@ TIPS = {
                      "Scatter of NCRP 147 Fig. C.1 (W anode, 50–150 kVp), 2.5 mA·min per patient.",
     "angle_option": "The scatter at the angle θ (20–140°) instead of 90° (side) or 135° (back), from the kVp\n"
                     "spectrum of the distribution (NCRP 147 Eq. C.5); each kVp through its own transmission.",
+    "tube_output": "Your tube output (µGy/mAs at 1 m) at 50, 70, 100, 125 kVp: the air kerma of Biondi et al. Eq. 3,\n"
+                   "Σ output × workload of each kVp (their table 2) × 1/1000, instead of NCRP 147 × Wsite / Wnorm.",
     "angle_leakage": "Adds the leakage of the tube at this kVp (NCRP 147 C.2).",
     "angle_field": "The primary field F (cm²) at d_{F} (m), e.g. the receptor at the SID; the scatter grows with it.",
     "field_size_written": "Your field F (cm²) at d_{F} (m), and the field your value was given for.\n"

@@ -30,7 +30,6 @@ RESULTS = os.path.join(ROOT, "docs", "images", "literature_examples.json")
 COMPARISON = "Literature examples - comparison.xlsx"
 OFFICE = "Administrative or clerical offices"  # T = 1
 DBT = "Digital Breast Tomosynthesis – Yang 2017"  # the program's name of the DBT workload distribution
-WEEKS = 52  # Biondi et al. give the workload and the goal per year
 
 REFERENCES = {
     "Yang 2017": "Yang K, Schultz TJ, Li X, Liu B. Radiation shielding calculation for digital breast tomosynthesis "
@@ -79,9 +78,10 @@ def department(name, rooms):
 EXAMPLES = []
 
 
-def example(file, title, paper, workspace, about, checks):
+def example(file, title, paper, workspace, about, checks, weeks=52):
+    """weeks: the weeks of a year of the paper, for the values it gives per year."""
     EXAMPLES.append({"file": file, "title": title, "paper": paper, "workspace": workspace, "about": about,
-                     "checks": checks})
+                     "checks": checks, "weeks": weeks})
 
 
 example("Yang 2017 - DBT room", "Yang et al. 2017: digital breast tomosynthesis room", "Yang 2017",
@@ -110,14 +110,16 @@ example("Yang 2016 - DBT floor", "Yang et al. 2016: the floor of a DBT room", "Y
           "equation with their table I gives 32 mm)")])
 
 # Judge et al. 2013, table 1: each unit's maximum scatter at 1 m x 40 000 exposures a year (40 patients a day, 4
-# exposures, 5 days, 50 weeks), a member of the public (0.3 mGy a year, T = 1) at 1 m, Simpkin's Mo/Mo transmission
+# exposures, 5 days, 50 weeks), a member of the public (0.3 mGy a year, T = 1) at 1 m, Simpkin's Mo/Mo transmission.
+# A week of theirs: 200 patients (patients are counted whole), and P = 0.3 / 50 mGy
+JUDGE_WEEKS = 50
 JUDGE_TABLE = [("GE Essential", 248, 1.21e-3, (21, 9, 180)), ("Hologic Selenia", 180, 1.67e-3, (19, 8, 169)),
                ("Philips MDM", 60, 5.00e-3, (18, 8, 157))]
 judge_walls, judge_checks = {}, []
 for k, (unit, ais, B, (gypsum, glass, wood)) in enumerate(JUDGE_TABLE, start=1):
     wall = barrier(3 + k, ["Gypsum Wallboard", "Plate Glass", "Wood"], [suggested(JUDGE, 1.0, ffdmunit=k)], T=1,
                    name=unit)
-    wall["dikeent"] = f"{0.3 / WEEKS:.6g}"
+    wall["dikeent"] = f"{0.3 / JUDGE_WEEKS:.6g}"
     judge_walls[3 + k] = wall
     room_name = "Judge 2013: FFDM room"
     judge_checks += [(room_name, unit, "K per year", "mGy/year", ais, 1.0,
@@ -127,41 +129,68 @@ for k, (unit, ais, B, (gypsum, glass, wood)) in enumerate(JUDGE_TABLE, start=1):
                      (room_name, unit, "Plate Glass", "mm", glass, 0.6, "plate glass, table 1"),
                      (room_name, unit, "Wood", "mm", wood, 1.0, "wood, table 1")]
 example("Judge 2013 - FFDM room", "Judge et al. 2013: three full-field digital mammography units", "Judge 2013",
-        room("Mammography Room", "Judge 2013: FFDM room", judge_walls, patients=10000 / WEEKS),
-        "Their table 1: a barrier 1 m from each unit, for a member of the public (0.3 mGy a year, T = 1), 40 000 "
-        "exposures a year.",
-        judge_checks)
+        room("Mammography Room", "Judge 2013: FFDM room", judge_walls, patients=40 * 5),
+        "Their table 1: a barrier 1 m from each unit, for a member of the public (0.3 mGy a year, T = 1), 40 patients "
+        "a day, 5 days a week, 50 weeks: 200 patients a week and P = 0.3 / 50 mGy/week.",
+        judge_checks, weeks=JUDGE_WEEKS)
 
-# Biondi et al. 2024: table 1 (procedures in 2023), table 2 (workload), table 4 with their Eq. 4 (the NCRP 147
-# secondary air kerma of cardiac or peripheral angiography, leakage + forward/backscatter, times Wsite / Wnorm)
-BIONDI_ROOMS = [("Angiography", 779, 345, 1.5), ("Electrophysiology", 523, 1, 0.0), ("Haemodynamics", 1199, 150, 1.1),
-                ("Neuroangiography", 172, 196, 1.3), ("Vascular Surgery", 393, 107, 1.0)]
-BIONDI_NOTE = {"Neuroangiography": "table 4 gives 196 mGy/year, which is Eq. 4 with 523 patients a year (the number "
-                                   "of electrophysiology in table 1), not the 172 of neuroangiography",
-               "Vascular Surgery": "table 4 gives 107 mGy/year, which is Eq. 4 with 172 patients a year (the number "
-                                   "of neuroangiography in table 1), not the 393 of vascular surgery"}
+# Biondi et al. 2024: table 2 (workload of each range of kVp, mAs per patient), table 3 (transmission), table 4: an
+# uncontrolled area 2 m away, 1 mSv a year, with their Eq. 4 (the NCRP 147 air kerma of cardiac or peripheral
+# angiography, leakage + forward/backscatter, × Wsite / Wnorm) and their Eq. 3 (their tube output, Fig. 1, × the
+# workload of each range of kVp × 1/1000). Their table 4 comes out with 393, 523 and 172 procedures a year for
+# electrophysiology, neuroangiography and vascular surgery in both equations (table 1 lists 523, 172 and 393), and with
+# the Eq. 3 values of haemodynamics and vascular surgery interchanged. The workload of a week is given as total
+# workload, Wsite × procedures / 52 (patients are counted whole).
+BIONDI_WEEKS = 52
+TUBE = {"tube50": "21", "tube70": "46", "tube100": "90", "tube125": "135"}  # µGy/mAs at 1 m, read from their Fig. 1
+#               room, procedures used, in table 1, Wsite (mAs), Eq. 4: K, lead, Eq. 3: K, lead (as compared)
+BIONDI_ROOMS = [("Angiography", 779, 779, 7155.262, 345, 1.5, 130, 1.1),
+                ("Electrophysiology", 393, 523, 26.139, 1, 0.0, 0.2, 0.0),
+                ("Haemodynamics", 1199, 1199, 1264.537, 150, 1.1, 33, 0.60),
+                ("Neuroangiography", 523, 172, 6070.188, 196, 1.3, 81, 1.0),
+                ("Vascular Surgery", 172, 393, 10105.044, 107, 1.0, 38, 0.7)]
+EQ3_PRINTED = {"Haemodynamics": "vascular surgery", "Vascular Surgery": "haemodynamics"}
+EQ4, EQ3 = "Wall, Eq. 4", "Wall, Eq. 3"
 
 
-def biondi_room(name, patients):
-    wall = barrier(4, ["Lead"], [secondary(f"{name} – Biondi 2024", 2.0, "leakage + forward/backscatter")], T=1,
-                   P=1 / WEEKS, name="Wall at 2 m")
-    wall["dikeent"] = f"{1 / WEEKS:.6g}"  # 1 mSv a year
-    return room("Fluoroscopy Room", f"Biondi 2024: {name}", {4: wall}, patients=patients / WEEKS)
+def biondi_room(name, procedures, w_site):
+    distribution = f"{name} – Biondi 2024"
+    walls = {}
+    for e, wall_name in ((4, EQ4), (5, EQ3)):
+        item = secondary(distribution, 2.0, "leakage + forward/backscatter")
+        if wall_name == EQ3:
+            item.update(tubeon="1", **TUBE)
+        walls[e] = barrier(e, ["Lead"], [item], T=1, P=1 / BIONDI_WEEKS, name=wall_name)
+        walls[e]["dikeent"] = f"{1 / BIONDI_WEEKS:.6g}"  # 1 mSv a year
+    workspace = room("Fluoroscopy Room", f"Biondi 2024: {name}", walls, patients=1)
+    # the workload of a week: Wsite (mA min per patient) x procedures of a year / 52
+    workspace["data"]["room"] = {"vrawork": "1", "worentry": number(w_site / 60 * procedures / BIONDI_WEEKS),
+                                 "numpapwe": None}
+    return workspace
 
 
 biondi_checks = []
-for name, patients, kerma, lead in BIONDI_ROOMS:
-    known = BIONDI_NOTE.get(name)
-    biondi_checks += [(f"Biondi 2024: {name}", "Wall at 2 m", "K per year", "mGy/year", kerma, None if known else 1.0,
-                       known or f"Eq. 4: Wsite / Wnorm × {patients} patients × K¹_{{sec}} / 2²"),
-                      (f"Biondi 2024: {name}", "Wall at 2 m", "Lead", "mm", lead, None if known else 0.06,
-                       (known + ", so its lead too") if known else "their table 3 transmission, B = 1 / K")]
+for name, used, listed, w_site, k4, lead4, k3, lead3 in BIONDI_ROOMS:
+    procedures = f"{used} procedures a year" + (f" (as their table 4; table 1 lists {listed})" if used != listed else "")
+    printed = EQ3_PRINTED.get(name)
+    where = f"; table 4 prints it in the row of {printed} (the two are interchanged there)" if printed else ""
+    room_name = f"Biondi 2024: {name}"
+    biondi_checks += [(room_name, EQ4, "K per year", "mGy/year", k4, 1.0,
+                       f"Eq. 4: Wsite / Wnorm × {procedures} × K¹_{{sec}} / 2²"),
+                      (room_name, EQ4, "Lead", "mm", lead4, 0.06, "their table 3 transmission, B = 1 / K"),
+                      (room_name, EQ3, "K per year", "mGy/year", k3, 0.05 if k3 < 1 else 1.5,
+                       f"Eq. 3: their tube output (Fig. 1) × the workload of each kVp × 1/1000, {procedures}{where}"),
+                      (room_name, EQ3, "Lead", "mm", lead3, 0.06, f"their table 3 transmission{where}")]
 example("Biondi 2024 - interventional rooms", "Biondi et al. 2024: five interventional rooms", "Biondi 2024",
         department("Biondi 2024: interventional rooms",
-                   [biondi_room(name, patients) for name, patients, _, _ in BIONDI_ROOMS]),
-        "Their table 4: five rooms, a fully occupied area 2 m from the isocenter, 1 mSv a year, lead with their "
-        "table 3 transmission.",
-        biondi_checks)
+                   [biondi_room(name, used, w_site) for name, used, _, w_site, *_ in BIONDI_ROOMS]),
+        "Their table 4: five rooms, an uncontrolled area 2 m away, 1 mSv a year (P = 1/52 mGy/week), lead with their "
+        "table 3 transmission. The workload is that of a week, Wsite × procedures a year / 52. Wall, Eq. 4: the NCRP "
+        "147 air kerma × Wsite / Wnorm; Wall, Eq. 3: their tube output (Fig. 1: 21, 46, 90, 135 µGy/mAs at 50, 70, "
+        "100, 125 kVp). Their table 4 comes out with 393, 523 and 172 procedures a year for electrophysiology, "
+        "neuroangiography and vascular surgery (table 1 lists 523, 172 and 393), and with the Eq. 3 values of "
+        "haemodynamics and vascular surgery interchanged.",
+        biondi_checks, weeks=BIONDI_WEEKS)
 
 # Li et al. 2024, section 3: the lead for a transmission of 0.001 at each kVp, for both filtrations (tables 1 and 2)
 LI_KVP = [60, 70, 80, 90, 100, 110, 120]
@@ -189,11 +218,11 @@ example("Li 2024 - DR 600 lead", "Li et al. 2024: lead for a transmission of 0.0
 
 
 # ===================== build, check, write =====================
-def program_value(app, rec, nr, e, quantity):
+def program_value(app, rec, nr, e, quantity, weeks):
     if quantity == "K":
         return rec["K_total"]
     if quantity == "K per year":
-        return rec["K_total"] * WEEKS
+        return rec["K_total"] * weeks
     if quantity == "B":
         return rec["B"]
     return dict(rec["thickness"])[quantity]
@@ -329,7 +358,7 @@ def main():
             e = next(k for k in range(1, app.d[f"x {t}"] + 1) if app.barrier_name(k, nr) == barrier_name)
             rec = app.calc[(nr, e)]
             assert not rec["missing"], (item["file"], room_name, barrier_name, rec["missing"])
-            value = program_value(app, rec, nr, e, quantity)
+            value = program_value(app, rec, nr, e, quantity, item["weeks"])
             approximate = isinstance(tolerance, tuple)  # the paper gives an approximate value
             limit = tolerance[1] if approximate else tolerance
             ok = limit is None or abs(value - paper) <= limit

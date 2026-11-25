@@ -398,9 +398,9 @@ shot("kirby_floor.png", root, widget=inputs, height=520)
 t = app.creatroom("Fluoroscopy Room")
 nr = d[f"nr {t}"]
 d[f"vname_room {t}"].set("Angiography room")
-d[f"vrawork {t}"].set(2)
+d[f"vrawork {t}"].set(1)  # patients are counted whole: the workload of a week, Wsite x 779 / 52
 app.workload(t)
-fill(f"numpapwe {t}", "14.98")  # 779 / 52
+fill(f"worentry {t}", f"{7155.262 / 60 * 779 / 52:.6g}")
 e = 4
 radiation(t, nr, e, 2, "Angiography – Biondi 2024", "1.7")  # + 0.3 m beyond the wall: 2 m
 d[f"unairkerv {e}{nr}0"].set(1)
@@ -413,6 +413,13 @@ fill(f"dikeent {e}{nr}", "0.01923")  # 1 mSv a year
 lead_and_concrete(t, e, nr)
 app.choosetype(e, nr, t, notify=False)
 record("biondi", t, [e])
+# their Eq. 3: the tube output of their Fig. 1 at 50, 70, 100, 125 kVp
+d[f"tubeon {e}{nr}0"].set(1)
+for v, out in zip((50, 70, 100, 125), ("21", "46", "90", "135")):
+    d[f"tube{v} {e}{nr}0"].set(out)
+app.field_widgets(e, nr, 0)
+app.choosetype(e, nr, t, notify=False)
+record("biondi_tube", t, [e])
 inputs, results = room_parts(t)
 app.depnote.select(app.standalone[t])
 select_barrier(t, e)

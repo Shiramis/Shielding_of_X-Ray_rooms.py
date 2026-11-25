@@ -82,7 +82,8 @@ preshielding, and the thickness is the one at which Σ *K*·*B*(*x* + *x*pre) = 
     (`python tools/literature_data.py --check`).
   - **Chen et al. 2013**: workloads, primary air kerma, use factors and lead and concrete transmission of radiographic
     rooms in Taiwan (their leakage and scatter made with the NCRP 147 method, as for Kirby et al.).
-  - **Biondi et al. 2024**: workloads and secondary transmission of five interventional rooms.
+  - **Biondi et al. 2024**: workloads and secondary transmission of five interventional rooms, with the air kerma of
+    their Eq. 4 (NCRP 147 × Wsite / Wnorm) or, from the output of your tube, of their Eq. 3.
   - **Judge et al. 2013**: the scatter of three full-field digital mammography units.
   - **Yang et al. 2017** and **Li et al. 2013**: digital breast tomosynthesis (workload, scatter, transmission); with
     Li et al. 2013, the scatter toward a wall or door, the floor or the ceiling of **Yang et al. 2016**.

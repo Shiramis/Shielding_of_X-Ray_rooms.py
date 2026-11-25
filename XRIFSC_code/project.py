@@ -21,7 +21,8 @@ FILE_TYPES = [("Shielding project", "*.shield"), ("All files", "*.*")]
 RADIATION_KEYS = ["radiob_w", "entryd", "vselxray", "vsexroom", "use_ent", "entk", "preshvar", "radiob_pre",
                   "unairkerv", "airkerv", "radiob_leak", "oworkvar", "workv", "worentry", "numpapwe", "kvpdata",
                   "dbtmode", "dbtbarrier", "ffdmunit", "fieldvar", "fieldF", "fielddF", "fieldF0", "fielddF0",
-                  "angle", "angleleak", "angleF", "angledF", "angleon"]
+                  "angle", "angleleak", "angleF", "angledF", "angleon", "tubeon", "tube50", "tube70", "tube100",
+                  "tube125"]
 # The further area beyond a barrier (keys "<name> <e><nr>")
 FAR_KEYS = ["far", "fardist", "farloc", "farT", "fararea", "farP"]
 CT_KEYS = ["bp_var", "hp_var", "dlpb_var", "dlph_var", "kvp_var"]
@@ -308,7 +309,12 @@ class ProjectFile:
                         for name in ("fieldvar", "fieldF", "fielddF"):
                             self.write_input(key(name), saved.get(name))
                         self.field_widgets(e, nr, i)
-                    if saved.get("angleon") == "1":  # the scatter at an angle, from the kVp spectrum
+                    tube = ("tube50", "tube70", "tube100", "tube125")
+                    if saved.get("tubeon") == "1" or any(saved.get(name) for name in tube):  # Biondi Eq. 3, also off
+                        for name in ("tubeon",) + tube:
+                            self.write_input(key(name), saved.get(name))
+                        self.field_widgets(e, nr, i)
+                    if saved.get("angleon") in ("0", "1") and saved.get("angle"):  # at an angle, kept if off
                         for name in ("angleon", "angle"):
                             self.write_input(key(name), saved.get(name))
                         self.field_widgets(e, nr, i)

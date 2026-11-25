@@ -778,7 +778,9 @@ def xray_room():
                        "walls and doors, at first <b>Door 1</b> and <b>Wall 1</b> to <b>Wall 4</b> (below).",
                        "<b>Workload</b>: either <b>Write total Workload</b> <i>W</i><sub>tot</sub> (mA·min/week) or "
                        "<b>The Number of Patients per week</b> <i>N</i> (NCRP 147 average for a radiographic room: "
-                       "120). It applies to every barrier, unless a barrier ticks <b>Different Workload</b>.",
+                       "120), a whole number; an average, such as the patients of a year / 52, goes in the total "
+                       "workload, which may have decimals. It applies to every barrier, unless a barrier ticks "
+                       "<b>Different Workload</b>.",
                        "<b>Floor Plan</b> (section 8), <b>2D / 3D View</b> (section 9), <b>Calculate all barriers"
                        "</b> and <b>Export to Excel</b> (section 10)."])]
     story += [P("Every barrier other than the floor and the ceiling is a <b>wall</b> or a <b>door</b>, with a name:")]
@@ -1142,6 +1144,14 @@ def biondi_section():
                        "peripheral angiography (angiography, neuroangiography, vascular surgery) times "
                        "<i>W</i><sub>site</sub> / <i>W</i><sub>norm</sub>. Every choice of the suggested air kerma "
                        "(leakage, side-scatter, forward/backscatter and their sums) is scaled so.",
+                       "<b>Tube output</b>, under Field size: their Equation 3, when the output of the tube is known. "
+                       "Type it in µGy/mAs at 1 m at 50, 70, 100 and 125 kVp, the kVp of NCRP 147 Table C.1 that "
+                       "they give each range of their table 2: <i>K</i><super>1</super><sub>sec</sub> = Σ output × "
+                       "workload of the range (mAs per patient) × 1/1000, their fraction of scatter.",
+                       "<b>Workload</b>: the program takes <i>W</i><sub>site</sub> as the workload per patient, so a "
+                       "total workload gives the same air kerma as the patients it stands for. Patients per week are "
+                       "a whole number; an average, such as the procedures of a year / 52, goes in <b>Write total "
+                       "Workload</b>: <i>W</i><sub>site</sub> × procedures / 52 mA·min.",
                        "<b>Secondary radiation only</b>: in fluoroscopy the image receptor stops the primary beam "
                        "(NCRP 147). With <b>Primary</b> the program asks for <i>Secondary radiation only</i>."])]
     rows = [["Workload distribution", "W<sub>norm</sub> (mA·min/patient)", "NCRP 147 scaled",
@@ -1152,8 +1162,9 @@ def biondi_section():
                                                                 f"{fmt(base[8] * w / base[1])}",
                      ", ".join(f"{v:g}" for v in transmission[r[0]][1:4])])
     story += table(rows, [47, 28, 36, 33, 26])
-    story += figure("biondi_barrier.png", "A wall of an angiography room with the data of Biondi et al. 2024: the "
-                                          "suggested air kerma names its source.", crop=(0, 0, 1154, 640))
+    story += figure("biondi_barrier.png", "A wall of an angiography room with the data of Biondi et al. 2024 and "
+                                          "their Equation 3: the tube output under Field size.",
+                    crop=(0, 0, 1154, 640))
     story += [P("Their workloads per patient are much higher than those of NCRP 147 for peripheral work (angiography "
                 "119 and vascular surgery 168 mA·min, against 64) and much lower for cardiac work (haemodynamics 21, "
                 "against 160). Section 11.8 reproduces the example of the article.")]
@@ -1256,7 +1267,8 @@ def ct_and_mammography():
                 "than clinical) times the 4 exposures of a patient, as they work out the annual scatter. For the "
                 "barriers they used Simpkin's Mo/Mo transmission (that of NCRP 147) without saying at which kVp; 30 "
                 "kVp reproduces their GE and Hologic results and 35 kVp their Philips results exactly (section "
-                "11.10), so the program uses these. Give the workload as patients per week.")]
+                "11.10), so the program uses these. Give the workload as patients per week, a whole number: their "
+                "example, 40 patients a day for 5 days, is 200 a week.")]
     story += H2("Transmission at a kVp: mammography and DBT beams")
     story += [P("In a mammography room, <b>Give kVp</b> has next to the kVp the choice of the transmission data, and "
                 "the kVp list follows it. The secondary radiation is taken as attenuated like the primary beam (NCRP "
@@ -1708,20 +1720,34 @@ def worked_examples():
     peripheral = next(r for r in load_workbook(EXCEL, data_only=True)["sec abc"].iter_rows(min_row=3, values_only=True)
                       if r[0] == "Peripheral Angiography")[1:4]
     story += H2("Interventional room (the example of Biondi et al. 2024)")
+    w_week = 7155.262 / 60 * 779 / 52
     story += [P(f"Biondi et al. work out an angiography room with 779 procedures a year and an uncontrolled area "
                 f"(1 mSv a year, <i>T</i> = 1) 2 m from the patient, with their Equation 4: 345 mGy a year without "
-                f"shielding and 1.5 mm of lead (their table 4). In the program: <b>{dist['N']:g}</b> patients per week "
-                f"(779 / 52), <b>Angiography – Biondi 2024</b>, <b>Leakage and Forward/Backscatter</b>, distance "
+                f"shielding and 1.5 mm of lead (their table 4). 779 / 52 is not a whole number of patients, so the "
+                f"week is given as workload: <b>Write total Workload</b> = 119.25 mA·min × 779 / 52 = "
+                f"<b>{w_week:.1f}</b> mA·min, which the program turns into {dist['N']:.2f} patients of 119.25 mA·min. "
+                f"Then <b>Angiography – Biondi 2024</b>, <b>Leakage and Forward/Backscatter</b>, distance "
                 f"{dist['d'] - bio['beyond']:g} m + {bio['beyond']:g} m, and <i>P</i> = 1/52 = {bio['P']:g} "
                 f"mGy/week.")]
     story += formula(f"<i>K</i><super>1</super><sub>sec</sub> = (7155 mAs / 60) / 64 × 0.95 = {dist['K1']:.3f} "
-                     f"mGy/patient<br/><i>K</i> = {dist['N']:g} × {dist['K1']:.3f} / {dist['d']:g}<super>2</super> = "
+                     f"mGy/patient<br/><i>K</i> = {dist['N']:.2f} × {dist['K1']:.3f} / {dist['d']:g}<super>2</super> = "
                      f"<b>{K:.2f}</b> mGy/week ({K * 52:.0f} mGy a year), <i>B</i> = {bio['P']:g} / {K:.2f} = "
                      f"<b>{fmt(B)}</b>")
     story += [P(f"With their lead data ({params_text(lead)}): <b>{x_lead:.2f} mm lead</b>, as the article; or "
                 f"{dict(bio['thickness'])['Concrete']:.0f} mm concrete. The NCRP 147 transmission of peripheral "
                 f"angiography would give {archer_thickness(peripheral, B):.2f} mm of lead for the same "
                 f"<i>B</i>: their transmission data are more penetrating.")]
+    tube = VALUES["biondi_tube"]["Wall 1"]
+    t_dist = tube["distributions"][0]
+    k1_tube = (0.096 * 21 + 318.608 * 46 + 5945.228 * 90 + 891.33 * 135) * 1e-6
+    close(k1_tube, t_dist["K1"])
+    close(t_dist["N"] * k1_tube / t_dist["d"] ** 2, tube["K_total"])
+    story += [P(f"With their Equation 3, ticking <b>Tube output</b> and typing the output of their Fig. 1, 21, 46, 90 "
+                f"and 135 µGy/mAs at 50, 70, 100 and 125 kVp:")]
+    story += formula(f"<i>K</i><super>1</super><sub>sec</sub> = (0.096 × 21 + 318.6 × 46 + 5945.2 × 90 + 891.3 × 135) "
+                     f"µGy × 1/1000 = {t_dist['K1']:.3f} mGy/patient<br/><i>K</i> = {tube['K_total']:.3f} mGy/week "
+                     f"({tube['K_total'] * 52:.0f} mGy a year): <b>{dict(tube['thickness'])['Lead']:.2f} mm lead</b>")
+    story += [P("as their table 4 (130 mGy a year, 1.1 mm).")]
 
     story += ncrp_examples()
     story += literature_examples()
@@ -1942,7 +1968,7 @@ def literature_examples():
                 "</font> of the source code: Yang et al. 2017 (the DBT room above), Yang et al. 2016 (the floor of a "
                 "DBT room, their Eq. 8 and 9, with the transmission of Li et al. 2012), Judge et al. 2013 (the "
                 "barriers of their table 1 for three units), Biondi et al. 2024 (five interventional rooms, their "
-                "table 4 with Eq. 4) and Li et al. 2024 (the lead that lets 0.001 through at each kV, with both "
+                "table 4 with Eq. 4 and Eq. 3) and Li et al. 2024 (the lead that lets 0.001 through at each kV, with both "
                 "filtrations). Kirby et al. 2023, Chen et al. 2013 and Li et al. 2013 give no worked example; for "
                 "them see the end of this section.")]
     rows = [["Article", "Example", "Quantity", "In the article", "Program", "Same"]]
@@ -1960,10 +1986,14 @@ def literature_examples():
                      shown(row["program"]) + unit, same])
     story += table(rows, [31, 49, 22, 26, 26, 16])
     story += [P("≈ Yang et al. 2016 give \"~35 mm\" of concrete; the Archer equation with the 40 kVp W/Al data of Li "
-                "et al. 2012 gives 32 mm. * Not compared. Biondi et al. 2024, table 4: for neuroangiography and "
-                "vascular surgery the air kerma of the article is that of Eq. 4 with 523 and 172 patients a year, "
-                "the numbers of electrophysiology and of neuroangiography in their table 1; the program, with the 172 "
-                "and 393 patients of these rooms, finds the values above. Judge et al. 2013 do not give the kVp of "
+                "et al. 2012 gives 32 mm. Biondi et al. 2024: each room has a week of workload, W<sub>site</sub> × "
+                "procedures / 52 mA·min (patients are counted whole), a wall with their Eq. 4 and one with their Eq. "
+                "3 (the tube output of their Fig. 1, 21, 46, 90, 135 µGy/mAs at 50, 70, 100, 125 kVp). Their table 4 "
+                "comes out, with both equations, with 393, 523 and 172 procedures a year for electrophysiology, "
+                "neuroangiography and vascular surgery, where their table 1 lists 523, 172 and 393; and its Eq. 3 "
+                "values of haemodynamics and vascular surgery are interchanged (33 mGy and 0.60 mm belong to "
+                "haemodynamics, 38 mGy and 0.7 mm to vascular surgery). Judge et al. 2013: 200 patients a week (40 a "
+                "day, 5 days) and P = 0.3/50 mGy/week; they do not give the kVp of "
                 "their transmission data: 30 kVp (GE, Hologic) and 35 kVp (Philips) reproduce all their values. The "
                 "same comparison, with the difference in %, is the Excel file <b>Literature examples - "
                 "comparison.xlsx</b> in <b>Examples\\Literature</b>.", "small"), Spacer(1, 4)]
@@ -2109,6 +2139,12 @@ def troubleshooting():
                                                                                      "the field it is for) is not "
                                                                                      "more than 0.",
                      "Type the fields and their distances, or untick Field size."],
+                    [f"<font color='{BAD}'>Missing: Patients per week: a whole number</font>",
+                     "Patients (and CT procedures) are counted whole.",
+                     "Type a whole number, or give an average as Write total Workload (mA·min/week)."],
+                    [f"<font color='{BAD}'>Missing: Tube output (µGy/mAs at 1 m)</font>",
+                     "Tube output (Biondi et al. Eq. 3) is ticked, but an output is missing.",
+                     "Type the output of the tube at 50, 70, 100 and 125 kVp, or untick it."],
                     [f"<font color='{BAD}'>Missing: Scattering angle (20-140°)</font>", "A secondary radiation "
                                                                                          "type at a kVp, at an angle "
                                                                                          "outside Figure C.1.",

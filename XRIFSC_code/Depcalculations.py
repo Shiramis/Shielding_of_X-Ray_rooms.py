@@ -419,6 +419,23 @@ ANGLES, ANGLE_KVP, KVP_WNORM = (20, 140), (50, 150), 2.5
 LEAK_RATE, LEAK_KVP, LEAK_MA, HOUSING = 0.876 / 60, 150, 3.3, 2.32
 ANGLE_OUT_OF_RANGE = "Scatter at an angle: 50-150 kVp, not mammography"
 ANGLE_NO_SPECTRUM = "Scatter at an angle: no kVp spectrum for this workload distribution"
+# Patients and CT procedures are counted whole; an average (a year's patients / 52) is given as total workload
+WHOLE_PATIENTS = "Patients per week: a whole number"
+WHOLE_PROCEDURES = "Procedures per week: whole numbers"
+
+
+def whole(n):
+    return n is not None and n >= 0 and abs(n - round(n)) < 1e-9
+
+
+# Biondi et al. 2024, their Eq. 3, when the tube output is known: the secondary air kerma per patient at 1 m is
+# Σ tube output (µGy/mAs at 1 m) × workload (mAs per patient, table 2) × 1/1000 (their fraction of scatter), the
+# workload of each range of kVp with the tube output at the kVp NCRP 147 Table C.1 gives that range (as they group
+# them: up to 50, 70, 100, 125 kVp; above 125 kVp they have none)
+TUBE_KVP = (50, 70, 100, 125)
+BIONDI_SCATTER = 1 / 1000
+BIONDI_BINS = {_row[0]: tuple(float(v or 0) for v in _row[1:5]) for _row in literature_rows("Biondi 2024")}
+TUBE_MISSING = "Tube output (µGy/mAs at 1 m)"
 
 
 def kerma_per_workload(kvp):
@@ -552,6 +569,12 @@ MISSING_HELP = {
     "Further area (distance, T and P)": "under 'Also check an area further away' type how much further than the "
                                         "person beyond the barrier it is (m, 0 or more), its occupancy factor T "
                                         "(more than 0, at most 1) and its design goal P, or untick it.",
+    WHOLE_PATIENTS: "patients are counted whole: type a whole number, or, for an average (e.g. the patients of a year / "
+                    "52), choose 'Write total Workload' and type the workload of a week (mA·min), which may have "
+                    "decimals.",
+    WHOLE_PROCEDURES: "procedures are counted whole: type whole numbers of body and head procedures per week.",
+    TUBE_MISSING: "under 'Field size', type the output of your tube (µGy/mAs at 1 m) at 50, 70, 100 and 125 kVp, or "
+                  "untick 'Tube output' to use the NCRP 147 air kerma × Wsite / Wnorm (Biondi et al. Eq. 4).",
     "Scattering angle (20-140°)": "type the angle between the primary beam and the direction to the barrier, from 20 "
                                   "to 140 degrees (NCRP 147 Figure C.1).",
     ANGLE_OUT_OF_RANGE: "the scatter fraction of NCRP 147 Figure C.1 is for tungsten-anode beams of 50 to 150 kVp: "
@@ -810,7 +833,11 @@ class departprimsec():
             else:
                 source = {2: "Side-scatter", 3: "Forward/backscatter"}.get(value(f"airkerv {e}{nr}{i}"), "")
             theta = self.entry_number(f"angle {e}{nr}{i}")
-            if source and "catter" in source and self.angle_on(e, nr, i) and theta is not None:
+            if source and distribution in BIONDI and self.option_on("tubeon", e, nr, i):
+                outputs = "/".join(f"{self.entry_number(f'tube{v} {e}{nr}{i}') or 0:g}" for v in TUBE_KVP)
+                source = (f"Tube output {outputs} µGy/mAs at 50/70/100/125 kVp × the workload of each kVp × 1/1000 "
+                          f"({origin}, Eq. 3)")
+            elif source and "catter" in source and self.angle_on(e, nr, i) and theta is not None:
                 # at an angle: from the kVp spectrum of the distribution (NCRP 147 Appendix C)
                 source = ("Leakage + scatter" if source.startswith("Leakage") else "Scatter") + \
                     f" at {theta:g}° ({origin}, NCRP 147 Appendix C, from the kVp spectrum)"
@@ -930,6 +957,10 @@ class departprimsec():
             if n is None:
                 need.append("Workload")
                 fields.append(f"numpapwe {suffix}")
+            elif not whole(n):  # patients are counted whole; an average goes in the total workload
+                need.append(WHOLE_PATIENTS)
+                fields.append(f"numpapwe {suffix}")
+                n = None
         elif mode == 1:
             total = self.entry_number(f"worentry {suffix}")
             # a kVp: the Wnorm of NCRP 147 for the rad room (all barriers), or for the mammography room
@@ -996,7 +1027,12 @@ class departprimsec():
                 else:
                     column = {2: 5, 3: 7}.get(kind)
                 row = UNSHIELDED_SECONDARY.get(distribution)
-                if column is not None and row is not None:
+                if column is not None and row is not None and distribution in BIONDI and \
+                        self.option_on("tubeon", e, nr, i):  # Biondi et al. 2024, Eq. 3: the tube output known
+                    K1, missing, marked = self.tube_kerma(e, nr, i, distribution)
+                    need += missing
+                    fields += marked
+                elif column is not None and row is not None:
                     K1 = float(row[column])
                     scale = self.field_scale(e, nr, i, row)
                     if scale is None:
@@ -1129,6 +1165,27 @@ class departprimsec():
         self.last_parts = spectrum_parts(spectrum, theta, F / dF ** 2, leakage)
         return sum(k for k, _ in self.last_parts), [], []
 
+    def tube_kerma(self, e, nr, i, distribution):
+        """Biondi et al. 2024, Eq. 3: the secondary air kerma per patient at 1 m from the tube output given at 50, 70,
+        100 and 125 kVp and their workload of each range of kVp (table 2), times 1/1000 for the scatter. Returns (K1
+        or None, what is missing, the entries to mark)."""
+        outputs = [self.entry_number(f"tube{v} {e}{nr}{i}") for v in TUBE_KVP]
+        workload = BIONDI_BINS[distribution]
+        bad = [f"tube{v}_entry {e}{nr}{i}" for v, out, w in zip(TUBE_KVP, outputs, workload)
+               if w > 0 and (out is None or out <= 0)]
+        if bad:
+            return None, [TUBE_MISSING], bad
+        K1 = sum(out * w for out, w in zip(outputs, workload) if w > 0) * 1e-3 * BIONDI_SCATTER  # µGy -> mGy
+        return K1, [], []
+
+    def option_on(self, name, e, nr, i):
+        """A tick box of radiation type i is ticked."""
+        variable = self.d.get(f"{name} {e}{nr}{i}")
+        try:
+            return variable is not None and variable.get() == 1
+        except TclError:
+            return False
+
     def angle_on(self, e, nr, i):
         """'At an angle' is ticked under 'Field size' (a suggested secondary air kerma with scatter)."""
         variable = self.d.get(f"angleon {e}{nr}{i}")
@@ -1243,6 +1300,10 @@ class departprimsec():
         if P <= 0:
             self.need.append("Shielding Design Goal (P)")
             self.need_fields.append(f"dikeent {e}{nr}")
+        fractions = [name for name in ("bp", "hp") if not whole(number(f"{name}_var {t}"))]
+        if fractions:  # procedures are counted whole
+            self.need.append(WHOLE_PROCEDURES)
+            self.need_fields += [f"{name}_entry {t}" for name in fractions]
         if workload <= 0:
             self.need.append("Procedures and DLP (body or head)")
             self.need_fields += [f"{name}_entry {t}" for name in ("bp", "hp", "dlpb", "dlph")

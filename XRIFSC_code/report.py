@@ -55,6 +55,8 @@ NOTES = [
               "workload distribution (for a single kVp, W = 2.5 mA·min), with the leakage at each kVp where chosen "
               "(NCRP 147 Eq. C.2, C.5, C.9; Figures B.1 and C.1); each kVp goes through the barrier with its own "
               "transmission (Table A.1; the leakage by its HVL)."),
+    ("tube", "Tube output (Biondi et al. 2024, Eq. 3): K¹ = Σ tube output (µGy/mAs at 1 m) × workload of each range "
+             "of kVp (mAs per patient, their table 2) × 1/1000, their fraction of scatter."),
     ("share", "Secondary × (1 − U): the secondary radiation of a workload counted only for the part (1 − U) of it "
               "not aimed at the barrier, U being the use factor of its primary beam there (NCRP 147 Eq. C.4, C.8); K "
               "of that radiation type includes it."),
@@ -249,6 +251,7 @@ def write_report(path, title, rooms):
            "shared": any(rec.get("shared") for _, _, rec in records),
            "angle": any("(NCRP 147 Appendix C" in (dist.get("k1_source") or "") for dist in distributions),
            "share": any("× (1 − " in (dist.get("k1_source") or "") for dist in distributions),
+           "tube": any("Eq. 3)" in (dist.get("k1_source") or "") for dist in distributions),
            "allowed": any(allowed_text(barrier.get("allowed")) for _, barrier, _ in records)}
     row += 1
     ws.write(row, 0, "Notes", f_title)
