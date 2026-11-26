@@ -98,7 +98,7 @@ TIPS = {
     "layers_reverse": "Swaps inside and outside, each layer keeping its share.",
     "materials": "Number of materials; you get one thickness for each.",
     "area": "The area beyond the barrier: controlled P = 0.1, uncontrolled P = 0.02 mGy/week.",
-    "occupancy_write": "Occupancy factor T (NCRP 147 Table 4.1):\n"
+    "occupancy_write": "Occupancy factor T, from 0 to 1, as 0.2 or 1/5 (NCRP 147 Table 4.1):\n"
                        "offices 1 · exam rooms 1/2 · corridors 1/5 · corridor doors 1/8 · toilets, storage 1/20 · "
                        "outdoors 1/40.",
     "occupancy_select": "The location beyond the barrier; it gives T (NCRP 147 Table 4.1).",

@@ -918,7 +918,10 @@ def xray_room():
                        "<i>P</i>.",
                        "<b>Write occupancy factor (T)</b>, <b>or select Location (Suggested NCRP 147)</b>: the "
                        "location beyond the barrier gives <i>T</i> from NCRP 147 Table 4.1 (section "
-                       f"{sec('Occupancy factors T (Table 4.1)')}).",
+                       f"{sec('Occupancy factors T (Table 4.1)')}), or you type it: more than 0 and at most 1, as a "
+                       "decimal or a fraction (0.2 or 1/5). <i>T</i> = 0.2 with <i>P</i> = 0.02 gives the same "
+                       "thickness as <i>T</i> = 1 with <i>P</i>/<i>T</i> = 0.1. In a controlled area the box starts "
+                       "with 1, selected, so that what you type replaces it.",
                        "<b>Shielding Design Goal</b> (mGy/week): filled in from the area; you can change it.",
                        "<b>Calculate</b>: calculates this barrier. <b>Calculate all barriers</b> at the top "
                        "calculates every barrier of the room."])]
@@ -2139,6 +2142,9 @@ def troubleshooting():
                                                                                      "the field it is for) is not "
                                                                                      "more than 0.",
                      "Type the fields and their distances, or untick Field size."],
+                    [f"<font color='{BAD}'>Missing: Occupancy Factor (T)</font>",
+                     "No location is chosen, or the T typed is not more than 0 and at most 1 (e.g. 10.5).",
+                     "Choose a location, or type T as 0.2 or 1/5."],
                     [f"<font color='{BAD}'>Missing: Patients per week: a whole number</font>",
                      "Patients (and CT procedures) are counted whole.",
                      "Type a whole number, or give an average as Write total Workload (mA·min/week)."],

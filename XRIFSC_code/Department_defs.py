@@ -1643,6 +1643,12 @@ class dep_defs():
         barrierf_key = f"barrierf {e}{nr}"
         if self.d[f"dikeent {e}{nr}"].get() == "":
             self.set_design_goal(e, nr)
+        # the T typed so far stays when 'Write occupancy factor' is clicked again
+        typed = ""
+        try:
+            typed = self.d[occupentry_key].get() if self.d.get(occupentry_key) is not None else ""
+        except TclError:
+            pass
         # Destroy previous widgets if they exist
         for key in (occupentry_key, sellocation_key):
             if self.d.get(key):
@@ -1651,9 +1657,14 @@ class dep_defs():
 
         if self.d[vra_key].get() == 1:
             # Entry for the occupancy factor; a controlled area (e.g. control room) has T = 1 in NCRP 147
-            self.d[occupentry_key] = ttk.Entry(master=self.d[barrierf_key], width=10)
-            if self.d[area_key].get() == "Controlled Area":
-                self.d[occupentry_key].insert(0, "1")
+            entry = self.d[occupentry_key] = ttk.Entry(master=self.d[barrierf_key], width=10)
+            if typed:
+                entry.insert(0, typed)
+            elif self.d[area_key].get() == "Controlled Area":
+                entry.insert(0, "1")
+            # a T already there is selected when the entry is entered, so what is typed replaces it ("1" then "0.5"
+            # gives 0.5, not 10.5)
+            entry.bind("<FocusIn>", lambda event: event.widget.select_range(0, "end"), add="+")
             self.d[occupentry_key].grid(row=105, column=1, pady=6.5, padx=5)
             tip(self.d[occupentry_key], "occupancy_write")
         elif self.d[vra_key].get() == 2:

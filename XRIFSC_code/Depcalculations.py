@@ -546,8 +546,8 @@ MISSING_HELP = {
                               "only (through concrete). Choose 'Primary', or another workload distribution.",
     "Barrier of Yang 2016": "at 'Per barrier (Yang 2016)' choose the barrier (wall / door, floor or ceiling) and the "
                             "technique.",
-    "Occupancy Factor (T)": "under 'Shielding Area' choose 'Write occupancy factor (T)' and type it, "
-                            "or 'select Location' and pick what is beyond the barrier.",
+    "Occupancy Factor (T)": "under 'Shielding Area' choose 'Write occupancy factor (T)' and type it, more than 0 "
+                            "and at most 1 (0.2 or 1/5), or 'select Location' and pick what is beyond the barrier.",
     "Distance from the Source to the Barrier (m)": "type the distance (d_{P}, d_{L}, d_{S} or d_{sec}) from the X-ray source "
                                                    "to the barrier in metres; the distance to the person beyond it "
                                                    "is added (or tick 'Enter the whole distance' and type all of it).",
@@ -853,9 +853,11 @@ class departprimsec():
                 "preshielding": preshielding}
 
     def occupancy_factor(self, e, nr):
-        # T written by the user, or taken from NCRP 147 Table 4.1 for the selected location; None if missing
+        # T written by the user, or taken from NCRP 147 Table 4.1 for the selected location; None if missing or not
+        # a fraction of the time (more than 0, at most 1)
         if self.d[f"vraoccup {e}{nr}"].get() == 1:
-            return self.entry_number(f"occupentry {e}{nr}")
+            T = self.entry_number(f"occupentry {e}{nr}")
+            return T if T is not None and 0 < T <= 1 else None
         if self.d[f"vraoccup {e}{nr}"].get() == 2:
             for location, factor in wb['Occupancy Factor ( T )'].iter_rows(min_row=2, max_col=2, values_only=True):
                 if location is not None and location == self.d[f"vselocation {e}{nr}"].get():
@@ -923,12 +925,17 @@ class departprimsec():
                 "Steel": float(ws[f'D{row}'].value)}
 
     def entry_number(self, key):
-        """Number typed in an entry (comma or dot), or None if it is empty, invalid or missing."""
+        """Number typed in an entry (comma or dot, or a fraction such as 1/5 as NCRP 147 writes T), or None if it is
+        empty, invalid or missing."""
         try:
             widget = self.d[key]
             # A variable's own text: IntVar.get() would cut 550.5 down to 550
             text = widget._tk.globalgetvar(widget._name) if isinstance(widget, Variable) else widget.get()
-            return float(str(text).strip().replace(",", "."))
+            text = str(text).strip().replace(",", ".")
+            if text.count("/") == 1:
+                numerator, denominator = (float(part) for part in text.split("/"))
+                return numerator / denominator if denominator else None
+            return float(text)
         except (KeyError, AttributeError, ValueError, TclError):
             return None
 
