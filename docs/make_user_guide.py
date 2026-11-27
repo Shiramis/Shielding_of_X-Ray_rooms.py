@@ -1712,8 +1712,8 @@ def worked_examples():
     assert 0.6 < lead_of("Kirby 2023", "Floor") / lead_of("NCRP 147", "Floor") < 0.75  # "about a third less"
     assert lead_of("Kirby 2023", "Wall 1") > lead_of("NCRP 147", "Wall 1")  # "but more"
     K = 120 * floor["K1"] / floor["d"] ** 2
-    story += formula(f"Floor, Kirby: <i>K</i> = 120 × 1 × 1 × {floor['K1']:g} / {floor['d']:.1f}<super>2</super> = "
-                     f"<b>{fmt(K)}</b> mGy/week, <i>B</i> = 0.02 / {fmt(K)} = <b>{fmt(0.02 / K)}</b>")
+    story += formula(f"Floor, Kirby: <i>K</i> = 120 × 1 × {floor['K1']:g} / {floor['d']:.1f}<super>2</super> = "
+                     f"<b>{fmt(K)}</b> mGy/week, <i>B</i> = (0.02 / 1) / {fmt(K)} = <b>{fmt(0.02 / K)}</b>")
     story += [P(f"and with the lead transmission of the floor spectrum ({params_text(floor['params']['Lead'])}): "
                 f"<b>{dict(floor['thickness'])['Lead']:.2f} mm lead</b>. The modern DR workload needs about a third "
                 f"less lead under the table, but more behind the chest bucky.")]
