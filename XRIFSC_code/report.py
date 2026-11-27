@@ -20,7 +20,8 @@ NOTES = [
                    "bucky, concrete); kVp data: 'DR 600' Li et al. 2024, W/Al and W/Rh Li et al. 2012, W/Ag Li et "
                    "al. 2013. See the User Guide."),
     ("xray", "Unshielded air kerma beyond the barrier for each radiation type, as NCRP 147 (Eq. 4.4): K = N · U · K¹ "
-             "/ d²  (mGy/week), without the occupancy factor."),
+             "/ d²  (mGy/week), with N the number of patients per week, U the use factor of its primary beam at the barrier, K¹ the "
+             "air kerma per patient at 1 m from the source, and d the distance from the source to the point beyond the barrier."),
     ("always", "Required transmission (NCRP 147 Eq. 4.6): B = (P / T) / ΣK, with P the shielding design goal and T "
                "the occupancy factor of the area beyond the barrier."),
     ("xray", "Thickness: every radiation type goes through the barrier with its own α, β, γ (of its workload "
