@@ -1506,12 +1506,12 @@ def source_terms(record):
     if record["kind"] == "ct":
         if record.get("K_total") is None or not record.get("d"):
             return None
-        return 0.0, record["K_total"] / record["T"] * record["d"] ** 2
+        return 0.0, record["K_total"] * record["d"] ** 2
     primary = secondary = 0.0
     for dist in record.get("distributions") or []:
-        if dist.get("K") is None or not dist.get("d") or not dist.get("T"):
+        if dist.get("K") is None or not dist.get("d"):
             return None
-        term = dist["K"] / dist["T"] * dist["d"] ** 2
+        term = dist["K"] * dist["d"] ** 2
         if dist["radiation"] == "Primary":
             primary += term
         else:

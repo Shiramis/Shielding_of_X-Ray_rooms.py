@@ -92,7 +92,7 @@
   "planned": null,
   "planned_dose": null,
   "ncrp_planned_dose": null,
-  "K": 9.2,
+  "K": 46.0,
   "B": 0.002173913043478261
  },
  {
@@ -104,11 +104,11 @@
   "ncrp_text": "K = 0.14 + 0.96 + 0.008 = 1.1 mGy/week, B = 9.1×10⁻² (P/T = 0.1); with the chest bucky transmission for all of them, to be simple and safe, 0.35 mm lead (with each source's own workload distribution and place, and 30° scatter from the chest patient: 0.3 mm)",
   "ncrp": 0.35,
   "bound": null,
-  "program": 0.3357248933461888,
+  "program": 0.3357248933461887,
   "planned": null,
   "planned_dose": null,
   "ncrp_planned_dose": null,
-  "K": 0.22136131172839504,
+  "K": 1.106806558641975,
   "B": 0.09035002478002803
  },
  {
@@ -124,7 +124,7 @@
   "planned": null,
   "planned_dose": null,
   "ncrp_planned_dose": null,
-  "K": 0.2523109425841775,
+  "K": 1.2615547129208875,
   "B": 0.07926727154660554
  },
  {
@@ -284,7 +284,7 @@
   "planned": null,
   "planned_dose": null,
   "ncrp_planned_dose": null,
-  "K": 0.1530612244897959,
+  "K": 1.2244897959183672,
   "B": 0.13066666666666668
  },
  {

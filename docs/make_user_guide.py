@@ -400,24 +400,29 @@ def method():
     story += H2("Weekly air kerma beyond a barrier")
     story += [P("For each kind of radiation that reaches a barrier (a <i>workload distribution</i>, primary or "
                 "secondary), the unshielded weekly air kerma at the occupied point beyond the barrier is")]
-    story += formula("<i>K</i> = <i>N</i> · <i>U</i> · <i>T</i> · <i>K</i><super>1</super> / <i>d</i><super>2"
-                     "</super>")
+    story += formula("<i>K</i> = <i>N</i> · <i>U</i> · <i>K</i><super>1</super> / <i>d</i><super>2</super>"
+                     "&nbsp;&nbsp;&nbsp;(NCRP 147 Eq. 4.4)")
     story += table([["Symbol", "Meaning", "Unit"],
                     ["<i>N</i>", "Number of patients per week. With a total workload <i>W</i><sub>tot</sub>: "
                                  "<i>N</i> = <i>W</i><sub>tot</sub> / <i>W</i><sub>norm</sub>.", "patients/week"],
                     ["<i>U</i>", "Use factor: the fraction of the primary beam aimed at the barrier "
                                  "(1 for secondary radiation).", "–"],
-                    ["<i>T</i>", "Occupancy factor of the area beyond the barrier (NCRP 147 Table 4.1).", "–"],
+
                     ["<i>K</i><super>1</super>", "Unshielded air kerma per patient at 1 m: primary "
                                                  "<i>K</i><super>1</super><sub>P</sub> or secondary (leakage and "
                                                  "scatter) <i>K</i><super>1</super><sub>sec</sub>.", "mGy/patient"],
                     ["<i>d</i>", "Distance from the source to the occupied point beyond the barrier.", "m"],
-                    ["<i>K</i>", "Weekly air kerma at that point without shielding.", "mGy/week"]], [18, 122, 30])
+                    ["<i>K</i>", "Weekly air kerma at that point without shielding, for a person there all the "
+                                 "time (without <i>T</i>, as NCRP 147 writes it).", "mGy/week"]], [18, 122, 30])
     story += [P("When several workload distributions reach one barrier (for example a wall that is primary for the "
                 "chest bucky and secondary for the table), their air kerma values are added: Σ<i>K</i>.")]
     story += H2("Transmission and thickness")
-    story += [P("The barrier must let through no more than the fraction")]
-    story += formula("<i>B</i> = <i>P</i> / Σ<i>K</i>")
+    story += [P("The person beyond the barrier is there a fraction <i>T</i> of the time, the occupancy factor of "
+                "the area (NCRP 147 Table 4.1), so the barrier must let through no more than the fraction")]
+    story += formula("<i>B</i> = (<i>P</i> / <i>T</i>) / Σ<i>K</i>&nbsp;&nbsp;&nbsp;(NCRP 147 Eq. 4.6)")
+    story += [P("The results and the report give <i>K</i> and <i>B</i> so, as NCRP 147 does. The dose beyond the "
+                "barrier that the program checks against <i>P</i> is what the person receives, "
+                "<i>K</i> · <i>B</i>(<i>x</i>) · <i>T</i>.")]
     story += [P("If <i>B</i> ≥ 1 the barrier needs no shielding and the result says <b>none needed</b>. With one "
                 "radiation type, the thickness of each material follows from the Archer equation, with the NCRP 147 "
                 "fitting parameters α, β, γ of that material for the workload distribution (minus the preshielding, "
@@ -426,9 +431,9 @@ def method():
     story += [P("When several radiation types reach one barrier, each goes through it with the fitting parameters of "
                 "its own workload distribution, primary or secondary, and its own preshielding, as NCRP 147 does in "
                 "its examples (Sections 5.3.5 and 5.4.2). The program finds the thickness at which their air kerma "
-                "beyond the barrier adds up to <i>P</i>:")]
+                "beyond the barrier adds up to <i>P</i> / <i>T</i>:")]
     story += formula("Σ<sub><i>i</i></sub> <i>K</i><sub><i>i</i></sub> · <i>B</i><sub><i>i</i></sub>(<i>x</i> + "
-                     "<i>x</i><sub>pre,<i>i</i></sub>) = <i>P</i>")
+                     "<i>x</i><sub>pre,<i>i</i></sub>) = <i>P</i> / <i>T</i>")
     story += [P("Every radiation type therefore needs its workload distribution (or kVp). A primary beam given by its "
                 "kVp can use, instead of the NCRP 147 data, those of modern digital radiography (section 4.9); the "
                 "workload distributions of the literature have their own (sections 4.10 to 4.12, 6.1 and 6.2).")]
@@ -1421,7 +1426,8 @@ def report_and_projects():
                 "preshielding when there is none, the CT data of X-ray rooms) is left out, and so is a note on "
                 "something the rooms do not have. The columns are wide enough for their headings and values.")]
     story += table([["Sheet", "Contents"],
-                    ["Summary", "One row per barrier: room, barrier, area, location (source of T), T, P, ΣK, B, the "
+                    ["Summary", "One row per barrier: room, barrier, area, location (source of T), T, P, P/T, ΣK "
+                                "(without T, as NCRP 147), B = (P/T)/ΣK, the "
                                 "thickness of each material chosen, the dose beyond, the goal P (also in a further "
                                 "area and, for a shared wall, toward the other room), the materials, the shielding "
                                 "height of walls and doors, the existing shielding, the further area, the room that "
@@ -1433,26 +1439,28 @@ def report_and_projects():
                                 "<i>d</i><sub>S</sub> or <i>d</i><sub>sec</sub>, with their subscripts): from the "
                                 "source to the barrier, what is added to the person beyond it, and <i>d</i>, which "
                                 "the program calculates with (with <b>Enter the whole distance</b> the typed distance "
-                                "is <i>d</i> and nothing is added); then K."],
+                                "is <i>d</i> and nothing is added); then K = N · U · K¹ / d², without T."],
                     ["Rooms", "Room type and workload; for CT rooms the procedures, scans per procedure, DLP and "
                               "kVp; the number of barriers and how many are calculated."]],
                    [25, 145])
     rep = VALUES["xray_report"]
     head = rep["header"]
-    pick = ["Barrier", "T", "P (mGy/week)", "ΣK (mGy/week)", "B", "Lead (mm)", "Concrete (mm)",
+    pick = ["Barrier", "T", "P (mGy/week)", "P/T (mGy/week)", "ΣK (mGy/week)", "B", "Lead (mm)", "Concrete (mm)",
             "Gypsum Wallboard (mm)", "Dose beyond (mGy/week)"]  # the report has all of them for this room
     index = [head.index(name) for name in pick]
-    rows = [["Barrier", "T", "P", "ΣK", "B", "Lead", "Concrete", "Gypsum", "Dose beyond"]]
+    rows = [["Barrier", "T", "P", "P/T", "ΣK", "B", "Lead", "Concrete", "Gypsum", "Dose beyond"]]
     for row in rep["rows"]:
         cells = []
         for k, i in enumerate(index):
             v = row[i]
-            cells.append("" if v is None else (v if isinstance(v, str) else (f"{v:g}" if k in (1, 2) else
-                                                                             fmt(v) if k in (3, 4, 8) else
+            cells.append("" if v is None else (v if isinstance(v, str) else (f"{v:g}" if k in (1, 2, 3) else
+                                                                             fmt(v) if k in (4, 5, 9) else
                                                                              f"{v:.2f}")))
         rows.append(cells)
-    story += [P("The Summary of the example X-ray room (thicknesses in mm, air kerma in mGy/week):")]
-    story += table(rows, [20, 12, 12, 22, 24, 17, 20, 19, 24])
+    story += [P("The Summary of the example X-ray room (thicknesses in mm, air kerma in mGy/week; ΣK without "
+                "<i>T</i> and <i>B</i> = (<i>P</i>/<i>T</i>)/ΣK, as NCRP 147; the dose beyond is what the person "
+                "there receives):")]
+    story += table(rows, [17, 13, 11, 11, 19, 20, 14, 18, 17, 23])
     story += H2("Projects")
     story += [P("<b>File › Save project</b> writes everything (departments, rooms, every input, the floor plans and "
                 "their drawings) into one <b>.shield</b> file; <b>Open project</b> brings it back. <b>New project"
@@ -1487,18 +1495,18 @@ def worked_examples():
     # ---------- secondary barrier ----------
     b3 = x["Wall 3"]
     dist = b3["distributions"][0]
-    K = dist["N"] * dist["U"] * dist["T"] * dist["K1"] / dist["d"] ** 2
+    K = dist["N"] * dist["U"] * dist["K1"] / dist["d"] ** 2  # NCRP 147 Eq. 4.4, without T
     close(K, b3["K_total"])
-    B = b3["P"] / K
+    B = b3["P"] / dist["T"] / K
     lead, gyp = b3["params"]["Lead"], b3["params"]["Gypsum Wallboard"]
     x_lead, x_gyp = archer_thickness(lead, B), archer_thickness(gyp, B)
     close(x_lead, dict(b3["thickness"])["Lead"])
     close(x_gyp, dict(b3["thickness"])["Gypsum Wallboard"])
     board = archer_transmission(gyp, 15.9)
-    dose = K * board
+    dose = K * board * dist["T"]  # what the person in the corridor receives
     close(dose, b3["check"]["dose"])
-    two = K * archer_transmission(gyp, 31.8)
-    three = K * archer_transmission(gyp, 47.7)
+    two = K * archer_transmission(gyp, 31.8) * dist["T"]
+    three = K * archer_transmission(gyp, 47.7) * dist["T"]
     story += H2("Secondary barrier: X-ray room, Wall 3 (corridor)")
     story += table([["Input", "Value", "Where it comes from"],
                     ["N", f"{dist['N']:g} patients/week", "Room workload (NCRP 147 average for a Rad Room)"],
@@ -1510,31 +1518,32 @@ def worked_examples():
                     ["d", f"{dist['d'] - b3['beyond']:.2f} + {b3['beyond']:g} = {dist['d']:.2f} m",
                      f"Source to wall, plus {b3['beyond']:g} m beyond it"],
                     ["P", f"{b3['P']:g} mGy/week", "Uncontrolled area"]], [38, 50, 82])
-    story += formula(f"<i>K</i> = {dist['N']:g} × {dist['U']:g} × {dist['T']:g} × {dist['K1']:g} / "
-                     f"{dist['d']:.2f}<super>2</super> = <b>{fmt(K)}</b> mGy/week<br/><i>B</i> = {b3['P']:g} / "
-                     f"{fmt(K)} = <b>{fmt(B)}</b>")
+    story += formula(f"<i>K</i> = {dist['N']:g} × {dist['U']:g} × {dist['K1']:g} / "
+                     f"{dist['d']:.2f}<super>2</super> = <b>{fmt(K)}</b> mGy/week<br/><i>B</i> = ({b3['P']:g} / "
+                     f"{dist['T']:g}) / {fmt(K)} = <b>{fmt(B)}</b>")
     story += [P(f"With the secondary transmission parameters of the Rad Room (all barriers) distribution, lead "
                 f"({params_text(lead)}) and gypsum wallboard ({params_text(gyp)}), the Archer equation gives:")]
     story += formula(f"lead <b>{x_lead:.2f} mm</b>&nbsp;&nbsp;&nbsp;or&nbsp;&nbsp;&nbsp;gypsum wallboard "
                      f"<b>{x_gyp:.1f} mm</b>")
     story += [P(f"The example plans one standard gypsum board of 15.9 mm. Its transmission is {fmt(board)}, so the "
-                f"dose beyond is {fmt(K)} × {fmt(board)} = <b>{fmt(dose)} mGy/week</b> &gt; 0.02: {EXCEEDED}. "
+                f"person in the corridor receives {fmt(K)} × {fmt(board)} × {dist['T']:g} = <b>{fmt(dose)} "
+                f"mGy/week</b> &gt; 0.02: {EXCEEDED}. "
                 f"Two boards (31.8 mm) still give {fmt(two)} mGy/week; three boards (47.7 mm) give {fmt(three)} "
                 f"mGy/week, which meets the goal. So does {x_lead:.2f} mm of lead.")]
 
     # ---------- primary barrier with preshielding ----------
     fl = x["Floor"]
     dist = fl["distributions"][0]
-    K = dist["N"] * dist["U"] * dist["T"] * dist["K1"] / dist["d"] ** 2
+    K = dist["N"] * dist["U"] * dist["K1"] / dist["d"] ** 2
     close(K, fl["K_total"])
-    B = fl["P"] / K
+    B = fl["P"] / dist["T"] / K
     conc, lead = fl["params"]["Concrete"], fl["params"]["Lead"]
     pre = fl["preshielding"]
     total_c, total_l = archer_thickness(conc, B), archer_thickness(lead, B)
     close(total_c - pre["Concrete"], dict(fl["thickness"])["Concrete"])
     close(total_l - pre["Lead"], dict(fl["thickness"])["Lead"])
     T100 = archer_transmission(conc, 100 + pre["Concrete"])
-    close(K * T100, fl["check"]["dose"])
+    close(K * T100 * dist["T"], fl["check"]["dose"])
     story += H2("Primary barrier with preshielding: X-ray room, floor")
     story += table([["Input", "Value", "Where it comes from"],
                     ["N", f"{dist['N']:g} patients/week", "Room workload"],
@@ -1548,9 +1557,9 @@ def worked_examples():
                     ["Preshielding", f"Bucky: {pre['Concrete']:g} mm concrete, {pre['Lead']:g} mm lead",
                      "Table bucky (NCRP 147)"],
                     ["P", f"{fl['P']:g} mGy/week", "Uncontrolled area"]], [38, 62, 70])
-    story += formula(f"<i>K</i> = {dist['N']:g} × {dist['U']:g} × {dist['T']:g} × {dist['K1']:g} / "
-                     f"{dist['d']:.2f}<super>2</super> = <b>{fmt(K)}</b> mGy/week<br/><i>B</i> = {fl['P']:g} / {fmt(K)} = "
-                     f"<b>{fmt(B)}</b>")
+    story += formula(f"<i>K</i> = {dist['N']:g} × {dist['U']:g} × {dist['K1']:g} / "
+                     f"{dist['d']:.2f}<super>2</super> = <b>{fmt(K)}</b> mGy/week<br/><i>B</i> = ({fl['P']:g} / "
+                     f"{dist['T']:g}) / {fmt(K)} = <b>{fmt(B)}</b>")
     story += [P(f"The Archer equation (primary, Rad Room floor: concrete {params_text(conc)}) gives {total_c:.1f} mm "
                 f"of concrete in all. The bucky already provides {pre['Concrete']:g} mm, so the floor needs "
                 f"<b>{total_c - pre['Concrete']:.2f} mm</b> of concrete. In lead: {total_l:.2f} − {pre['Lead']:g} = "
@@ -1562,8 +1571,8 @@ def worked_examples():
     # ---------- two radiation types and layers ----------
     b4 = x["Wall 4"]
     d1, d2 = b4["distributions"]
-    K1 = d1["N"] * d1["U"] * d1["T"] * d1["K1"] / d1["d"] ** 2
-    K2 = d2["N"] * d2["U"] * d2["T"] * d2["K1"] / d2["d"] ** 2
+    K1 = d1["N"] * d1["U"] * d1["K1"] / d1["d"] ** 2
+    K2 = d2["N"] * d2["U"] * d2["K1"] / d2["d"] ** 2
     K = K1 + K2
     close(K, b4["K_total"])
     P4 = b4["P"]
@@ -1615,9 +1624,9 @@ def worked_examples():
     body = 1.2 * 3e-4 * 550
     head = 9e-5 * 1200
     weekly = 100 * s_body * body + 50 * s_head * head
-    K = flc["T"] * weekly / flc["d"] ** 2
+    K = weekly / flc["d"] ** 2
     close(K, flc["K_total"])
-    B = flc["P"] / K
+    B = flc["P"] / flc["T"] / K
     lead, conc = flc["params"]["Lead"], flc["params"]["Concrete"]
     close(archer_thickness(lead, B), dict(flc["thickness"])["Lead"])
     close(archer_thickness(conc, B), dict(flc["thickness"])["Concrete"])
@@ -1630,8 +1639,8 @@ def worked_examples():
     story += formula(f"<i>K</i><super>1</super><sub>body</sub> = 1.2 × 3×10<super>−4</super> × 550 = "
                      f"{body:.4f} mGy<br/><i>K</i><super>1</super><sub>head</sub> = 9×10<super>−5</super> × "
                      f"1200 = {head:.4f} mGy")
-    story += formula(f"<i>K</i> = 1 × (100 × {s_body:g} × {body:.4f} + 50 × {s_head:g} × {head:.4f}) / "
-                     f"{flc['d']:.2f}<super>2</super> = <b>{fmt(K)}</b> mGy/week<br/><i>B</i> = 0.02 / {fmt(K)} = "
+    story += formula(f"<i>K</i> = (100 × {s_body:g} × {body:.4f} + 50 × {s_head:g} × {head:.4f}) / "
+                     f"{flc['d']:.2f}<super>2</super> = <b>{fmt(K)}</b> mGy/week<br/><i>B</i> = (0.02 / 1) / {fmt(K)} = "
                      f"<b>{fmt(B)}</b>")
     story += [P(f"With the NCRP 147 CT data at 120 kVp, lead ({params_text(lead)}) and concrete ({params_text(conc)}): "
                 f"<b>{archer_thickness(lead, B):.2f} mm lead</b> or <b>{archer_thickness(conc, B):.0f} mm concrete"
@@ -1640,9 +1649,9 @@ def worked_examples():
     # ---------- mammography ----------
     m2 = mammo["Wall 2"]
     dist = m2["distributions"][0]
-    K = dist["N"] * dist["U"] * dist["T"] * dist["K1"] / dist["d"] ** 2
+    K = dist["N"] * dist["U"] * dist["K1"] / dist["d"] ** 2
     close(K, m2["K_total"])
-    B = m2["P"] / K
+    B = m2["P"] / dist["T"] / K
     gyp, lead = m2["params"]["Gypsum Wallboard"], m2["params"]["Lead"]
     close(archer_thickness(gyp, B), dict(m2["thickness"])["Gypsum Wallboard"])
     story += H2("Mammography room, Wall 2 (offices)")
@@ -1809,7 +1818,7 @@ def existing_and_shared_examples():
     # ---------- the patients a barrier allows: Wall 3 of the X-ray room ----------
     b3 = VALUES["xray"]["Wall 3"]
     dist = b3["distributions"][0]
-    K3, P3 = b3["K_total"], b3["P"]
+    K3, P3 = b3["K_total"] * b3["T"], b3["P"]  # what the person in the corridor receives without shielding
     dose = b3["check"]["dose"]
     close(dose, K3 * archer_transmission(b3["params"]["Gypsum Wallboard"], 15.9))
     factor = P3 / dose
@@ -1830,13 +1839,15 @@ def existing_and_shared_examples():
     # ---------- a wall shared by two rooms ----------
     shared = VALUES["shared"]
     ct, mammo = shared["CT Scanner"], shared["Mammography"]
-    x_ct = {m: archer_thickness(ct["params"][m], ct["P"] / ct["K"]) for m in ("Lead", "Concrete")}
-    x_mammo = {m: archer_thickness(mammo["params"][m], mammo["P"] / mammo["K"]) for m in ("Lead", "Concrete")}
+    B_ct, B_mammo = ct["P"] / ct["T"] / ct["K"], mammo["P"] / mammo["T"] / mammo["K"]
+    x_ct = {m: archer_thickness(ct["params"][m], B_ct) for m in ("Lead", "Concrete")}
+    x_mammo = {m: archer_thickness(mammo["params"][m], B_mammo) for m in ("Lead", "Concrete")}
     for m, x in ct["thickness"]:
         close(x, max(x_ct[m], x_mammo[m]))
     for m, x in mammo["thickness"]:
         close(x, max(x_ct[m], x_mammo[m]))
-    toward_mammo = max(mammo["K"] * archer_transmission(mammo["params"][m], x) for m, x in mammo["thickness"])
+    toward_mammo = max(mammo["K"] * mammo["T"] * archer_transmission(mammo["params"][m], x)
+                       for m, x in mammo["thickness"])
     close(toward_mammo, mammo["check"]["dose"])
     story += H2("A wall shared by two rooms: the CT and the mammography room")
     story += [P(f"In the example department the CT room and the mammography room share a wall: Wall 2 of the CT "
@@ -1845,9 +1856,9 @@ def existing_and_shared_examples():
     story += table([["Side", "Radiation toward the other room", "<i>K</i> (mGy/week)", "<i>B</i>", "Lead (mm)",
                      "Concrete (mm)"],
                     ["CT room, Wall 2", "CT secondary, 120 kVp (NCRP 147 CT data)", fmt(ct["K"]),
-                     fmt(ct["P"] / ct["K"]), f"{x_ct['Lead']:.2f}", f"{x_ct['Concrete']:.1f}"],
+                     fmt(B_ct), f"{x_ct['Lead']:.2f}", f"{x_ct['Concrete']:.1f}"],
                     ["Mammography, Wall 4", "Mammography Room, leakage + side-scatter", fmt(mammo["K"]),
-                     fmt(mammo["P"] / mammo["K"]), f"{x_mammo['Lead']:.3f}", f"{x_mammo['Concrete']:.1f}"]],
+                     fmt(B_mammo), f"{x_mammo['Lead']:.3f}", f"{x_mammo['Concrete']:.1f}"]],
                    [34, 52, 22, 20, 18, 22])
     story += [P(f"Both tabs show the larger: <b>{max(x_ct['Lead'], x_mammo['Lead']):.2f} mm of lead</b> or "
                 f"<b>{max(x_ct['Concrete'], x_mammo['Concrete']):.1f} mm of concrete</b>, and say that the CT room "
@@ -1863,32 +1874,37 @@ def further_and_field_examples():
     story = []
     near, far = VALUES["further"]["near"], VALUES["further"]["far"]
     gyp, lead = near["params"]["Gypsum Wallboard"], near["params"]["Lead"]
-    K2 = near["K"] * far["T"] / near["T"] * (near["d"] / (near["d"] + far["delta"])) ** 2
+    K_near = near["K"]  # NCRP 147: without T
+    K2 = K_near * (near["d"] / (near["d"] + far["delta"])) ** 2
     close(K2, far["K"])
-    x_near = {m: archer_thickness(near["params"][m], near["P"] / near["K"]) for m in ("Lead", "Gypsum Wallboard")}
-    x_far = {m: archer_thickness(near["params"][m], far["P"] / K2) for m in ("Lead", "Gypsum Wallboard")}
+    B_near, B_far = near["P"] / near["T"] / K_near, far["P"] / far["T"] / K2
+    x_near = {m: archer_thickness(near["params"][m], B_near) for m in ("Lead", "Gypsum Wallboard")}
+    x_far = {m: archer_thickness(near["params"][m], B_far) for m in ("Lead", "Gypsum Wallboard")}
     for m, x in far["thickness"]:
         close(x, max(x_near[m], x_far[m]))
     board = archer_transmission(gyp, 15.9)
-    close(far["check"]["far"]["dose"], K2 * board)
-    factor = far["P"] / (K2 * board)
+    close(far["check"]["far"]["dose"], K2 * board * far["T"])
+    factor = far["P"] / (K2 * board * far["T"])
     close(factor, far["allowed"]["rows"][0]["factor"])
     story += H2("A further area: the office across the corridor")
     story += [P(f"Beyond Wall 3 of the example X-ray room (section {sec('Secondary barrier: X-ray room, Wall 3 (corridor)')}) "
                 f"is a corridor (<i>T</i> = {near['T']:g}). Across it, {far['delta']:g} m further, is an office "
                 f"(<i>T</i> = {far['T']:g}, <i>P</i> = {far['P']:g} mGy/week): {fig('further_area.png')}. The corridor "
                 f"point is <i>d</i> = {near['d']:.2f} m from the source, the office {near['d'] + far['delta']:.2f} m:")]
-    story += formula(f"<i>K</i><sub>2</sub> = {fmt(near['K'])} × ({far['T']:g} / {near['T']:g}) × ({near['d']:.2f} / "
-                     f"{near['d'] + far['delta']:.2f})<super>2</super> = <b>{fmt(K2)}</b> mGy/week")
-    story += table([["Area", "<i>K</i> (mGy/week)", "<i>B</i>", "Lead (mm)", "Gypsum wallboard (mm)"],
-                    [f"Corridor, <i>T</i> = {near['T']:g}", fmt(near["K"]), fmt(near["P"] / near["K"]),
+    story += formula(f"<i>K</i><sub>2</sub> = {fmt(K_near)} × ({near['d']:.2f} / "
+                     f"{near['d'] + far['delta']:.2f})<super>2</super> = <b>{fmt(K2)}</b> mGy/week,&nbsp;&nbsp;"
+                     f"<i>B</i><sub>2</sub> = ({far['P']:g} / {far['T']:g}) / <i>K</i><sub>2</sub>")
+    story += table([["Area", "<i>K</i> (mGy/week)", "<i>B</i> = (<i>P</i>/<i>T</i>)/<i>K</i>", "Lead (mm)",
+                     "Gypsum wallboard (mm)"],
+                    [f"Corridor, <i>T</i> = {near['T']:g}", fmt(K_near), fmt(B_near),
                      f"{x_near['Lead']:.2f}", f"{x_near['Gypsum Wallboard']:.1f}"],
-                    [f"Office, {far['delta']:g} m further, <i>T</i> = {far['T']:g}", fmt(K2), fmt(far["P"] / K2),
+                    [f"Office, {far['delta']:g} m further, <i>T</i> = {far['T']:g}", fmt(K2), fmt(B_far),
                      f"<b>{x_far['Lead']:.2f}</b>", f"<b>{x_far['Gypsum Wallboard']:.1f}</b>"]],
-                   [52, 30, 26, 24, 38])
+                   [52, 30, 30, 22, 36])
     story += [P(f"The office governs: {far['T'] / near['T']:g} times the occupancy outweighs the extra distance. "
                 f"The one gypsum board "
-                f"planned (15.9 mm) lets {fmt(K2 * board)} mGy/week reach the office, so the barrier allows "
+                f"planned (15.9 mm) gives the person in the office {fmt(K2 * board * far['T'])} mGy/week, so the "
+                "barrier allows "
                 f"{factor:.2f} × 120 = <b>{factor * 120:.0f} patients/week</b>, fewer than the "
                 f"{VALUES['xray']['Wall 3']['allowed']['rows'][0]['factor'] * 120:.0f} the corridor alone allows "
                 f"(section {sec('How many patients a barrier allows: X-ray room, Wall 3')}).")]
@@ -1897,9 +1913,9 @@ def further_and_field_examples():
     s = 1505 / 1.0 / (1000 / 1.0)
     K1 = 0.00053 + s * 0.034  # NCRP 147 Table 4.7, Rad Room (all barriers): leakage, side-scatter
     close(K1, field["K1"])
-    K = field["N"] * field["T"] * K1 / field["d"] ** 2
+    K = field["N"] * K1 / field["d"] ** 2
     close(K, field["K"])
-    x = {m: archer_thickness(field["params"][m], field["P"] / K) for m in ("Lead", "Gypsum Wallboard")}
+    x = {m: archer_thickness(field["params"][m], field["P"] / field["T"] / K) for m in ("Lead", "Gypsum Wallboard")}
     for m, value in field["thickness"]:
         close(value, x[m])
     story += H2("Scatter of a larger field: X-ray room, Wall 3")
@@ -1909,7 +1925,8 @@ def further_and_field_examples():
     story += formula(f"<i>K</i><super>1</super><sub>sec</sub> = 5.3 × 10<super>−4</super> + {s:.3f} × 0.034 = "
                      f"<b>{K1:.4f}</b> mGy/patient (instead of 0.034)")
     story += [P(f"For Wall 3 (120 patients/week, <i>T</i> = {field['T']:g}, <i>d</i> = {field['d']:.2f} m) "
-                f"<i>K</i> = {fmt(K)} mGy/week and <i>B</i> = {fmt(field['P'] / K)}: <b>{x['Lead']:.2f} mm lead</b> or "
+                f"<i>K</i> = {fmt(K)} mGy/week and <i>B</i> = ({field['P']:g} / {field['T']:g}) / {fmt(K)} = "
+                f"{fmt(field['P'] / field['T'] / K)}: <b>{x['Lead']:.2f} mm lead</b> or "
                 f"<b>{x['Gypsum Wallboard']:.1f} mm gypsum wallboard</b>, against "
                 f"{dict(VALUES['xray']['Wall 3']['thickness'])['Lead']:.2f} and "
                 f"{dict(VALUES['xray']['Wall 3']['thickness'])['Gypsum Wallboard']:.1f} mm with the field of NCRP 147.")]

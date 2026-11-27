@@ -19,21 +19,24 @@ NOTES = [
                    "2013 (tomosynthesis; toward each barrier: Yang et al. 2016), Li et al. 2024 (orthopedic table "
                    "bucky, concrete); kVp data: 'DR 600' Li et al. 2024, W/Al and W/Rh Li et al. 2012, W/Ag Li et "
                    "al. 2013. See the User Guide."),
-    ("xray", "Air kerma beyond the barrier for each radiation type: K = N · U · T · K¹ / d²  (mGy/week)."),
-    ("always", "Required transmission: B = P / ΣK, with P the shielding design goal of the area beyond the barrier."),
+    ("xray", "Unshielded air kerma beyond the barrier for each radiation type, as NCRP 147 (Eq. 4.4): K = N · U · K¹ "
+             "/ d²  (mGy/week), without the occupancy factor."),
+    ("always", "Required transmission (NCRP 147 Eq. 4.6): B = (P / T) / ΣK, with P the shielding design goal and T "
+               "the occupancy factor of the area beyond the barrier."),
     ("xray", "Thickness: every radiation type goes through the barrier with its own α, β, γ (of its workload "
-             "distribution, primary or secondary) and its own preshielding, so that Σ K · B(x + x_pre) = P (NCRP 147 "
-             "5.3.5, 5.4.2). With one radiation type: x = (1/αγ) · ln[(B^−γ + β/α) / (1 + β/α)] − x_pre."),
+             "distribution, primary or secondary) and its own preshielding, so that Σ K · B(x + x_pre) = P / T (NCRP "
+             "147 5.3.5, 5.4.2). With one radiation type: x = (1/αγ) · ln[(B^−γ + β/α) / (1 + β/α)] − x_pre."),
     ("xray", "d goes from the source to the occupied point (d_{P} primary, d_{L} leakage, d_{S} scatter, d_{sec} "
              "leakage and scatter): the distance to the barrier plus the distance beyond it (NCRP 147 4.1.2: 0.3 m "
              "beyond walls and doors, 0.5 m above the floor of the room above, 1.7 m above the floor below), or the "
              "whole distance when it is typed so; shown for each radiation type in the Details sheet."),
     ("ct", "CT rooms: K¹_{sec} per scan = κ · DLP (κ head 9×10⁻⁵ cm⁻¹, κ body 1.2 × 3×10⁻⁴ cm⁻¹); "
-           "K = T · Σ N · s · K¹_{sec} / d_{sec}², with s the scans per procedure (NCRP 147: 1.4) and d_{sec} from "
+           "K = Σ N · s · K¹_{sec} / d_{sec}², with s the scans per procedure (NCRP 147: 1.4) and d_{sec} from "
            "the isocenter."),
     ("none needed", "A thickness of 0 mm means no additional shielding is required (B ≥ 1)."),
-    ("check", "Dose beyond: weekly air kerma × T beyond the barrier with the planned thickness (or with the required "
-              "thickness when none is planned), compared with the shielding design goal P."),
+    ("check", "Dose beyond: the weekly air kerma a person beyond the barrier receives, K · B · T, with the planned "
+              "thickness (or with the required thickness when none is planned), compared with the shielding design "
+              "goal P."),
     ("alone", "'Each material alone': the thickness of each material if it were the only one."),
     ("layers", "'Layers': all materials together; from the inside out each takes its share of the attenuation, "
                "every layer starting at the equivalent thickness of the layers (and preshielding) in front of it."),
@@ -190,7 +193,8 @@ def write_report(path, title, rooms):
     materials = [m for m in MATERIALS if m in chosen]  # only the materials chosen somewhere
     columns = ([("Room", 18, f_bold, True), ("Room type", 16, f_text, True), ("Barrier", 11, f_text, True),
                 ("Area", 17, f_text, False), ("Location / T source", 26, f_text, False), ("T", 6, f_num, False),
-                ("P (mGy/week)", 9, f_num, False), ("ΣK (mGy/week)", 10, f_sci, False), ("B", 10, f_sci, False)]
+                ("P (mGy/week)", 9, f_num, False), ("P/T (mGy/week)", 9, f_num, False),
+                ("ΣK (mGy/week)", 10, f_sci, False), ("B", 10, f_sci, False)]
                + [(f"{m} (mm)", 9, f_mm, True) for m in materials]
                + [("Dose beyond (mGy/week)", 11, f_sci, False), ("Goal P", 26, f_text, False),
                   ("Materials", 30, f_text, False), ("Shielding height", 14, f_text, False),
@@ -208,7 +212,9 @@ def write_report(path, title, rooms):
             thickness = dict(rec.get("thickness", []))
             check = barrier.get("check")
             layers = rec.get("layers")
-            row += [rec.get("area"), rec.get("location"), rec.get("T"), rec.get("P"), rec.get("K_total"), rec.get("B")]
+            goal = rec["P"] / rec["T"] if rec.get("P") and rec.get("T") else None
+            row += [rec.get("area"), rec.get("location"), rec.get("T"), rec.get("P"), goal, rec.get("K_total"),
+                    rec.get("B")]
             row += [thickness.get(material) for material in materials]
             goal = None
             if check:

@@ -645,9 +645,11 @@ class departprimsec():
             if not missing and Ktotal <= 0:
                 missing.append("Unshielded air kerma is zero")
             self.need, self.need_fields = list(dict.fromkeys(missing)), fields
-            self.B = P / Ktotal if not missing else None
-            self.material_thicknesses(e, nr, components, P)
-            self.record_barrier(e, nr, kind="xray", P=P, T=self.occupancy_factor(e, nr),
+            T = self.occupancy_factor(e, nr)
+            goal = P / T if P is not None and T else None  # NCRP 147: the barrier lets P / T through
+            self.B = goal / Ktotal if not missing else None
+            self.material_thicknesses(e, nr, components, goal)
+            self.record_barrier(e, nr, kind="xray", P=P, T=T,
                                 K_total=Ktotal if not missing else None, B=self.B, distributions=distributions,
                                 beyond=self.beyond_distance(e, nr), whole=self.whole_distance(e, nr))
         self.share_barrier(e, nr, t, partner)
@@ -778,8 +780,8 @@ class departprimsec():
         shield = getattr(self, "last_shield", None)
         far = self.far_area(e, nr)
         if far and shield and result.get("T") and not self.need:
-            # the further area: every radiation type with its T and the person that much further away
-            far["components"] = [dict(c, K=c["K"] * far["T"] / result["T"] * (c["d"] / (c["d"] + far["delta"])) ** 2)
+            # the further area: every radiation type with the person that much further away (its T divides its P)
+            far["components"] = [dict(c, K=c["K"] * (c["d"] / (c["d"] + far["delta"])) ** 2)
                                  for c in shield["components"]]
         result.update(area=area if area != "Classify the area" else None, location=location,
                       thickness=thickness, missing=list(self.need), layers=layers,
@@ -940,7 +942,8 @@ class departprimsec():
             return None
 
     def calkerma(self, e, nr, i, t):
-        # Air kerma K = N·U·T·K1/d² of one radiation type; self.need lists what is missing,
+        # Unshielded air kerma K = N·U·K1/d² of one radiation type, without T, as NCRP 147 (Eq. 4.4); T divides P
+        # (B = (P/T)/K, Eq. 4.6). self.need lists what is missing,
         # self.need_fields the entries to highlight
         need, fields = [], []
         self.last_parts = None  # the air kerma kVp by kVp, when it is made from a spectrum (at an angle)
@@ -1077,7 +1080,7 @@ class departprimsec():
         d = D + beyond if D is not None and beyond is not None else None  # source to the occupied point
         self.need, self.need_fields = need, fields
         # ========== Calculate Kerma (None if there are missing variables) ==========
-        K = n * Us * T * K1 / (d ** 2) if None not in (n, Us, T, K1, d) and d > 0 else None
+        K = n * Us * K1 / (d ** 2) if None not in (n, Us, T, K1, d) and d > 0 else None
         self.last_distribution = dict(self.describe_distribution(e, nr, i), N=n, U=Us, T=T, K1=K1, d=d, K=K,
                                       D=D, symbol=self.distance_symbol(e, nr, i))
         return K
@@ -1326,13 +1329,14 @@ class departprimsec():
         self.need = list(dict.fromkeys(self.need))
         if not self.need:
             d += beyond  # isocenter to the occupied point
-            K = T * workload / d ** 2
+            K = workload / d ** 2  # without T, as NCRP 147
             self.d["K " + self.barn[f"lab_bar {e}{nr}"].cget("text") + nr] = K
-            B = P / K
+            B = P / T / K
         kvp_120 = number(f"kvp_var {t}") == 120
         ct_params = {"Lead": (2.246, 5.73, 0.547) if kvp_120 else (2.009, 3.99, 0.342),
                      "Concrete": (0.0383, 0.0142, 0.658) if kvp_120 else (0.0336, 0.0122, 0.519)}
-        self.material_thicknesses(e, nr, [{"K": K, "params": ct_params, "pre": {}, "d": d}] if K else [], P)
+        self.material_thicknesses(e, nr, [{"K": K, "params": ct_params, "pre": {}, "d": d}] if K else [],
+                                  P / T if P and T else P)
         self.record_barrier(e, nr, kind="ct", P=P or None, T=T, K_total=K, B=B, d=d if K else None,
                             kvp=int(number(f"kvp_var {t}")) or None, beyond=beyond, scans=scans,
                             whole=self.whole_distance(e, nr), D=D if K else None)
@@ -1527,7 +1531,7 @@ class departprimsec():
             return
         materials, fractions, existing, side = self.barrier_build(e, nr)
         near = [self.thm.get(f"xbar {e}{o}{nr}") for o in range(1, len(materials) + 1)]
-        needed = required_thicknesses(far["components"], far["P"], materials, fractions, existing, side)
+        needed = required_thicknesses(far["components"], far["P"] / far["T"], materials, fractions, existing, side)
         combined, governs = larger_thicknesses(near, needed, "further area")
         far.update(near=near, far=needed, governs=governs)
         self.set_thicknesses(e, nr, combined)
@@ -1552,9 +1556,9 @@ class departprimsec():
         materials, fractions, existing, side = self.barrier_build(e, nr)
         seen_from_there = other_side(materials, fractions, existing, side)
         theirs = None
-        for components, P in [(other["shield"]["components"], other["P"])] + (
-                [(other["far"]["components"], other["far"]["P"])] if other.get("far") else []):
-            needed = required_thicknesses(components, P, *seen_from_there)
+        for components, goal in [(other["shield"]["components"], other["P"] / other["T"])] + (
+                [(other["far"]["components"], other["far"]["P"] / other["far"]["T"])] if other.get("far") else []):
+            needed = required_thicknesses(components, goal, *seen_from_there)
             if fractions is not None:
                 needed = needed[::-1]
             theirs = needed if theirs is None else larger_thicknesses(theirs, needed, info["room"])[0]
@@ -1615,32 +1619,34 @@ class departprimsec():
         rec = self.calc.get((nr, e))
         if not rec or rec["missing"] or not rec.get("K_total") or not rec.get("P") or not rec.get("shield"):
             return None
-        K, P, shield = rec["K_total"], rec["P"], rec["shield"]
+        K, P, T, shield = rec["K_total"], rec["P"], rec["T"], rec["shield"]
         layered = bool(rec.get("layers"))
         existing, _ = self.existing_of(rec)
         other = self.shared_other(rec)
         stacks, planned = self.built_stacks(nr, e, rec)
         if not stacks_usable(shield["components"], stacks):  # e.g. existing steel in a CT room: no data
             return None
+        # K (NCRP 147) is without T: the person there receives K · B · T, which must not exceed P
         if planned:
-            dose = stack_dose(shield["components"], stacks[0], layered)
+            dose = T * stack_dose(shield["components"], stacks[0], layered)
             basis = "planned " + self.layers_text(stacks[0], existing)
         elif (existing or other or rec.get("far")) and stacks:  # the least protective material, with what is there
-            dose = max(stack_dose(shield["components"], stack, layered) for stack in stacks)
+            dose = T * max(stack_dose(shield["components"], stack, layered) for stack in stacks)
             basis = "required thickness"
         else:
-            dose, basis = min(K, P), "required thickness"
-        result = {"K": K, "P": P, "dose": dose, "ok": dose <= P * 1.0001, "basis": basis, "transmission": dose / K}
+            dose, basis = min(K * T, P), "required thickness"
+        result = {"K": K, "P": P, "dose": dose, "ok": dose <= P * 1.0001, "basis": basis,
+                  "transmission": dose / (K * T)}
         areas = [("far", "further area", rec.get("far"), False)]
         if other is not None:  # the same wall, from the other room: the layers in the reverse order
-            areas += [("other", rec["shared"]["room"], {"components": other["shield"]["components"], "P": other["P"]},
-                       True),
+            areas += [("other", rec["shared"]["room"], {"components": other["shield"]["components"], "P": other["P"],
+                                                        "T": other["T"]}, True),
                       ("other_far", f"{rec['shared']['room']}, further area", other.get("far"), True)]
         for key, label, area, mirrored in areas:
             if not area or not stacks or not stacks_usable(area["components"], stacks):
                 continue
-            dose2 = max(stack_dose(area["components"], stack[::-1] if mirrored else stack, layered)
-                        for stack in stacks)
+            dose2 = area["T"] * max(stack_dose(area["components"], stack[::-1] if mirrored else stack, layered)
+                                    for stack in stacks)
             result[key] = {"room": label, "dose": dose2, "P": area["P"], "ok": dose2 <= area["P"] * 1.0001}
             result["ok"] = result["ok"] and result[key]["ok"]
         return result
@@ -1695,13 +1701,14 @@ class departprimsec():
         rows = []
         for t, side_rec, layers, name in sides:
             # the area beyond the barrier, and the further one: the workload is that of the more demanding
-            areas = [(side_rec["shield"]["components"], side_rec["P"], None)]
+            areas = [(side_rec["shield"]["components"], side_rec["P"] / side_rec["T"], None)]
             if side_rec.get("far") and stacks_usable(side_rec["far"]["components"], [layers]):
-                areas.append((side_rec["far"]["components"], side_rec["far"]["P"], "the further area"))
+                areas.append((side_rec["far"]["components"], side_rec["far"]["P"] / side_rec["far"]["T"],
+                              "the further area"))
             limits = []
-            for components, P, label in areas:
+            for components, goal, label in areas:  # goal: P / T, as the air kerma K is without T
                 dose = stack_dose(components, layers, layered)
-                limits.append((P / dose if dose > 0 else float("inf"), label))
+                limits.append((goal / dose if dose > 0 else float("inf"), label))
             factor, label = min(limits, key=lambda item: item[0])
             text = self.workload_allowed(t, factor) + (f", {label} limits it" if label and len(limits) > 1 else "")
             rows.append({"room": name, "factor": factor, "text": text})
